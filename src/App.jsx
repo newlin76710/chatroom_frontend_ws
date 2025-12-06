@@ -1,21 +1,22 @@
-
 import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_BACKEND_URL);
+const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
 
 export default function App(){
   const [room,setRoom]=useState("public");
   const [name,setName]=useState("訪客"+Math.floor(Math.random()*999));
   const [messages,setMessages]=useState([]);
   const [text,setText]=useState("");
+  const [joined,setJoined]=useState(false);
 
   useEffect(()=>{
     socket.on("message",(m)=>setMessages(s=>[...s,m]));
-    return ()=> socket.off("message");
+    socket.on("systemMessage",(m)=>setMessages(s=>[...s,{user:{name:'系統'},message:m}]));
+    return ()=> { socket.off("message"); socket.off("systemMessage"); }
   },[]);
 
-  const join = ()=> socket.emit("joinRoom",{room,user:{name}});
+  const join = ()=>{ socket.emit("joinRoom",{room,user:{name}}); setJoined(true); }
   const send = ()=>{
     if(!text) return;
     socket.emit("message",{room,message:text,user:{name}});
@@ -23,28 +24,37 @@ export default function App(){
   };
 
   return (
-    <div style={{padding:"20px", maxWidth:"600px", margin:"auto"}}>
-      <h2>免費版聊天室</h2>
-      <div>
-        暱稱：<input value={name} onChange={e=>setName(e.target.value)}/>
+    <div style={{padding:"20px", maxWidth:"720px", margin:"auto", fontFamily:'Arial, sans-serif'}}>
+      <h2>尋夢園 聊天室（免費部署版）</h2>
+      <div style={{marginBottom:8}}>
+        暱稱：<input value={name} onChange={e=>setName(e.target.value)} />
       </div>
-      <div>
+      <div style={{marginBottom:8}}>
         房間：
         <select value={room} onChange={e=>setRoom(e.target.value)}>
           <option value="public">大廳</option>
         </select>
-        <button onClick={join}>加入</button>
+        <button onClick={join} style={{marginLeft:8}}>加入</button>
       </div>
 
-      <div style={{border:"1px solid #ccc", height:"300px", overflow:"auto", marginTop:"10px", padding:"5px"}}>
+      <div style={{border:"1px solid #ddd", height:320, overflow:"auto", padding:8, background:'#fafafa'}}>
         {messages.map((m,i)=>(
-          <div key={i}><b>{m.user?.name}：</b>{m.message}</div>
+          <div key={i} style={{marginBottom:6}}>
+            <strong>{m.user?.name}：</strong><span>{m.message}</span>
+          </div>
         ))}
+        {!messages.length && <div style={{color:'#666'}}>還沒有人發話，打個招呼吧！</div>}
       </div>
 
-      <input value={text} onChange={e=>setText(e.target.value)}
-       onKeyDown={e=> e.key==="Enter" && send()}/>
-      <button onClick={send}>發送</button>
+      <div style={{marginTop:8}}>
+        <input value={text} onChange={e=>setText(e.target.value)}
+         onKeyDown={e=> e.key==="Enter" && send()} style={{width:'70%'}}/>
+        <button onClick={send} style={{marginLeft:8}}>發送</button>
+      </div>
+
+      <div style={{marginTop:12, color:'#888', fontSize:12}}>
+        小提醒：在訊息中提到 <code>@bot</code> 可叫 AI 回覆（後端需設定 API key）。
+      </div>
     </div>
   )
 }
