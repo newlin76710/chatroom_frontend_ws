@@ -72,7 +72,7 @@ export default function App() {
         <button onClick={join} style={{ padding: "5px 15px", cursor: "pointer" }} disabled={joined}>加入</button>
 
         <div>
-          <label>指定 AI：</label>
+          <label>指定 聊天對象：</label>
           <select value={targetAI} onChange={(e) => setTargetAI(e.target.value)} style={{ padding: "5px", width: "150px" }}>
             <option value="">全部</option>
             {aiPersonalities.map((p) => <option key={p} value={p}>{p}</option>)}
