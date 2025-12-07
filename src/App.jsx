@@ -22,8 +22,11 @@ export default function App() {
   ];
 
   useEffect(() => {
+    // 收到訊息時加入到 messages 狀態
     socket.on("message", (m) => setMessages((s) => [...s, m]));
-    socket.on("systemMessage", (m) => setMessages((s) => [...s, { user: { name: '系統' }, message: m }]));
+    socket.on("systemMessage", (m) =>
+      setMessages((s) => [...s, { user: { name: "系統" }, message: m }])
+    );
     return () => {
       socket.off("message");
       socket.off("systemMessage");
@@ -39,11 +42,11 @@ export default function App() {
     if (!joined) {
       socket.emit("joinRoom", { room, user: { name } });
       setJoined(true);
-      setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} 加入房間` }]);
+      setMessages((s) => [...s, { user: { name: "系統" }, message: `${name} 加入房間` }]);
     } else {
       socket.emit("leaveRoom");
       setJoined(false);
-      setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} 離開房間` }]);
+      setMessages((s) => [...s, { user: { name: "系統" }, message: `${name} 離開房間` }]);
     }
   };
 
@@ -57,8 +60,11 @@ export default function App() {
       user: { name },
     };
 
+    // 顯示在聊天室畫面上（即使選擇 AI）
+    setMessages((s) => [...s, messageData]);
+
     if (aiPersonality) {
-      messageData.aiPersonality = aiPersonality; // 選擇 AI 人格 → 自動送給 AI
+      messageData.aiPersonality = aiPersonality; // 選擇 AI 人格 → 後端回覆 AI
     }
 
     socket.emit("message", messageData);
