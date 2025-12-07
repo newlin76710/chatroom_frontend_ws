@@ -3,27 +3,27 @@ import { io } from "socket.io-client";
 
 const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
 
-// 性別、婚姻狀態、人格編號
-const genders = ["女性", "男性"];
-const maritalStatuses = ["未婚", "已婚"];
-const personalityIndexes = [1, 2, 3, 4];
+// 模擬 AI 人格列表（可在後端生成更多）
+const aiPersonalities = [
+  "已婚女性-1", "已婚女性-2", "已婚女性-3", "已婚女性-4",
+  "未婚女性-1", "未婚女性-2", "未婚女性-3", "未婚女性-4",
+  "已婚男性-1", "已婚男性-2", "已婚男性-3", "已婚男性-4",
+  "未婚男性-1", "未婚男性-2", "未婚男性-3", "未婚男性-4",
+];
 
 export default function App() {
   const [room, setRoom] = useState("public");
   const [name, setName] = useState("訪客" + Math.floor(Math.random() * 999));
-  const [gender, setGender] = useState("女性");
-  const [maritalStatus, setMaritalStatus] = useState("已婚");
-  const [personalityIndex, setPersonalityIndex] = useState(1);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [joined, setJoined] = useState(false);
+  const [targetAI, setTargetAI] = useState(""); // 指定對話的 AI
 
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     socket.on("message", (m) => setMessages((s) => [...s, m]));
     socket.on("systemMessage", (m) => setMessages((s) => [...s, { user: { name: '系統' }, message: m }]));
-
     return () => {
       socket.off("message");
       socket.off("systemMessage");
@@ -34,30 +34,25 @@ export default function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const role = `${maritalStatus}${gender}-${personalityIndex}`; // 組合人格名稱
-
-  // 加入或離開房間
-  const toggleRoom = () => {
-    if (!joined) {
-      socket.emit("joinRoom", { room, user: { name, role } });
-      setJoined(true);
-      setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} (${role}) 加入房間` }]);
-    } else {
-      socket.emit("leaveRoom");
-      setJoined(false);
-      setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} (${role}) 離開房間` }]);
-    }
+  const join = () => {
+    socket.emit("joinRoom", { room, user: { name } });
+    setJoined(true);
+    setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} 加入房間` }]);
   };
 
-  // 發送訊息
   const send = () => {
     if (!text || !joined) return;
-    socket.emit("message", { room, message: text, user: { name, role } });
+    socket.emit("message", {
+      room,
+      message: text,
+      user: { name },
+      targetAI // 可空，表示廣播給所有人
+    });
     setText("");
   };
 
   return (
-    <div style={{ maxWidth: "900px", margin: "30px auto", fontFamily: "Arial, sans-serif" }}>
+    <div style={{ maxWidth: "800px", margin: "30px auto", fontFamily: "Arial, sans-serif" }}>
       <h2 style={{ textAlign: "center", marginBottom: "20px" }}>尋夢園聊天室</h2>
 
       {/* 使用者資訊區 */}
@@ -68,36 +63,21 @@ export default function App() {
         </div>
 
         <div>
-          <label>性別：</label>
-          <select value={gender} onChange={(e) => setGender(e.target.value)} style={{ padding: "5px", width: "100px" }}>
-            {genders.map((g) => <option key={g} value={g}>{g}</option>)}
-          </select>
-        </div>
-
-        <div>
-          <label>婚姻狀態：</label>
-          <select value={maritalStatus} onChange={(e) => setMaritalStatus(e.target.value)} style={{ padding: "5px", width: "100px" }}>
-            {maritalStatuses.map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
-        </div>
-
-        <div>
-          <label>人格編號：</label>
-          <select value={personalityIndex} onChange={(e) => setPersonalityIndex(parseInt(e.target.value))} style={{ padding: "5px", width: "100px" }}>
-            {personalityIndexes.map((i) => <option key={i} value={i}>{i}</option>)}
-          </select>
-        </div>
-
-        <div>
           <label>房間：</label>
           <select value={room} onChange={(e) => setRoom(e.target.value)} style={{ padding: "5px" }}>
             <option value="public">大廳</option>
           </select>
         </div>
 
-        <button onClick={toggleRoom} style={{ padding: "5px 15px", cursor: "pointer" }}>
-          {joined ? "離開" : "加入"}
-        </button>
+        <button onClick={join} style={{ padding: "5px 15px", cursor: "pointer" }} disabled={joined}>加入</button>
+
+        <div>
+          <label>指定 AI：</label>
+          <select value={targetAI} onChange={(e) => setTargetAI(e.target.value)} style={{ padding: "5px", width: "150px" }}>
+            <option value="">全部</option>
+            {aiPersonalities.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* 聊天訊息區 */}
@@ -116,6 +96,7 @@ export default function App() {
               {m.user?.name} {m.user?.role ? `(${m.user.role})` : ""}：
             </strong>
             <span>{m.message}</span>
+            {m.targetAI && <em style={{ color: "#888", marginLeft: "5px" }}>→ {m.targetAI}</em>}
           </div>
         ))}
         {!messages.length && <div style={{ color: '#888', textAlign: "center" }}>還沒有人發話，打個招呼吧！</div>}
