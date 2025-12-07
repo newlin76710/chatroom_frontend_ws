@@ -24,7 +24,7 @@ export default function App() {
 
   useEffect(() => {
     socket.on("message", (m) => setMessages((s) => [...s, m]));
-    socket.on("systemMessage", (m) => setMessages((s) => [...s, { user: { name: '系統' }, message: m }]));
+    socket.on("systemMessage", (m) => setMessages((s) => [...s, { user: { name: '系統' }, message: m }] ));
     return () => {
       socket.off("message");
       socket.off("systemMessage");
@@ -40,11 +40,8 @@ export default function App() {
     setJoined(true);
     setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} 加入房間` }]);
 
-    // 如果設定自動離開
     if (autoLeaveTime > 0) {
-      autoLeaveTimeoutRef.current = setTimeout(() => {
-        leave();
-      }, autoLeaveTime * 1000);
+      autoLeaveTimeoutRef.current = setTimeout(() => leave(), autoLeaveTime * 1000);
     }
   };
 
@@ -53,7 +50,6 @@ export default function App() {
     setJoined(false);
     setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} 離開房間` }]);
     
-    // 清掉自動離開計時
     if (autoLeaveTimeoutRef.current) {
       clearTimeout(autoLeaveTimeoutRef.current);
       autoLeaveTimeoutRef.current = null;
@@ -62,12 +58,18 @@ export default function App() {
 
   const send = () => {
     if (!text || !joined) return;
+
+    // 自動把對象設成 targetAI 名稱
+    const to = targetAI || "";
+
     socket.emit("message", {
       room,
       message: text,
       user: { name },
-      targetAI
+      targetAI,
+      to
     });
+
     setText("");
   };
 
@@ -88,15 +90,12 @@ export default function App() {
           </select>
         </div>
 
-        <button
-          onClick={joined ? leave : join}
-          style={{ padding: "5px 15px", cursor: "pointer" }}
-        >
+        <button onClick={joined ? leave : join} style={{ padding: "5px 15px", cursor: "pointer" }}>
           {joined ? "離開" : "加入"}
         </button>
 
         <div>
-          <label>指定 聊天對象：</label>
+          <label>指定聊天對象：</label>
           <select value={targetAI} onChange={(e) => setTargetAI(e.target.value)} style={{ padding: "5px", width: "150px" }}>
             <option value="">全部</option>
             {aiPersonalities.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -127,7 +126,7 @@ export default function App() {
         {messages.map((m, i) => (
           <div key={i} style={{ marginBottom: "8px" }}>
             <strong style={{ color: m.user?.name === "系統" ? "#f00" : "#333" }}>
-              {m.user?.name} {m.user?.role ? `(${m.user.role})` : ""}：
+              {m.user?.name} {m.to ? `對 ${m.to} 說` : ""}：
             </strong>
             <span>{m.message}</span>
             {m.targetAI && <em style={{ color: "#888", marginLeft: "5px" }}>→ {m.targetAI}</em>}
