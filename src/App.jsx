@@ -101,187 +101,158 @@ export default function App() {
   };
 
   return (
-    <div style={{ maxWidth: "800px", margin: "20px auto", fontFamily: "Arial", padding: "0 10px" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "10px" }}>尋夢園聊天室</h2>
+    <div className="container" style={{ maxWidth: "800px", marginTop: "20px" }}>
+      <h2 className="text-center mb-3">尋夢園聊天室</h2>
 
-      {/* 控制面板 Bootstrap 版 */}
-      <div className="container mb-3">
-        <div className="row g-3">
+      {/* 控制面板 */}
+      <div className="row g-3 mb-3">
+        {/* 暱稱 */}
+        <div className="col-6 col-md-3">
+          <label className="form-label">暱稱</label>
+          <input
+            className="form-control"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
 
-          {/* 暱稱 */}
-          <div className="col-6 col-md-3">
-            <label className="form-label">暱稱</label>
-            <input
-              className="form-control"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+        {/* 房間 */}
+        <div className="col-6 col-md-2">
+          <label className="form-label">房間</label>
+          <select
+            className="form-select"
+            value={room}
+            onChange={(e) => setRoom(e.target.value)}
+          >
+            <option value="public">大廳</option>
+          </select>
+        </div>
 
-          {/* 房間 */}
-          <div className="col-6 col-md-2">
-            <label className="form-label">房間</label>
-            <select
-              className="form-select"
-              value={room}
-              onChange={(e) => setRoom(e.target.value)}
-            >
-              <option value="public">大廳</option>
-            </select>
-          </div>
+        {/* 加入 / 離開按鈕 */}
+        <div className="col-6 col-md-2 d-flex align-items-end">
+          <button
+            className={`btn ${joined ? "btn-danger" : "btn-primary"} w-100`}
+            onClick={joined ? leave : join}
+          >
+            {joined ? "離開" : "加入"}
+          </button>
+        </div>
 
-          {/* 按鈕 */}
-          <div className="col-6 col-md-2 d-flex align-items-end">
-            <button
-              className="btn btn-primary w-100"
-              onClick={joined ? leave : join}
-            >
-              {joined ? "離開" : "加入"}
-            </button>
-          </div>
+        {/* 指定聊天對象 */}
+        <div className="col-6 col-md-3">
+          <label className="form-label">指定聊天對象</label>
+          <select
+            className="form-select"
+            value={targetAI}
+            onChange={(e) => setTargetAI(e.target.value)}
+          >
+            <option value="">全部</option>
+            {aiPersonalities.map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+        </div>
 
-          {/* 指定聊天對象 */}
-          <div className="col-6 col-md-3">
-            <label className="form-label">指定聊天對象</label>
-            <select
-              className="form-select"
-              value={targetAI}
-              onChange={(e) => setTargetAI(e.target.value)}
-            >
-              <option value="">全部</option>
-              {aiPersonalities.map((p) => (
-                <option key={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* 自動離開秒數 */}
-          <div className="col-6 col-md-2">
-            <label className="form-label">自動離開秒數</label>
-            <input
-              type="number"
-              min="0"
-              className="form-control"
-              value={autoLeaveTime}
-              onChange={(e) => setAutoLeaveTime(Number(e.target.value))}
-            />
-          </div>
-
+        {/* 自動離開秒數 */}
+        <div className="col-6 col-md-2">
+          <label className="form-label">自動離開秒數</label>
+          <input
+            type="number"
+            min="0"
+            className="form-control"
+            value={autoLeaveTime}
+            onChange={(e) => setAutoLeaveTime(Number(e.target.value))}
+          />
         </div>
       </div>
 
-      {/* 聊天 */}
-      <div style={{
-        border: "1px solid #ddd", borderRadius: "10px",
-        background: "#fafafa", height: "400px",
-        overflowY: "auto", padding: "10px",
-        marginBottom: "10px", display: "flex",
-        flexDirection: "column", gap: "6px"
-      }}>
+      {/* 聊天區 */}
+      <div className="card mb-3 shadow-sm">
+        <div
+          className="card-body overflow-auto"
+          style={{ height: "400px", display: "flex", flexDirection: "column", gap: "6px" }}
+        >
+          {messages.map((m, i) => {
+            const isSelf = m.user?.name === name;
+            const isAI = aiPersonalities.includes(m.user?.name);
+            const isSystem = m.user?.name === "系統";
 
-        {messages.map((m, i) => {
-          const isSelf = m.user?.name === name;
-          const isAI = aiPersonalities.includes(m.user?.name);
-          const isSystem = m.user?.name === "系統";
-          const align = isSelf ? "flex-end" : "flex-start";
+            return (
+              <div
+                key={i}
+                className={`d-flex mb-2 ${isSelf ? "justify-content-end" : "justify-content-start"}`}
+              >
+                {/* AI 頭像 */}
+                {!isSelf && isAI && (
+                  <img
+                    src={aiAvatars[m.user?.name]}
+                    className="rounded-circle border me-2"
+                    style={{ width: "38px", height: "38px" }}
+                  />
+                )}
 
-          const bubbleStyle = {
-            padding: "10px 14px",
-            borderRadius: "14px",
-            maxWidth: "75%",
-            lineHeight: "1.4",
-            wordBreak: "break-word",
-            margin: "5px 0",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
-            animation: "fadeIn 0.25s ease",
-            background: isSystem
-              ? "#ffe5e5"
-              : isAI
-                ? "#e8d6ff"
-                : isSelf
-                  ? "#d6e8ff"
-                  : "#fff",
-            color: isSystem
-              ? "#d00"
-              : isAI
-                ? "purple"
-                : isSelf
-                  ? "#004c99"
-                  : "#333",
-          };
-
-          return (
-            <div key={i} style={{ display: "flex", justifyContent: align }}>
-              {/* 左側頭像（只有 AI 有） */}
-              {!isSelf && isAI && (
-                <img
-                  src={aiAvatars[m.user?.name]}
+                <div
+                  className="p-2 rounded shadow-sm"
                   style={{
-                    width: "38px", height: "38px", borderRadius: "50%",
-                    marginRight: "8px", border: "2px solid #ddd",
+                    maxWidth: "70%",
+                    backgroundColor: isSystem
+                      ? "#ffe5e5"
+                      : isAI
+                        ? "#f1e0ff"
+                        : isSelf
+                          ? "#d7eafe"
+                          : "#ffffff",
+                    color: isSystem
+                      ? "#bb0000"
+                      : isAI
+                        ? "purple"
+                        : isSelf
+                          ? "#003366"
+                          : "#333"
                   }}
-                />
-              )}
-
-              <div style={bubbleStyle}>
-                <strong>{m.user?.name} {m.to ? `對 ${m.to} 說` : ""}：</strong>
-                <br />
-                {m.message}
+                >
+                  <strong>
+                    {m.user?.name} {m.to ? `對 ${m.to} 說` : ""}：
+                  </strong>
+                  <br />
+                  {m.message}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
 
-        {/* 正在輸入 */}
-        {typingAI && (
-          <div style={{ color: "#888", margin: "5px 0", fontStyle: "italic" }}>
-            {typingAI}
-          </div>
-        )}
+          {/* 正在輸入 */}
+          {typingAI && (
+            <div className="text-muted fst-italic small ms-1">{typingAI}</div>
+          )}
 
-        {!messages.length && (
-          <div style={{ color: "#888", textAlign: "center" }}>還沒有人發話，打個招呼吧！</div>
-        )}
+          {!messages.length && (
+            <div className="text-center text-muted">還沒有人發話，打個招呼吧！</div>
+          )}
 
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef}></div>
+        </div>
       </div>
 
       {/* 輸入框 */}
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+      <div className="input-group mb-3">
         <input
+          className="form-control"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
-          style={{
-            flex: "1 1 70%",
-            padding: "8px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-          }}
           placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先加入房間才能發言"}
           disabled={!joined}
         />
-
         <button
+          className="btn btn-success"
           onClick={send}
-          style={{
-            flex: "1 1 25%",
-            padding: "8px",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
           disabled={!joined}
         >
           發送
         </button>
       </div>
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
+
 }
