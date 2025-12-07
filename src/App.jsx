@@ -32,12 +32,19 @@ export default function ChatApp() {
   const [autoLeaveTime, setAutoLeaveTime] = useState(0);
   const [typing, setTyping] = useState("");
   const [userList, setUserList] = useState([]);
+  const [showUserList, setShowUserList] = useState(true);
 
   const messagesEndRef = useRef(null);
   const autoLeaveRef = useRef(null);
 
   useEffect(() => {
-    socket.on("message", (m) => setMessages(s => [...s, m]));
+    socket.on("message", (m) => {
+      setMessages(s => [...s, m]);
+      if (m.user && aiAvatars[m.user.name] && m.to) {
+        setTyping(""); // AI 回覆後清除正在輸入
+      }
+    });
+
     socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
     socket.on("typing", (n) => {
       setTyping(n + " 正在輸入...");
@@ -73,6 +80,7 @@ export default function ChatApp() {
 
   const send = () => {
     if (!text || !joined) return;
+    if (target && aiAvatars[target]) setTyping(`${target} 正在輸入...`);
     socket.emit("message", { room, message: text, user: { name }, target });
     setText("");
   };
@@ -104,18 +112,24 @@ export default function ChatApp() {
 
       <div className="row">
         {/* 在線使用者列表 */}
-        <div className="col-12 col-md-3 mb-2">
-          <div className="card" style={{ maxHeight: "400px", overflowY: "auto" }}>
-            <div className="card-header bg-primary text-white">在線人數: {userList.length}</div>
-            <ul className="list-group list-group-flush">
-              {userList.map(u => (
-                <li key={u.id} className="list-group-item d-flex justify-content-between align-items-center">
-                  {u.name}
-                  <span className={`badge ${u.type === 'AI' ? 'bg-warning text-dark' : 'bg-success'}`}>{u.type === 'AI' ? 'AI' : '人類'}</span>
-                </li>
-              ))}
-            </ul>
+        <div className={`col-12 col-md-3 mb-2`}>
+          <div className="d-flex justify-content-between align-items-center mb-1">
+            <strong>在線人數: {userList.length}</strong>
+            <button className="btn btn-sm btn-outline-secondary" onClick={() => setShowUserList(!showUserList)}>
+              {showUserList ? "▼" : "▲"}
+            </button>
           </div>
+          {showUserList && (
+            <div className="card" style={{ maxHeight: "400px", overflowY: "auto" }}>
+              <ul className="list-group list-group-flush">
+                {userList.map(u => (
+                  <li key={u.id} className="list-group-item">
+                    {u.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* 聊天區 */}
