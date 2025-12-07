@@ -4,22 +4,22 @@ import { io } from "socket.io-client";
 const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
 
 const aiAvatars = {
-  "林怡君": "https://i.imgur.com/WPmBv8J.png",
-  "張雅婷": "https://i.imgur.com/mEtU0lH.png",
-  "陳思妤": "https://i.imgur.com/d3gaYqI.png",
-  "黃彥廷": "https://i.imgur.com/LXnSoe5.png",
-  "王子涵": "https://i.imgur.com/fMuC9NW.png",
-  "劉家瑋": "https://i.imgur.com/1aDHx7j.png",
-  "李佩珊": "https://i.imgur.com/mAD0cHj.png",
-  "蔡承翰": "https://i.imgur.com/gvgkZ1M.png",
-  "許婉婷": "https://i.imgur.com/UrI4asX.png",
-  "周俊宏": "https://i.imgur.com/E9Xgywn.png",
-  "何詩涵": "https://i.imgur.com/hTzFV8Y.png",
-  "鄭宇翔": "https://i.imgur.com/Fz3FhXQ.png",
-  "郭心怡": "https://i.imgur.com/YHCMe7j.png",
-  "江柏翰": "https://i.imgur.com/W4QkJtI.png",
-  "曾雅雯": "https://i.imgur.com/2hEQHaE.png",
-  "施俊傑": "https://i.imgur.com/svubm7Y.png",
+  "林怡君": "/avatars/g01.gif",
+  "張雅婷": "/avatars/g02.gif",
+  "陳思妤": "/avatars/g03.gif",
+  "黃彥廷": "/avatars/b01.gif",
+  "王子涵": "/avatars/b02.gif",
+  "劉家瑋": "/avatars/b03.gif",
+  "李佩珊": "/avatars/g04.gif",
+  "蔡承翰": "/avatars/b04.gif",
+  "許婉婷": "/avatars/g05.gif",
+  "周俊宏": "/avatars/b05.gif",
+  "何詩涵": "/avatars/g06.gif",
+  "鄭宇翔": "/avatars/b06.gif",
+  "郭心怡": "/avatars/g07.gif",
+  "江柏翰": "/avatars/b07.gif",
+  "曾雅雯": "/avatars/g08.gif",
+  "施俊傑": "/avatars/b08.gif",
 };
 
 const aiPersonalities = Object.keys(aiAvatars);
