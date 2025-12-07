@@ -1,60 +1,100 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
 const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
 
-export default function App(){
-  const [room,setRoom]=useState("public");
-  const [name,setName]=useState("訪客"+Math.floor(Math.random()*999));
-  const [messages,setMessages]=useState([]);
-  const [text,setText]=useState("");
-  const [joined,setJoined]=useState(false);
+export default function App() {
+  const [room, setRoom] = useState("public");
+  const [name, setName] = useState("訪客" + Math.floor(Math.random() * 999));
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
+  const [joined, setJoined] = useState(false);
 
-  useEffect(()=>{
-    socket.on("message",(m)=>setMessages(s=>[...s,m]));
-    socket.on("systemMessage",(m)=>setMessages(s=>[...s,{user:{name:'系統'},message:m}]));
-    return ()=> { socket.off("message"); socket.off("systemMessage"); }
-  },[]);
+  const messagesEndRef = useRef(null);
 
-  const join = ()=>{ socket.emit("joinRoom",{room,user:{name}}); setJoined(true); }
-  const send = ()=>{
-    if(!text) return;
-    socket.emit("message",{room,message:text,user:{name}});
+  useEffect(() => {
+    socket.on("message", (m) => setMessages((s) => [...s, m]));
+    socket.on("systemMessage", (m) => setMessages((s) => [...s, { user: { name: '系統' }, message: m }]));
+
+    return () => {
+      socket.off("message");
+      socket.off("systemMessage");
+    };
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const join = () => {
+    socket.emit("joinRoom", { room, user: { name } });
+    setJoined(true);
+  };
+
+  const send = () => {
+    if (!text) return;
+    socket.emit("message", { room, message: text, user: { name } });
     setText("");
   };
 
   return (
-    <div style={{padding:"20px", maxWidth:"720px", margin:"auto", fontFamily:'Arial, sans-serif'}}>
-      <h2>尋夢園 聊天室（免費部署版）</h2>
-      <div style={{marginBottom:8}}>
-        暱稱：<input value={name} onChange={e=>setName(e.target.value)} />
-      </div>
-      <div style={{marginBottom:8}}>
-        房間：
-        <select value={room} onChange={e=>setRoom(e.target.value)}>
-          <option value="public">大廳</option>
-        </select>
-        <button onClick={join} style={{marginLeft:8}}>加入</button>
+    <div style={{ maxWidth: "800px", margin: "30px auto", fontFamily: "Arial, sans-serif" }}>
+      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>尋夢園聊天室</h2>
+
+      {/* 使用者資訊區 */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "15px", alignItems: "center" }}>
+        <div>
+          <label>暱稱：</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} style={{ padding: "5px", width: "150px" }} />
+        </div>
+
+        <div>
+          <label>房間：</label>
+          <select value={room} onChange={(e) => setRoom(e.target.value)} style={{ padding: "5px" }}>
+            <option value="public">大廳</option>
+          </select>
+        </div>
+
+        <button onClick={join} style={{ padding: "5px 15px", cursor: "pointer" }}>加入</button>
       </div>
 
-      <div style={{border:"1px solid #ddd", height:320, overflow:"auto", padding:8, background:'#fafafa'}}>
-        {messages.map((m,i)=>(
-          <div key={i} style={{marginBottom:6}}>
-            <strong>{m.user?.name}：</strong><span>{m.message}</span>
+      {/* 聊天訊息區 */}
+      <div style={{
+        border: "1px solid #ddd",
+        height: "400px",
+        overflowY: "auto",
+        padding: "10px",
+        borderRadius: "5px",
+        background: "#fafafa",
+        marginBottom: "15px"
+      }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{ marginBottom: "8px" }}>
+            <strong style={{ color: m.user?.name === "系統" ? "#f00" : "#333" }}>{m.user?.name}：</strong>
+            <span>{m.message}</span>
           </div>
         ))}
-        {!messages.length && <div style={{color:'#666'}}>還沒有人發話，打個招呼吧！</div>}
+        {!messages.length && <div style={{ color: '#888', textAlign: "center" }}>還沒有人發話，打個招呼吧！</div>}
+        <div ref={messagesEndRef} />
       </div>
 
-      <div style={{marginTop:8}}>
-        <input value={text} onChange={e=>setText(e.target.value)}
-         onKeyDown={e=> e.key==="Enter" && send()} style={{width:'70%'}}/>
-        <button onClick={send} style={{marginLeft:8}}>發送</button>
+      {/* 發送訊息區 */}
+      <div style={{ display: "flex", gap: "10px" }}>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && send()}
+          style={{ flex: 1, padding: "8px", borderRadius: "5px", border: "1px solid #ccc" }}
+          placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先加入房間才能發言"}
+          disabled={!joined}
+        />
+        <button onClick={send} style={{ padding: "8px 15px", cursor: "pointer" }} disabled={!joined}>發送</button>
       </div>
 
-      <div style={{marginTop:12, color:'#888', fontSize:12}}>
+      {/* 小提醒 */}
+      <div style={{ marginTop: "15px", color: '#666', fontSize: "12px", textAlign: "center" }}>
         小提醒：在訊息中提到 <code>@bot</code> 可叫 AI 回覆（後端需設定 API key）。
       </div>
     </div>
-  )
+  );
 }
