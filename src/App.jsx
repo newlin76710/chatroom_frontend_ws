@@ -60,11 +60,10 @@ export default function App() {
       user: { name },
     };
 
-    // 顯示在聊天室畫面上（即使選擇 AI）
-    setMessages((s) => [...s, messageData]);
-
     if (aiPersonality) {
-      messageData.aiPersonality = aiPersonality; // 選擇 AI 人格 → 後端回覆 AI
+      // 選擇 AI 人格 → 顯示在畫面上
+      setMessages((s) => [...s, messageData]);
+      messageData.aiPersonality = aiPersonality; // 後端會回覆 AI 訊息
     }
 
     socket.emit("message", messageData);
