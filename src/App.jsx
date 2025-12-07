@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:3001");
+const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
 
 const aiAvatars = {
   "林怡君": "/avatars/g01.gif",
@@ -22,35 +22,28 @@ const aiAvatars = {
   "施俊傑": "/avatars/b08.gif",
 };
 
-const aiPersonalities = Object.keys(aiAvatars);
-
-export default function App() {
+export default function ChatApp() {
   const [room, setRoom] = useState("public");
   const [name, setName] = useState("訪客" + Math.floor(Math.random() * 999));
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [joined, setJoined] = useState(false);
-  const [targetAI, setTargetAI] = useState("");
+  const [target, setTarget] = useState("");
   const [autoLeaveTime, setAutoLeaveTime] = useState(0);
-  const [typingAI, setTypingAI] = useState("");
-  const [usersInRoom, setUsersInRoom] = useState([]);
+  const [typing, setTyping] = useState("");
+  const [userList, setUserList] = useState([]);
 
   const messagesEndRef = useRef(null);
-  const autoLeaveTimeoutRef = useRef(null);
+  const autoLeaveRef = useRef(null);
 
   useEffect(() => {
-    socket.on("message", (m) => setMessages((s) => [...s, m]));
-    socket.on("systemMessage", (m) =>
-      setMessages((s) => [...s, { user: { name: "系統" }, message: m }])
-    );
-    socket.on("typing", (user) => {
-      setTypingAI(user + " 正在輸入...");
-      setTimeout(() => setTypingAI(""), 1500);
+    socket.on("message", (m) => setMessages(s => [...s, m]));
+    socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
+    socket.on("typing", (n) => {
+      setTyping(n + " 正在輸入...");
+      setTimeout(() => setTyping(""), 1500);
     });
-    socket.on("updateUsers", (users) => {
-      const filtered = users.filter((u) => u.name !== "系統");
-      setUsersInRoom(filtered);
-    });
+    socket.on("updateUsers", (list) => setUserList(list));
 
     return () => {
       socket.off("message");
@@ -62,169 +55,109 @@ export default function App() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typingAI]);
+  }, [messages, typing]);
 
   const join = () => {
     socket.emit("joinRoom", { room, user: { name } });
     setJoined(true);
-    setMessages((s) => [
-      ...s,
-      { user: { name: "系統" }, message: `${name} 加入房間` },
-    ]);
-
-    if (autoLeaveTime > 0)
-      autoLeaveTimeoutRef.current = setTimeout(() => leave(), autoLeaveTime * 1000);
+    setMessages(s => [...s, { user: { name: "系統" }, message: `${name} 加入房間` }]);
+    if (autoLeaveTime > 0) autoLeaveRef.current = setTimeout(() => leave(), autoLeaveTime * 1000);
   };
 
   const leave = () => {
     socket.emit("leaveRoom", { room, user: { name } });
     setJoined(false);
-    setMessages((s) => [
-      ...s,
-      { user: { name: "系統" }, message: `${name} 離開房間` },
-    ]);
-
-    if (autoLeaveTimeoutRef.current) {
-      clearTimeout(autoLeaveTimeoutRef.current);
-      autoLeaveTimeoutRef.current = null;
-    }
+    setMessages(s => [...s, { user: { name: "系統" }, message: `${name} 離開房間` }]);
+    if (autoLeaveRef.current) clearTimeout(autoLeaveRef.current);
   };
 
   const send = () => {
     if (!text || !joined) return;
-
-    socket.emit("message", {
-      room,
-      message: text,
-      user: { name },
-      targetAI,
-      to: targetAI || "",
-    });
-
+    socket.emit("message", { room, message: text, user: { name }, target });
     setText("");
   };
 
-  const getBubbleClasses = (m) => {
-    const isSelf = m.user?.name === name;
-    const isAI = aiPersonalities.includes(m.user?.name);
-    const isSystem = m.user?.name === "系統";
-
-    if (isSystem) return "bg-danger bg-opacity-10 text-danger";
-    if (isAI) return "bg-secondary bg-opacity-10 text-secondary";
-    if (isSelf) return "bg-primary bg-opacity-10 text-primary";
-    return "bg-light text-dark";
-  };
-
   return (
-    <div className="container my-4" style={{ maxWidth: "800px" }}>
-      <h2 className="text-center mb-4">尋夢園聊天室</h2>
+    <div className="container mt-3">
+      <h2 className="text-center mb-3">尋夢園聊天室</h2>
 
       {/* 控制面板 */}
-      <div className="row g-3 mb-3">
+      <div className="row g-2 mb-3">
         <div className="col-6 col-md-3">
           <label className="form-label">暱稱</label>
-          <input
-            className="form-control"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-
         <div className="col-6 col-md-2">
           <label className="form-label">房間</label>
-          <select
-            className="form-select"
-            value={room}
-            onChange={(e) => setRoom(e.target.value)}
-          >
+          <select className="form-select" value={room} onChange={(e) => setRoom(e.target.value)}>
             <option value="public">大廳</option>
           </select>
         </div>
-
         <div className="col-6 col-md-2">
           <label className="form-label">自動離開秒數</label>
-          <input
-            type="number"
-            min="0"
-            className="form-control"
-            value={autoLeaveTime}
-            onChange={(e) => setAutoLeaveTime(Number(e.target.value))}
-          />
+          <input type="number" min="0" className="form-control" value={autoLeaveTime} onChange={(e) => setAutoLeaveTime(Number(e.target.value))} />
         </div>
-
         <div className="col-6 col-md-2 d-flex align-items-end">
-          <button
-            className={`btn ${joined ? "btn-danger" : "btn-primary"} w-100`}
-            onClick={joined ? leave : join}
-          >
-            {joined ? "離開" : "加入"}
-          </button>
+          <button className="btn btn-primary w-100" onClick={joined ? leave : join}>{joined ? "離開" : "加入"}</button>
         </div>
       </div>
 
-      {/* 聊天區 */}
-      <div className="card mb-3 shadow-sm">
-        <div className="card-body overflow-auto d-flex flex-column gap-2" style={{ height: "400px" }}>
-          {messages.map((m, i) => {
-            const isSelf = m.user?.name === name;
-            return (
-              <div
-                key={i}
-                className={`d-flex mb-2 ${isSelf ? "justify-content-end" : "justify-content-start"}`}
-              >
-                {!isSelf && aiPersonalities.includes(m.user?.name) && (
-                  <img
-                    src={aiAvatars[m.user?.name]}
-                    className="rounded-circle border me-2"
-                    style={{ width: "38px", height: "38px" }}
-                  />
-                )}
-                <div
-                  className={`p-2 rounded shadow-sm ${getBubbleClasses(m)}`}
-                  style={{ maxWidth: "70%" }}
-                >
-                  <strong>
-                    {m.user?.name} {m.to ? `對 ${m.to} 說` : ""}：
-                  </strong>
-                  <br />
-                  {m.message}
+      <div className="row">
+        {/* 在線使用者列表 */}
+        <div className="col-12 col-md-3 mb-2">
+          <div className="card" style={{ maxHeight: "400px", overflowY: "auto" }}>
+            <div className="card-header bg-primary text-white">在線人數: {userList.length}</div>
+            <ul className="list-group list-group-flush">
+              {userList.map(u => (
+                <li key={u.id} className="list-group-item d-flex justify-content-between align-items-center">
+                  {u.name}
+                  <span className={`badge ${u.type === 'AI' ? 'bg-warning text-dark' : 'bg-success'}`}>{u.type === 'AI' ? 'AI' : '人類'}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* 聊天區 */}
+        <div className="col-12 col-md-9">
+          <div className="card mb-2" style={{ height: "400px", overflowY: "auto", padding: "10px" }}>
+            {messages.map((m, i) => {
+              const isSelf = m.user?.name === name;
+              const isAI = aiAvatars[m.user?.name];
+              const alignClass = isSelf ? "justify-content-end text-end" : "justify-content-start text-start";
+
+              return (
+                <div key={i} className={`d-flex ${alignClass} mb-2`}>
+                  {!isSelf && isAI && (
+                    <img src={aiAvatars[m.user?.name]} alt={m.user.name} className="rounded-circle me-2" style={{ width: "38px", height: "38px", border: "2px solid #ddd" }} />
+                  )}
+                  <div className={`p-2 rounded`} style={{
+                    background: isSelf ? "#d6e8ff" : isAI ? "#e8d6ff" : m.user?.name === "系統" ? "#ffe5e5" : "#fff",
+                    color: m.user?.name === "系統" ? "#d00" : isAI ? "purple" : isSelf ? "#004c99" : "#333",
+                    maxWidth: "75%",
+                    wordBreak: "break-word",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.18)"
+                  }}>
+                    <strong>{m.user?.name}{m.target ? ` 對 ${m.target} 說` : ""}：</strong> {m.message}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+            {typing && <div className="text-muted fst-italic">{typing}</div>}
+            {!messages.length && <div className="text-center text-muted">還沒有人發話，打個招呼吧！</div>}
+            <div ref={messagesEndRef} />
+          </div>
 
-          {typingAI && <div className="text-muted fst-italic small ms-1">{typingAI}</div>}
-          {!messages.length && <div className="text-center text-muted">還沒有人發話，打個招呼吧！</div>}
-          <div ref={messagesEndRef}></div>
+          {/* 輸入區 */}
+          <div className="input-group mb-3">
+            <select className="form-select" value={target} onChange={e => setTarget(e.target.value)}>
+              <option value="">發送給全部</option>
+              {userList.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
+            </select>
+            <input type="text" className="form-control" placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先加入房間"} value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} disabled={!joined} />
+            <button className="btn btn-primary" onClick={send} disabled={!joined}>發送</button>
+          </div>
         </div>
-      </div>
-
-      {/* 輸入區 */}
-      <div className="input-group mb-3 flex-wrap">
-        <span className="input-group-text">發送給</span>
-        <select
-          className="form-select"
-          value={targetAI}
-          onChange={(e) => setTargetAI(e.target.value)}
-          style={{ maxWidth: "180px" }}
-        >
-          <option value="">全部</option>
-          {usersInRoom.map((u) => (
-            <option key={u.name} value={u.name}>{u.name}</option>
-          ))}
-        </select>
-
-        <input
-          className="form-control"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先加入房間才能發言"}
-          disabled={!joined}
-        />
-        <button className="btn btn-success" onClick={send} disabled={!joined}>
-          發送
-        </button>
       </div>
     </div>
   );
