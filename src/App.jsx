@@ -9,13 +9,20 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [joined, setJoined] = useState(false);
+  const [aiPersonality, setAiPersonality] = useState("friendly"); // 預設人格
 
   const messagesEndRef = useRef(null);
+
+  const aiOptions = [
+    { value: "friendly", label: "友善型 AI" },
+    { value: "sarcastic", label: "諷刺型 AI" },
+    { value: "motivational", label: "勵志型 AI" },
+    { value: "academic", label: "學術型 AI" },
+  ];
 
   useEffect(() => {
     socket.on("message", (m) => setMessages((s) => [...s, m]));
     socket.on("systemMessage", (m) => setMessages((s) => [...s, { user: { name: '系統' }, message: m }]));
-
     return () => {
       socket.off("message");
       socket.off("systemMessage");
@@ -31,12 +38,10 @@ export default function App() {
     if (!joined) {
       socket.emit("joinRoom", { room, user: { name } });
       setJoined(true);
-      // 前端立即顯示自己加入的訊息
       setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} 加入房間` }]);
     } else {
       socket.emit("leaveRoom");
       setJoined(false);
-      // 前端立即顯示自己離開的訊息
       setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} 離開房間` }]);
     }
   };
@@ -44,7 +49,14 @@ export default function App() {
   // 發送訊息
   const send = () => {
     if (!text || !joined) return;
-    socket.emit("message", { room, message: text, user: { name } });
+    const messageData = { room, message: text, user: { name } };
+
+    // 如果訊息包含 @bot，附帶 aiPersonality
+    if (text.includes("@bot")) {
+      messageData.aiPersonality = aiPersonality;
+    }
+
+    socket.emit("message", messageData);
     setText("");
   };
 
@@ -69,6 +81,16 @@ export default function App() {
         <button onClick={toggleRoom} style={{ padding: "5px 15px", cursor: "pointer" }}>
           {joined ? "離開" : "加入"}
         </button>
+      </div>
+
+      {/* AI 人格選單 */}
+      <div style={{ marginBottom: "15px" }}>
+        <label>選擇 AI 人格： </label>
+        <select value={aiPersonality} onChange={(e) => setAiPersonality(e.target.value)} style={{ padding: "5px" }}>
+          {aiOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* 聊天訊息區 */}
@@ -106,7 +128,7 @@ export default function App() {
 
       {/* 小提醒 */}
       <div style={{ marginTop: "15px", color: '#666', fontSize: "12px", textAlign: "center" }}>
-        小提醒：在訊息中提到 <code>@bot</code> 可叫 AI 回覆（後端需設定 API key）。
+        小提醒：在訊息中提到 <code>@bot</code> 可叫 AI 回覆。
       </div>
     </div>
   );
