@@ -29,6 +29,8 @@ export default function App() {
   const join = () => {
     socket.emit("joinRoom", { room, user: { name } });
     setJoined(true);
+    // 如果想立即在自己聊天室顯示，也可以在前端加一條
+    setMessages(s => [...s, { user: { name: '系統' }, message: `${name} 加入房間` }]);
   };
 
   const send = () => {
