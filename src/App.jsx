@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
+const socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:3001");
 
 const aiAvatars = {
   "林怡君": "/avatars/g01.gif",
@@ -33,26 +33,30 @@ export default function App() {
   const [targetAI, setTargetAI] = useState("");
   const [autoLeaveTime, setAutoLeaveTime] = useState(0);
   const [typingAI, setTypingAI] = useState("");
+  const [usersInRoom, setUsersInRoom] = useState([]);
 
   const messagesEndRef = useRef(null);
   const autoLeaveTimeoutRef = useRef(null);
 
   useEffect(() => {
     socket.on("message", (m) => setMessages((s) => [...s, m]));
-
     socket.on("systemMessage", (m) =>
       setMessages((s) => [...s, { user: { name: "系統" }, message: m }])
     );
-
-    socket.on("typing", (name) => {
-      setTypingAI(name + " 正在輸入...");
+    socket.on("typing", (user) => {
+      setTypingAI(user + " 正在輸入...");
       setTimeout(() => setTypingAI(""), 1500);
+    });
+    socket.on("updateUsers", (users) => {
+      const filtered = users.filter((u) => u.name !== "系統");
+      setUsersInRoom(filtered);
     });
 
     return () => {
       socket.off("message");
       socket.off("systemMessage");
       socket.off("typing");
+      socket.off("updateUsers");
     };
   }, []);
 
@@ -100,13 +104,23 @@ export default function App() {
     setText("");
   };
 
+  const getBubbleClasses = (m) => {
+    const isSelf = m.user?.name === name;
+    const isAI = aiPersonalities.includes(m.user?.name);
+    const isSystem = m.user?.name === "系統";
+
+    if (isSystem) return "bg-danger bg-opacity-10 text-danger";
+    if (isAI) return "bg-secondary bg-opacity-10 text-secondary";
+    if (isSelf) return "bg-primary bg-opacity-10 text-primary";
+    return "bg-light text-dark";
+  };
+
   return (
-    <div className="container" style={{ maxWidth: "800px", marginTop: "20px" }}>
-      <h2 className="text-center mb-3">尋夢園聊天室</h2>
+    <div className="container my-4" style={{ maxWidth: "800px" }}>
+      <h2 className="text-center mb-4">尋夢園聊天室</h2>
 
       {/* 控制面板 */}
       <div className="row g-3 mb-3">
-        {/* 暱稱 */}
         <div className="col-6 col-md-3">
           <label className="form-label">暱稱</label>
           <input
@@ -116,7 +130,6 @@ export default function App() {
           />
         </div>
 
-        {/* 房間 */}
         <div className="col-6 col-md-2">
           <label className="form-label">房間</label>
           <select
@@ -128,7 +141,6 @@ export default function App() {
           </select>
         </div>
 
-        {/* 自動離開秒數 */}
         <div className="col-6 col-md-2">
           <label className="form-label">自動離開秒數</label>
           <input
@@ -140,7 +152,6 @@ export default function App() {
           />
         </div>
 
-        {/* 加入 / 離開按鈕 */}
         <div className="col-6 col-md-2 d-flex align-items-end">
           <button
             className={`btn ${joined ? "btn-danger" : "btn-primary"} w-100`}
@@ -153,31 +164,23 @@ export default function App() {
 
       {/* 聊天區 */}
       <div className="card mb-3 shadow-sm">
-        <div
-          className="card-body overflow-auto"
-          style={{ height: "400px", display: "flex", flexDirection: "column", gap: "6px" }}
-        >
+        <div className="card-body overflow-auto d-flex flex-column gap-2" style={{ height: "400px" }}>
           {messages.map((m, i) => {
             const isSelf = m.user?.name === name;
-            const isAI = aiPersonalities.includes(m.user?.name);
-            const isSystem = m.user?.name === "系統";
-
             return (
               <div
                 key={i}
                 className={`d-flex mb-2 ${isSelf ? "justify-content-end" : "justify-content-start"}`}
               >
-                {/* AI 頭像 */}
-                {!isSelf && isAI && (
+                {!isSelf && aiPersonalities.includes(m.user?.name) && (
                   <img
                     src={aiAvatars[m.user?.name]}
                     className="rounded-circle border me-2"
                     style={{ width: "38px", height: "38px" }}
                   />
                 )}
-
                 <div
-                  className={`p-2 rounded shadow-sm ${isSystem ? "bg-danger bg-opacity-10 text-danger" : isAI ? "bg-purple bg-opacity-10 text-purple" : isSelf ? "bg-primary bg-opacity-10 text-primary" : "bg-light text-dark"}`}
+                  className={`p-2 rounded shadow-sm ${getBubbleClasses(m)}`}
                   style={{ maxWidth: "70%" }}
                 >
                   <strong>
@@ -190,31 +193,24 @@ export default function App() {
             );
           })}
 
-          {/* 正在輸入 */}
-          {typingAI && (
-            <div className="text-muted fst-italic small ms-1">{typingAI}</div>
-          )}
-
-          {!messages.length && (
-            <div className="text-center text-muted">還沒有人發話，打個招呼吧！</div>
-          )}
-
+          {typingAI && <div className="text-muted fst-italic small ms-1">{typingAI}</div>}
+          {!messages.length && <div className="text-center text-muted">還沒有人發話，打個招呼吧！</div>}
           <div ref={messagesEndRef}></div>
         </div>
       </div>
 
-      {/* 輸入區：發送對象 + 訊息 + 發送按鈕 */}
-      <div className="input-group mb-3">
+      {/* 輸入區 */}
+      <div className="input-group mb-3 flex-wrap">
         <span className="input-group-text">發送給</span>
         <select
           className="form-select"
           value={targetAI}
           onChange={(e) => setTargetAI(e.target.value)}
-          style={{ maxWidth: "150px" }}
+          style={{ maxWidth: "180px" }}
         >
           <option value="">全部</option>
-          {aiPersonalities.map((p) => (
-            <option key={p}>{p}</option>
+          {usersInRoom.map((u) => (
+            <option key={u.name} value={u.name}>{u.name}</option>
           ))}
         </select>
 
@@ -226,16 +222,10 @@ export default function App() {
           placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先加入房間才能發言"}
           disabled={!joined}
         />
-
-        <button
-          className="btn btn-success"
-          onClick={send}
-          disabled={!joined}
-        >
+        <button className="btn btn-success" onClick={send} disabled={!joined}>
           發送
         </button>
       </div>
     </div>
   );
-
 }
