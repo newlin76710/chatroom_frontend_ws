@@ -4,14 +4,17 @@ import { io } from "socket.io-client";
 const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001');
 
 export default function App() {
+  const [room, setRoom] = useState("public");
   const [name, setName] = useState("訪客" + Math.floor(Math.random() * 999));
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
-  const [aiPersonality, setAiPersonality] = useState(""); // 空字串 = 不選擇 AI
+  const [joined, setJoined] = useState(false);
+  const [aiPersonality, setAiPersonality] = useState(""); // 空字串 = 不用 AI
+
   const messagesEndRef = useRef(null);
 
   const aiOptions = [
-    { value: "", label: "一般聊天室" },
+    { value: "", label: "一般聊天" },
     { value: "friendly", label: "友善型 AI" },
     { value: "sarcastic", label: "諷刺型 AI" },
     { value: "motivational", label: "勵志型 AI" },
@@ -31,25 +34,34 @@ export default function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 加入或離開房間
+  const toggleRoom = () => {
+    if (!joined) {
+      socket.emit("joinRoom", { room, user: { name } });
+      setJoined(true);
+      setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} 加入房間` }]);
+    } else {
+      socket.emit("leaveRoom");
+      setJoined(false);
+      setMessages((s) => [...s, { user: { name: '系統' }, message: `${name} 離開房間` }]);
+    }
+  };
+
   // 發送訊息
   const send = () => {
-    if (!text) return;
+    if (!text || !joined) return;
+
+    const messageData = {
+      room,
+      message: text,
+      user: { name },
+    };
 
     if (aiPersonality) {
-      // 與 AI 對話
-      socket.emit("message", {
-        message: text,
-        user: { name },
-        aiPersonality
-      });
-    } else {
-      // 一般聊天室訊息
-      socket.emit("message", {
-        room: "public",
-        message: text,
-        user: { name }
-      });
+      messageData.aiPersonality = aiPersonality; // 選擇 AI 人格 → 自動送給 AI
     }
+
+    socket.emit("message", messageData);
     setText("");
   };
 
@@ -64,15 +76,26 @@ export default function App() {
           <input value={name} onChange={(e) => setName(e.target.value)} style={{ padding: "5px", width: "150px" }} />
         </div>
 
-        {/* AI / 聊天模式選單 */}
         <div>
-          <label>對象：</label>
-          <select value={aiPersonality} onChange={(e) => setAiPersonality(e.target.value)} style={{ padding: "5px" }}>
-            {aiOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
+          <label>房間：</label>
+          <select value={room} onChange={(e) => setRoom(e.target.value)} style={{ padding: "5px" }}>
+            <option value="public">大廳</option>
           </select>
         </div>
+
+        <button onClick={toggleRoom} style={{ padding: "5px 15px", cursor: "pointer" }}>
+          {joined ? "離開" : "加入"}
+        </button>
+      </div>
+
+      {/* AI 人格選單 */}
+      <div style={{ marginBottom: "15px" }}>
+        <label>AI 人格（選擇即對 AI 對話）： </label>
+        <select value={aiPersonality} onChange={(e) => setAiPersonality(e.target.value)} style={{ padding: "5px" }}>
+          {aiOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* 聊天訊息區 */}
@@ -102,14 +125,14 @@ export default function App() {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           style={{ flex: 1, padding: "8px", borderRadius: "5px", border: "1px solid #ccc" }}
-          placeholder="輸入訊息後按 Enter 發送"
+          placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先加入房間才能發言"}
+          disabled={!joined}
         />
-        <button onClick={send} style={{ padding: "8px 15px", cursor: "pointer" }}>發送</button>
+        <button onClick={send} style={{ padding: "8px 15px", cursor: "pointer" }} disabled={!joined}>發送</button>
       </div>
 
-      {/* 小提醒 */}
       <div style={{ marginTop: "15px", color: '#666', fontSize: "12px", textAlign: "center" }}>
-        小提醒：選擇 AI 人格即可與 AI 對話。
+        小提醒：選擇 AI 人格即可自動與 AI 對話，否則為一般聊天室。
       </div>
     </div>
   );
