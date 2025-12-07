@@ -129,7 +129,6 @@ export default function App() {
               {m.user?.name} {m.to ? `對 ${m.to} 說` : ""}：
             </strong>
             <span>{m.message}</span>
-            {m.targetAI && <em style={{ color: "#888", marginLeft: "5px" }}>→ {m.targetAI}</em>}
           </div>
         ))}
         {!messages.length && <div style={{ color: '#888', textAlign: "center" }}>還沒有人發話，打個招呼吧！</div>}
