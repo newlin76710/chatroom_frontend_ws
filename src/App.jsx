@@ -18,13 +18,12 @@ export default function ChatApp() {
 
   const messagesEndRef = useRef(null);
   const autoLeaveRef = useRef(null);
-  const aiLoopRef = useRef(null);
-  const topicCountRef = useRef({}); // 話題次數限制
 
-  // --- Socket 事件 ---
   useEffect(() => {
     socket.on("message", (m) => {
       setMessages(s => [...s, m]);
+
+      // AI 回覆後清除打字提示
       if (m.user && aiAvatars[m.user.name] && m.target) setTyping("");
     });
 
@@ -32,7 +31,6 @@ export default function ChatApp() {
 
     socket.on("typing", (n) => {
       setTyping(n + " 正在輸入...");
-      setTimeout(() => setTyping(""), 1500);
     });
 
     socket.on("updateUsers", (list) => setUserList(list));
@@ -60,85 +58,18 @@ export default function ChatApp() {
     setJoined(false);
     setMessages(s => [...s, { user: { name: "系統" }, message: `${name} 離開房間` }]);
     if (autoLeaveRef.current) clearTimeout(autoLeaveRef.current);
-    if (aiLoopRef.current) clearTimeout(aiLoopRef.current);
-    aiLoopRef.current = null;
   };
 
   const send = () => {
     if (!text || !joined) return;
-
     socket.emit("message", { room, message: text, user: { name }, target });
     setText("");
 
-    // 如果對 AI 說話，顯示打字提示直到後端回覆
     if (target && aiAvatars[target]) {
       setTyping(`${target} 正在輸入...`);
     }
   };
 
-  // --- AI 自動請求（後端生成） ---
-  useEffect(() => {
-    if (!joined || userList.length === 0) return;
-
-    const loop = async () => {
-      const ais = userList.filter((u) => aiAvatars[u.name]);
-      if (!ais.length) return;
-
-      const lastMessage = messages.slice(-1)[0];
-      if (!lastMessage) return;
-
-      const topicKey = lastMessage.message || "default";
-      if (!topicCountRef.current[topicKey]) topicCountRef.current[topicKey] = {};
-
-      for (let speaker of ais) {
-        if (!topicCountRef.current[topicKey][speaker.name]) topicCountRef.current[topicKey][speaker.name] = 0;
-        if (topicCountRef.current[topicKey][speaker.name] >= 2) continue; // 限制每個 AI 最多回覆 2 次
-
-        setTyping(`${speaker.name} 正在輸入...`);
-
-        try {
-          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:3000"}/ai/reply`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              room,
-              aiName: speaker.name,
-              lastMessage: lastMessage.message,
-              roomContext: messages.map((m) => ({ user: m.user?.name, text: m.message })),
-            }),
-          });
-          const data = await response.json();
-          const aiReply = data.reply || "嗯～";
-
-          socket.emit("message", {
-            room,
-            message: aiReply,
-            user: { name: speaker.name },
-            target: lastMessage.user?.name || "",
-          });
-
-          topicCountRef.current[topicKey][speaker.name] += 1;
-        } catch (err) {
-          console.error("[AI fetch error]", err);
-        } finally {
-          setTyping("");
-        }
-      }
-
-      // 下一輪延遲 20~40 秒
-      const nextDelay = 20000 + Math.random() * 20000;
-      aiLoopRef.current = setTimeout(loop, nextDelay);
-    };
-
-    loop();
-
-    return () => {
-      if (aiLoopRef.current) clearTimeout(aiLoopRef.current);
-      aiLoopRef.current = null;
-    };
-  }, [userList, joined, messages]);
-
-  // --- JSX ---
   return (
     <div className="container mt-3">
       <h2 className="text-center mb-3">尋夢園聊天室</h2>
@@ -189,7 +120,6 @@ export default function ChatApp() {
             {messages.map((m, i) => {
               const isSelf = m.user?.name === name;
               const isAI = aiAvatars[m.user?.name];
-              const profile = aiProfiles[m.user?.name] || { color: isAI ? "purple" : "#333" };
               const alignClass = isSelf ? "justify-content-end text-end" : "justify-content-start text-start";
 
               return (
@@ -199,7 +129,7 @@ export default function ChatApp() {
                   )}
                   <div className={`p-2 rounded`} style={{
                     background: isSelf ? "#d6e8ff" : isAI ? "#e8d6ff" : m.user?.name === "系統" ? "#ffe5e5" : "#fff",
-                    color: m.user?.name === "系統" ? "#d00" : profile.color,
+                    color: m.user?.name === "系統" ? "#d00" : "#333",
                     maxWidth: "75%",
                     wordBreak: "break-word",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.18)"
