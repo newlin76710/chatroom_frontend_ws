@@ -78,6 +78,7 @@ export default function ChatApp() {
           <input type="number" min="0" value={autoLeaveTime} onChange={e => setAutoLeaveTime(Number(e.target.value))} />
         </div>
         <div className="form-group">
+          <label>動作</label>
           <button onClick={joined ? leave : join}>{joined ? "離開" : "加入"}</button>
         </div>
       </div>
