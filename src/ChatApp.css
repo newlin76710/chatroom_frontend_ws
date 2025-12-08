@@ -1,71 +1,203 @@
-/* ChatApp.css */
-
-/* 全局背景與文字 */
+/* body & container */
 body, .chat-container {
-  background-color: #1e1e1e;
-  color: #eee;
+  background-color: #121212;
+  color: #fff;
   min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
 }
 
-/* 卡片背景 */
-.card-dark {
-  background-color: #2a2a2a !important;
+.chat-container {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-/* 輸入框樣式 */
-.input-dark {
-  background-color: #2a2a2a !important;
-  color: #eee !important;
-  border: 1px solid #555 !important;
+/* 設定區 */
+.chat-settings {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-/* 在線人員列表 */
-.item-dark {
-  background-color: #2a2a2a !important;
-  color: #eee !important;
+.chat-settings .form-group {
+  flex: 1 1 150px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-settings input,
+.chat-settings select {
+  padding: 6px 8px;
+  background-color: #1a1a1a;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+}
+
+/* 加入/離開按鈕 */
+.chat-settings button {
+  width: 100%;
+  padding: 8px;
+  background-color: #6200ee;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
   cursor: pointer;
 }
 
-/* 滾動條 */
-.scroll-dark::-webkit-scrollbar {
-  width: 8px;
+.chat-settings button:hover {
+  background-color: #7a33ff;
 }
-.scroll-dark::-webkit-scrollbar-thumb {
-  background-color: #888;
+
+/* 主區 */
+.chat-main {
+  display: flex;
+  gap: 10px;
+  height: 500px;
+}
+
+/* 使用者列表 */
+.user-list {
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-list-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.user-list-content {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #1a1a1a;
   border-radius: 4px;
+  border: 1px solid #555;
 }
-.scroll-dark::-webkit-scrollbar-track {
+
+.user-list-content .user-item {
+  padding: 5px 10px;
+  border-bottom: 1px solid #555;
+  cursor: pointer;
+  color: #fff;
+}
+
+.user-list-content .user-item:hover {
   background-color: #2a2a2a;
 }
 
-/* 按鈕 */
-.btn-primary {
-  background-color: #6a4eff;
-  border-color: #6a4eff;
-}
-.btn-primary:hover {
-  background-color: #8555ff;
-  border-color: #8555ff;
-}
-.btn-outline-light {
-  color: #eee;
-  border-color: #eee;
-}
-.btn-outline-light:hover {
-  color: #000;
-  background-color: #eee;
+/* 聊天區 */
+.chat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-/* 訊息泡泡 */
-.message-self {
-  background-color: #3a3a3a;
-  color: #eee;
+.chat-messages {
+  flex: 1;
+  background-color: #1a1a1a;
+  padding: 10px;
+  overflow-y: auto;
+  border-radius: 4px;
+  border: 1px solid #555;
 }
-.message-ai {
-  background-color: #5c3a8c;
-  color: #fff;
+
+.chat-message {
+  margin-bottom: 6px;
+  max-width: 75%;
+  word-break: break-word;
+  padding: 6px 10px;
+  border-radius: 6px;
 }
-.message-system {
-  background-color: #7a2a2a;
+
+.chat-message.self {
+  align-self: flex-end;
+  background-color: #2a2a2a;
+}
+
+.chat-message.ai {
+  background-color: #3d1a5f;
+}
+
+.chat-message.system {
+  background-color: #5f1a1a;
+  color: #ff5555;
+}
+
+.chat-message img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 6px;
+  border: 1px solid #555;
+}
+
+/* 打字提示 */
+.typing {
+  font-style: italic;
+  color: #aaa;
+}
+
+/* 輸入區 */
+.chat-input {
+  display: flex;
+  margin-top: 6px;
+  gap: 6px;
+}
+
+.chat-input select {
+  flex: 0 0 150px;
+  padding: 6px;
+  background-color: #1a1a1a;
+  border: 1px solid #555;
   color: #fff;
+  border-radius: 4px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 6px 8px;
+  background-color: #1a1a1a;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.chat-input button {
+  padding: 6px 10px;
+  background-color: #6200ee;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  background-color: #7a33ff;
+}
+
+/* 滾動條 */
+.user-list-content::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.user-list-content::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+.user-list-content::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track {
+  background-color: #222;
 }
