@@ -19,33 +19,27 @@ export default function ChatApp() {
   const messagesEndRef = useRef(null);
   const autoLeaveRef = useRef(null);
 
+  // --- Socket 事件 ---
   useEffect(() => {
     socket.on("message", (m) => {
       setMessages(s => [...s, m]);
-
-      // AI 回覆後清除打字提示
       if (m.user && aiAvatars[m.user.name] && m.target) setTyping("");
     });
 
     socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
-
-    socket.on("typing", (n) => {
-      setTyping(n + " 正在輸入...");
-    });
 
     socket.on("updateUsers", (list) => setUserList(list));
 
     return () => {
       socket.off("message");
       socket.off("systemMessage");
-      socket.off("typing");
       socket.off("updateUsers");
     };
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing]);
+  }, [messages]);
 
   const join = () => {
     socket.emit("joinRoom", { room, user: { name } });
@@ -64,30 +58,26 @@ export default function ChatApp() {
     if (!text || !joined) return;
     socket.emit("message", { room, message: text, user: { name }, target });
     setText("");
-
-    if (target && aiAvatars[target]) {
-      setTyping(`${target} 正在輸入...`);
-    }
   };
 
   return (
-    <div className="container mt-3">
+    <div className="chat-container">
       <h2 className="text-center mb-3">尋夢園聊天室</h2>
 
       <div className="row g-2 mb-3">
         <div className="col-6 col-md-3">
           <label className="form-label">暱稱</label>
-          <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="form-control input-dark" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="col-6 col-md-2">
           <label className="form-label">房間</label>
-          <select className="form-select" value={room} onChange={(e) => setRoom(e.target.value)}>
+          <select className="form-select input-dark" value={room} onChange={(e) => setRoom(e.target.value)}>
             <option value="public">大廳</option>
           </select>
         </div>
         <div className="col-6 col-md-2">
           <label className="form-label">自動離開秒數</label>
-          <input type="number" min="0" className="form-control" value={autoLeaveTime} onChange={(e) => setAutoLeaveTime(Number(e.target.value))} />
+          <input type="number" min="0" className="form-control input-dark" value={autoLeaveTime} onChange={(e) => setAutoLeaveTime(Number(e.target.value))} />
         </div>
         <div className="col-6 col-md-2 d-flex align-items-end">
           <button className="btn btn-primary w-100" onClick={joined ? leave : join}>{joined ? "離開" : "加入"}</button>
@@ -98,15 +88,15 @@ export default function ChatApp() {
         <div className={`col-12 col-md-3 mb-2`}>
           <div className="d-flex justify-content-between align-items-center mb-1">
             <strong>在線人數: {userList.length}</strong>
-            <button className="btn btn-sm btn-outline-secondary" onClick={() => setShowUserList(!showUserList)}>
+            <button className="btn btn-sm btn-outline-light" onClick={() => setShowUserList(!showUserList)}>
               {showUserList ? "▼" : "▲"}
             </button>
           </div>
           {showUserList && (
-            <div className="card" style={{ maxHeight: "400px", overflowY: "auto" }}>
+            <div className="card card-dark scroll-dark" style={{ maxHeight: "400px" }}>
               <ul className="list-group list-group-flush">
                 {userList.map(u => (
-                  <li key={u.id} className="list-group-item" style={{ cursor: 'pointer' }} onClick={() => setTarget(u.name)}>
+                  <li key={u.id} className="list-group-item item-dark" onClick={() => setTarget(u.name)}>
                     {u.name}
                   </li>
                 ))}
@@ -116,23 +106,24 @@ export default function ChatApp() {
         </div>
 
         <div className="col-12 col-md-9">
-          <div className="card mb-2" style={{ height: "400px", overflowY: "auto", padding: "10px" }}>
+          <div className="card card-dark scroll-dark" style={{ height: "400px", padding: "10px" }}>
             {messages.map((m, i) => {
               const isSelf = m.user?.name === name;
               const isAI = aiAvatars[m.user?.name];
+              const profile = aiProfiles[m.user?.name] || { color: isAI ? "#d6b3ff" : "#fff" };
               const alignClass = isSelf ? "justify-content-end text-end" : "justify-content-start text-start";
 
               return (
                 <div key={i} className={`d-flex ${alignClass} mb-2`}>
                   {!isSelf && isAI && (
-                    <img src={aiAvatars[m.user?.name]} alt={m.user.name} className="rounded-circle me-2" style={{ width: "38px", height: "38px", border: "2px solid #ddd" }} />
+                    <img src={aiAvatars[m.user?.name]} alt={m.user.name} className="rounded-circle me-2" style={{ width: "38px", height: "38px", border: "2px solid #555" }} />
                   )}
                   <div className={`p-2 rounded`} style={{
-                    background: isSelf ? "#d6e8ff" : isAI ? "#e8d6ff" : m.user?.name === "系統" ? "#ffe5e5" : "#fff",
-                    color: m.user?.name === "系統" ? "#d00" : "#333",
+                    background: isSelf ? "#2a2a2a" : isAI ? "#3d1a5f" : m.user?.name === "系統" ? "#5f1a1a" : "#1a1a1a",
+                    color: m.user?.name === "系統" ? "#ff5555" : profile.color,
                     maxWidth: "75%",
                     wordBreak: "break-word",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.18)"
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.5)"
                   }}>
                     <strong>{m.user?.name}{m.target ? ` 對 ${m.target} 說` : ""}：</strong> {m.message}
                   </div>
@@ -145,15 +136,62 @@ export default function ChatApp() {
           </div>
 
           <div className="input-group mb-3">
-            <select className="form-select" value={target} onChange={e => setTarget(e.target.value)}>
+            <select className="form-select input-dark" value={target} onChange={e => setTarget(e.target.value)}>
               <option value="">發送給全部</option>
               {userList.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
             </select>
-            <input type="text" className="form-control" placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先加入房間"} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} disabled={!joined} />
+            <input type="text" className="form-control input-dark" placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先加入房間"} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} disabled={!joined} />
             <button className="btn btn-primary" onClick={send} disabled={!joined}>發送</button>
           </div>
         </div>
       </div>
+
+      <style>{`
+        body, .chat-container {
+          background-color: #121212;
+          color: #fff;
+          min-height: 100vh;
+        }
+        .card-dark {
+          background-color: #1a1a1a !important;
+        }
+        .input-dark {
+          background-color: #1a1a1a !important;
+          color: #fff !important;
+          border: 1px solid #555 !important;
+        }
+        .item-dark {
+          background-color: #1a1a1a !important;
+          color: #fff !important;
+          cursor: pointer;
+        }
+        .scroll-dark::-webkit-scrollbar {
+          width: 8px;
+        }
+        .scroll-dark::-webkit-scrollbar-thumb {
+          background-color: #555;
+          border-radius: 4px;
+        }
+        .scroll-dark::-webkit-scrollbar-track {
+          background-color: #222;
+        }
+        .btn-primary {
+          background-color: #6200ee;
+          border-color: #6200ee;
+        }
+        .btn-primary:hover {
+          background-color: #7a33ff;
+          border-color: #7a33ff;
+        }
+        .btn-outline-light {
+          color: #fff;
+          border-color: #fff;
+        }
+        .btn-outline-light:hover {
+          color: #000;
+          background-color: #fff;
+        }
+      `}</style>
     </div>
   );
 }
