@@ -1,4 +1,3 @@
-/* body & container */
 body, .chat-container {
   background-color: #121212;
   color: #fff;
@@ -19,7 +18,6 @@ body, .chat-container {
   gap: 15px;
 }
 
-/* 設定區 */
 .chat-settings {
   display: flex;
   gap: 10px;
@@ -60,7 +58,6 @@ body, .chat-container {
   display: flex;
   gap: 10px;
   height: 500px;
-  flex-wrap: wrap;
 }
 
 /* 使用者列表 */
@@ -68,7 +65,6 @@ body, .chat-container {
   flex: 0 0 200px;
   display: flex;
   flex-direction: column;
-  min-width: 150px;
 }
 
 .user-list-header {
@@ -80,6 +76,7 @@ body, .chat-container {
 .user-list-content {
   flex: 1;
   overflow-y: auto;
+  max-height: calc(500px - 40px);
   background-color: #1a1a1a;
   border-radius: 4px;
   border: 1px solid #555;
@@ -92,18 +89,15 @@ body, .chat-container {
   color: #fff;
   display: flex;
   align-items: center;
+  gap: 6px;
 }
 
-.user-list-content .user-item.selected {
+.user-list-content .user-item:hover {
   background-color: #2a2a2a;
 }
 
-.user-list-content .user-item img {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  margin-right: 6px;
-  border: 1px solid #555;
+.user-list-content .user-item.selected {
+  background-color: #333;
 }
 
 /* 聊天區 */
@@ -120,22 +114,14 @@ body, .chat-container {
   overflow-y: auto;
   border-radius: 4px;
   border: 1px solid #555;
-  scroll-behavior: smooth;
-}
-
-/* 訊息淡入 */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .chat-message {
+  margin-bottom: 6px;
   max-width: 75%;
   word-break: break-word;
   padding: 6px 10px;
   border-radius: 6px;
-  animation: fadeIn 0.3s ease-out;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .chat-message.self {
@@ -145,7 +131,6 @@ body, .chat-container {
 
 .chat-message.ai {
   background-color: #3d1a5f;
-  color: #fff;
 }
 
 .chat-message.system {
@@ -157,7 +142,6 @@ body, .chat-container {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  margin-right: 6px;
   border: 1px solid #555;
 }
 
@@ -222,27 +206,9 @@ body, .chat-container {
   background-color: #222;
 }
 
-/* --- 手機響應 --- */
-@media (max-width: 600px) {
-  .chat-main {
-    flex-wrap: wrap;
-  }
-  .user-list {
-    order: 2;
-    width: 100%;
-    flex: 1 1 auto;
-  }
-  .chat-box {
-    order: 1;
-    width: 100%;
-  }
-  .chat-input {
-    flex-wrap: wrap;
-  }
-  .chat-input select,
-  .chat-input input,
-  .chat-input button {
-    flex: 1 1 100%;
-    margin-bottom: 4px;
+/* 手機版限制列表高度避免擋按鈕 */
+@media (max-width: 480px) {
+  .user-list-content {
+    max-height: 250px;
   }
 }
