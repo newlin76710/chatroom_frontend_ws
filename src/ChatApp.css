@@ -1,0 +1,71 @@
+/* ChatApp.css */
+
+/* 全局背景與文字 */
+body, .chat-container {
+  background-color: #1e1e1e;
+  color: #eee;
+  min-height: 100vh;
+}
+
+/* 卡片背景 */
+.card-dark {
+  background-color: #2a2a2a !important;
+}
+
+/* 輸入框樣式 */
+.input-dark {
+  background-color: #2a2a2a !important;
+  color: #eee !important;
+  border: 1px solid #555 !important;
+}
+
+/* 在線人員列表 */
+.item-dark {
+  background-color: #2a2a2a !important;
+  color: #eee !important;
+  cursor: pointer;
+}
+
+/* 滾動條 */
+.scroll-dark::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-dark::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 4px;
+}
+.scroll-dark::-webkit-scrollbar-track {
+  background-color: #2a2a2a;
+}
+
+/* 按鈕 */
+.btn-primary {
+  background-color: #6a4eff;
+  border-color: #6a4eff;
+}
+.btn-primary:hover {
+  background-color: #8555ff;
+  border-color: #8555ff;
+}
+.btn-outline-light {
+  color: #eee;
+  border-color: #eee;
+}
+.btn-outline-light:hover {
+  color: #000;
+  background-color: #eee;
+}
+
+/* 訊息泡泡 */
+.message-self {
+  background-color: #3a3a3a;
+  color: #eee;
+}
+.message-ai {
+  background-color: #5c3a8c;
+  color: #fff;
+}
+.message-system {
+  background-color: #7a2a2a;
+  color: #fff;
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { aiAvatars, aiProfiles } from "./aiConfig";
+import './ChatApp.css'; // ← 改成獨立 CSS
 
 const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
 
@@ -23,7 +24,6 @@ export default function ChatApp() {
   useEffect(() => {
     socket.on("message", (m) => {
       setMessages(s => [...s, m]);
-      if (m.user && aiAvatars[m.user.name] && m.target) setTyping("");
     });
 
     socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
@@ -85,7 +85,7 @@ export default function ChatApp() {
       </div>
 
       <div className="row">
-        <div className={`col-12 col-md-3 mb-2`}>
+        <div className="col-12 col-md-3 mb-2">
           <div className="d-flex justify-content-between align-items-center mb-1">
             <strong>在線人數: {userList.length}</strong>
             <button className="btn btn-sm btn-outline-light" onClick={() => setShowUserList(!showUserList)}>
@@ -145,53 +145,6 @@ export default function ChatApp() {
           </div>
         </div>
       </div>
-
-      <style>{`
-        body, .chat-container {
-          background-color: #121212;
-          color: #fff;
-          min-height: 100vh;
-        }
-        .card-dark {
-          background-color: #1a1a1a !important;
-        }
-        .input-dark {
-          background-color: #1a1a1a !important;
-          color: #fff !important;
-          border: 1px solid #555 !important;
-        }
-        .item-dark {
-          background-color: #1a1a1a !important;
-          color: #fff !important;
-          cursor: pointer;
-        }
-        .scroll-dark::-webkit-scrollbar {
-          width: 8px;
-        }
-        .scroll-dark::-webkit-scrollbar-thumb {
-          background-color: #555;
-          border-radius: 4px;
-        }
-        .scroll-dark::-webkit-scrollbar-track {
-          background-color: #222;
-        }
-        .btn-primary {
-          background-color: #6200ee;
-          border-color: #6200ee;
-        }
-        .btn-primary:hover {
-          background-color: #7a33ff;
-          border-color: #7a33ff;
-        }
-        .btn-outline-light {
-          color: #fff;
-          border-color: #fff;
-        }
-        .btn-outline-light:hover {
-          color: #000;
-          background-color: #fff;
-        }
-      `}</style>
     </div>
   );
 }
