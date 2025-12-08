@@ -1,9 +1,13 @@
+/* body & container */
 body, .chat-container {
   background-color: #121212;
   color: #fff;
   min-height: 100vh;
   margin: 0;
   padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   font-family: Arial, sans-serif;
 }
 
@@ -15,6 +19,7 @@ body, .chat-container {
   gap: 15px;
 }
 
+/* 設定區 */
 .chat-settings {
   display: flex;
   gap: 10px;
@@ -50,67 +55,12 @@ body, .chat-container {
   background-color: #7a33ff;
 }
 
+/* 主區 */
 .chat-main {
   display: flex;
   gap: 10px;
   height: 500px;
-}
-
-/* 聊天區 */
-.chat-box {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-messages {
-  flex: 1;
-  background-color: #1a1a1a;
-  padding: 10px;
-  overflow-y: auto;
-  border-radius: 4px;
-  border: 1px solid #555;
-}
-
-.message-row {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 6px;
-}
-
-.message-row.self-row {
-  justify-content: flex-end;
-}
-
-.chat-message {
-  max-width: 75%;
-  word-break: break-word;
-  padding: 6px 10px;
-  border-radius: 6px;
-}
-
-.chat-message.self {
-  background-color: #2a2a2a;
-}
-
-.chat-message.ai {
-  background-color: #3d1a5f;
-}
-
-.chat-message.system {
-  background-color: #5f1a1a;
-  color: #ff5555;
-}
-
-/* 頭貼統一 24px */
-.chat-message img,
-.user-item img {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  margin-right: 6px;
-  border: 1px solid #555;
-  object-fit: cover;
+  flex-wrap: wrap;
 }
 
 /* 使用者列表 */
@@ -118,6 +68,7 @@ body, .chat-container {
   flex: 0 0 200px;
   display: flex;
   flex-direction: column;
+  min-width: 150px;
 }
 
 .user-list-header {
@@ -138,83 +89,44 @@ body, .chat-container {
   padding: 5px 10px;
   border-bottom: 1px solid #555;
   cursor: pointer;
+  color: #fff;
   display: flex;
   align-items: center;
 }
 
-.user-list-content .user-item:hover,
 .user-list-content .user-item.selected {
   background-color: #2a2a2a;
 }
 
-/* 輸入區 */
-.chat-input {
-  display: flex;
-  margin-top: 6px;
-  gap: 6px;
-}
-
-.chat-input select,
-.chat-input input {
-  padding: 6px 8px;
-  background-color: #1a1a1a;
+.user-list-content .user-item img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 6px;
   border: 1px solid #555;
-  color: #fff;
-  border-radius: 4px;
 }
 
-.chat-input select {
-  flex: 0 0 150px;
-}
-
-.chat-input input {
+/* 聊天區 */
+.chat-box {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.chat-input button {
-  padding: 6px 10px;
-  background-color: #6200ee;
-  border: none;
+.chat-messages {
+  flex: 1;
+  background-color: #1a1a1a;
+  padding: 10px;
+  overflow-y: auto;
   border-radius: 4px;
-  color: #fff;
-  cursor: pointer;
-}
-
-.chat-input button:hover {
-  background-color: #7a33ff;
-}
-
-/* 打字提示 */
-.typing {
-  font-style: italic;
-  color: #aaa;
+  border: 1px solid #555;
+  scroll-behavior: smooth;
 }
 
 /* 訊息淡入 */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.message-row {
-  display: flex;
-  margin-bottom: 6px;
-}
-
-.message-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  margin-right: 6px;
-  border: 1px solid #555;
-}
-
-.user-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  margin-right: 6px;
-  border: 1px solid #555;
 }
 
 .chat-message {
@@ -232,7 +144,7 @@ body, .chat-container {
 }
 
 .chat-message.ai {
-  background-color: #3d1a5f; /* 單色深紫 */
+  background-color: #3d1a5f;
   color: #fff;
 }
 
@@ -241,12 +153,96 @@ body, .chat-container {
   color: #ff5555;
 }
 
-.chat-messages {
-  flex: 1;
-  background-color: #1a1a1a;
-  padding: 10px;
-  overflow-y: auto;
-  border-radius: 4px;
+.chat-message img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 6px;
   border: 1px solid #555;
-  scroll-behavior: smooth;
+}
+
+/* 打字提示 */
+.typing {
+  font-style: italic;
+  color: #aaa;
+}
+
+/* 輸入區 */
+.chat-input {
+  display: flex;
+  margin-top: 6px;
+  gap: 6px;
+}
+
+.chat-input select {
+  flex: 0 0 150px;
+  padding: 6px;
+  background-color: #1a1a1a;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 6px 8px;
+  background-color: #1a1a1a;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.chat-input button {
+  padding: 6px 10px;
+  background-color: #6200ee;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.chat-input button:hover {
+  background-color: #7a33ff;
+}
+
+/* 滾動條 */
+.user-list-content::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.user-list-content::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+.user-list-content::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track {
+  background-color: #222;
+}
+
+/* --- 手機響應 --- */
+@media (max-width: 600px) {
+  .chat-main {
+    flex-wrap: wrap;
+  }
+  .user-list {
+    order: 2;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+  .chat-box {
+    order: 1;
+    width: 100%;
+  }
+  .chat-input {
+    flex-wrap: wrap;
+  }
+  .chat-input select,
+  .chat-input input,
+  .chat-input button {
+    flex: 1 1 100%;
+    margin-bottom: 4px;
+  }
 }
