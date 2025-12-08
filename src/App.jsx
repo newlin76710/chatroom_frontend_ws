@@ -38,6 +38,7 @@ export default function ChatApp() {
   const autoLeaveRef = useRef(null);
   const aiLoopRef = useRef(null);
 
+  // --- Socket 事件監聽 ---
   useEffect(() => {
     socket.on("message", (m) => {
       setMessages(s => [...s, m]);
@@ -61,25 +62,29 @@ export default function ChatApp() {
     };
   }, []);
 
+  // --- 自動滾動訊息 ---
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
+  // --- 加入房間 ---
   const join = () => {
     socket.emit("joinRoom", { room, user: { name } });
     setJoined(true);
     if (autoLeaveTime > 0) autoLeaveRef.current = setTimeout(() => leave(), autoLeaveTime * 1000);
-    startAIAutoTalk();
   };
 
+  // --- 離開房間 ---
   const leave = () => {
     socket.emit("leaveRoom", { room, user: { name } });
     setJoined(false);
     setMessages(s => [...s, { user: { name: "系統" }, message: `${name} 離開房間` }]);
     if (autoLeaveRef.current) clearTimeout(autoLeaveRef.current);
     if (aiLoopRef.current) clearTimeout(aiLoopRef.current);
+    aiLoopRef.current = null;
   };
 
+  // --- 發送訊息 ---
   const send = () => {
     if (!text || !joined) return;
 
@@ -102,12 +107,20 @@ export default function ChatApp() {
     socket.on("message", clearTyping);
   };
 
-  const startAIAutoTalk = () => {
-    if (aiLoopRef.current) return;
+  // --- AI 自動對話循環 ---
+  useEffect(() => {
+    if (!joined) return;
+
+    const ais = userList.filter(u => aiAvatars[u.name]);
+    if (!ais.length) return;
+    if (aiLoopRef.current) return; // 避免重複啟動
 
     const loop = async () => {
       const ais = userList.filter(u => aiAvatars[u.name]);
-      if (!ais.length) return;
+      if (!ais.length) {
+        aiLoopRef.current = null;
+        return;
+      }
 
       if (Math.random() < 0.25) {
         const speaker = ais[Math.floor(Math.random() * ais.length)];
@@ -142,8 +155,14 @@ export default function ChatApp() {
     };
 
     loop();
-  };
 
+    return () => {
+      if (aiLoopRef.current) clearTimeout(aiLoopRef.current);
+      aiLoopRef.current = null;
+    };
+  }, [userList, joined, messages]);
+
+  // --- JSX 略 (不變) ---
   return (
     <div className="container mt-3">
       <h2 className="text-center mb-3">尋夢園聊天室</h2>
