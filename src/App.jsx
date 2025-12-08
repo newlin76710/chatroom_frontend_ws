@@ -3,6 +3,7 @@ import { io } from "socket.io-client";
 
 const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
 
+// AI 頭像
 const aiAvatars = {
   "林怡君": "/avatars/g01.gif",
   "張雅婷": "/avatars/g02.gif",
@@ -20,6 +21,16 @@ const aiAvatars = {
   "江柏翰": "/avatars/b07.gif",
   "曾雅雯": "/avatars/g08.gif",
   "施俊傑": "/avatars/b08.gif",
+};
+
+// AI 個性設定
+const aiProfiles = {
+  "林怡君": { color: "purple", style: "活潑", phrases: ["哈哈～", "真的嗎？", "好有趣！"] },
+  "張雅婷": { color: "pink", style: "甜美", phrases: ["嗯嗯～", "太棒了！", "我也覺得呢～"] },
+  "陳思妤": { color: "orange", style: "俏皮", phrases: ["XD", "好耶！", "真的假的～"] },
+  "黃彥廷": { color: "green", style: "幽默", phrases: ["哈哈哈", "這不錯！", "你說什麼？"] },
+  "王子涵": { color: "blue", style: "沉穩", phrases: ["嗯～", "原來如此", "了解～"] },
+  // 其他 AI 可自行增加
 };
 
 export default function ChatApp() {
@@ -42,9 +53,7 @@ export default function ChatApp() {
   useEffect(() => {
     socket.on("message", (m) => {
       setMessages(s => [...s, m]);
-      if (m.user && aiAvatars[m.user.name] && m.target) {
-        setTyping(""); // AI 回覆後清除正在輸入
-      }
+      if (m.user && aiAvatars[m.user.name] && m.target) setTyping("");
     });
 
     socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
@@ -107,13 +116,13 @@ export default function ChatApp() {
     socket.on("message", clearTyping);
   };
 
-  // --- AI 自動對話循環 ---
+  // --- AI 自動對話循環 + 個性化 ---
   useEffect(() => {
     if (!joined) return;
 
     const ais = userList.filter(u => aiAvatars[u.name]);
     if (!ais.length) return;
-    if (aiLoopRef.current) return; // 避免重複啟動
+    if (aiLoopRef.current) return;
 
     const loop = async () => {
       const ais = userList.filter(u => aiAvatars[u.name]);
@@ -122,32 +131,53 @@ export default function ChatApp() {
         return;
       }
 
-      if (Math.random() < 0.25) {
-        const speaker = ais[Math.floor(Math.random() * ais.length)];
-        const lastUser = messages.slice(-1)[0]?.user?.name || "大家";
+      const speaker = ais[Math.floor(Math.random() * ais.length)];
+      const lastUser = messages.slice(-1)[0]?.user?.name || "大家";
 
-        setTyping(`${speaker.name} 正在輸入...`);
+      setTyping(`${speaker.name} 正在輸入...`);
 
-        try {
-          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/ai/reply`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              room,
-              userMessage: `接續 ${lastUser} 的話題聊聊`,
-              aiName: speaker.name,
-              roomContext: messages.map(m => ({ user: m.user?.name, text: m.message }))
-            })
-          });
-          const data = await response.json();
-          const aiReply = data.reply || "嗯嗯～";
-
-          socket.emit("message", { room, message: aiReply, user: { name: speaker.name }, target: lastUser });
-        } catch (err) {
-          console.error("[AI 前端 fetch error]", err);
-        } finally {
-          setTyping("");
+      try {
+        const typeRand = Math.random();
+        let userMessage = "";
+        if (typeRand < 0.6) {
+          userMessage = `接續 ${lastUser} 的話題聊聊`;
+        } else {
+          const topics = [
+            "大家最近有什麼有趣的事嗎？",
+            "你們最喜歡的電影是什麼？",
+            "今天心情如何？",
+            "有沒有推薦的音樂或歌手？",
+            "最近看到什麼好笑的事情嗎？"
+          ];
+          userMessage = topics[Math.floor(Math.random() * topics.length)];
         }
+
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/ai/reply`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            room,
+            userMessage,
+            aiName: speaker.name,
+            roomContext: messages.map(m => ({ user: m.user?.name, text: m.message }))
+          })
+        });
+
+        const data = await response.json();
+        const profile = aiProfiles[speaker.name] || { phrases: ["嗯嗯～"], color: "purple" };
+        const suffix = profile.phrases[Math.floor(Math.random() * profile.phrases.length)];
+        const aiReply = data.reply ? `${data.reply} ${suffix}` : suffix;
+
+        socket.emit("message", {
+          room,
+          message: aiReply,
+          user: { name: speaker.name },
+          target: typeRand < 0.6 ? lastUser : ""
+        });
+      } catch (err) {
+        console.error("[AI 前端 fetch error]", err);
+      } finally {
+        setTyping("");
       }
 
       const delay = 18000 + Math.random() * 17000;
@@ -162,7 +192,7 @@ export default function ChatApp() {
     };
   }, [userList, joined, messages]);
 
-  // --- JSX 略 (不變) ---
+  // --- JSX 渲染部分 ---
   return (
     <div className="container mt-3">
       <h2 className="text-center mb-3">尋夢園聊天室</h2>
@@ -213,6 +243,7 @@ export default function ChatApp() {
             {messages.map((m, i) => {
               const isSelf = m.user?.name === name;
               const isAI = aiAvatars[m.user?.name];
+              const profile = aiProfiles[m.user?.name] || { color: isAI ? "purple" : "#333" };
               const alignClass = isSelf ? "justify-content-end text-end" : "justify-content-start text-start";
 
               return (
@@ -222,7 +253,7 @@ export default function ChatApp() {
                   )}
                   <div className={`p-2 rounded`} style={{
                     background: isSelf ? "#d6e8ff" : isAI ? "#e8d6ff" : m.user?.name === "系統" ? "#ffe5e5" : "#fff",
-                    color: m.user?.name === "系統" ? "#d00" : isAI ? "purple" : isSelf ? "#004c99" : "#333",
+                    color: m.user?.name === "系統" ? "#d00" : profile.color,
                     maxWidth: "75%",
                     wordBreak: "break-word",
                     boxShadow: "0 1px 3px rgba(0,0,0,0.18)"
