@@ -250,3 +250,56 @@ body, .chat-container {
   border: 1px solid #555;
   scroll-behavior: smooth;
 }
+
+/* 手機版優化 */
+@media (max-width: 480px) {
+  .chat-main {
+    flex-direction: column-reverse; /* 聊天區在上，列表在下 */
+    height: auto;
+  }
+
+  .chat-box {
+    width: 100%;
+  }
+
+  .user-list {
+    flex: none;
+    width: 100%;
+    max-height: 120px; /* 更合理高度 */
+    margin-bottom: 10px;
+  }
+
+  .user-list-content {
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .chat-input {
+    flex-direction: row;
+    gap: 4px;
+    padding: 4px 0;
+  }
+
+  .chat-input select {
+    flex: 0 0 70px; /* 發送對象縮短 */
+    font-size: 14px;
+    padding: 5px;
+  }
+
+  .chat-input input {
+    flex: 1 1 auto;
+    max-width: calc(100% - 70px - 60px); /* 保留 select + button 空間 */
+    font-size: 14px;
+    padding: 5px;
+  }
+
+  .chat-input button {
+    flex: 0 0 60px; /* 固定按鈕寬度 */
+    font-size: 14px;
+    padding: 5px;
+  }
+
+  .chat-messages {
+    max-height: 60vh; /* 限制聊天高度，保證輸入框可見 */
+  }
+}
