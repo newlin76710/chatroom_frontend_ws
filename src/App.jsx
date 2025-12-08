@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import { aiAvatars, aiProfiles } from "./aiConfig";
+import { aiAvatars } from "./aiConfig";
 
 const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000');
 
@@ -19,7 +19,7 @@ export default function ChatApp() {
   const messagesEndRef = useRef(null);
   const autoLeaveRef = useRef(null);
   const aiLoopRef = useRef(null);
-  const topicCountRef = useRef({}); // 記錄話題發言次數
+  const topicCountRef = useRef({}); // 話題次數限制
 
   // --- Socket 事件 ---
   useEffect(() => {
@@ -27,11 +27,14 @@ export default function ChatApp() {
       setMessages(s => [...s, m]);
       if (m.user && aiAvatars[m.user.name] && m.target) setTyping("");
     });
+
     socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
+
     socket.on("typing", (n) => {
       setTyping(n + " 正在輸入...");
       setTimeout(() => setTyping(""), 1500);
     });
+
     socket.on("updateUsers", (list) => setUserList(list));
 
     return () => {
@@ -64,73 +67,61 @@ export default function ChatApp() {
   const send = () => {
     if (!text || !joined) return;
 
-    let typingTimeout;
-    if (target && aiAvatars[target]) {
-      typingTimeout = setTimeout(() => setTyping(`${target} 正在輸入...`), 2000);
-    }
-
     socket.emit("message", { room, message: text, user: { name }, target });
     setText("");
 
-    const clearTyping = (m) => {
-      if (m.user?.name === target) {
-        setTyping("");
-        socket.off("message", clearTyping);
-        if (typingTimeout) clearTimeout(typingTimeout);
-      }
-    };
-
-    socket.on("message", clearTyping);
+    // 如果對 AI 說話，顯示打字提示直到後端回覆
+    if (target && aiAvatars[target]) {
+      setTyping(`${target} 正在輸入...`);
+    }
   };
 
-  // --- AI 自動對話 ---
+  // --- AI 自動請求（後端生成） ---
   useEffect(() => {
     if (!joined) return;
 
-    const activeAILoop = {};
-
     const loop = async () => {
       const ais = userList.filter(u => aiAvatars[u.name]);
-      const humanUsers = userList.filter(u => !aiAvatars[u.name]);
       if (!ais.length) return;
 
       const lastMessage = messages.slice(-1)[0];
-      const lastUser = lastMessage?.user?.name || "大家";
-      const topicKey = lastMessage?.message || "default";
+      if (!lastMessage) return;
 
+      const topicKey = lastMessage.message || "default";
       if (!topicCountRef.current[topicKey]) topicCountRef.current[topicKey] = 0;
-      if (topicCountRef.current[topicKey] >= 4) return; // 話題超過次數就停
+      if (topicCountRef.current[topicKey] >= 4) return; // 話題發言次數限制
 
       for (let speaker of ais) {
-        if (activeAILoop[speaker.name]) continue;
-        activeAILoop[speaker.name] = true;
+        // 打字提示
+        setTyping(`${speaker.name} 正在輸入...`);
 
-        const typingDelay = 2000 + Math.random() * 2000;
-        setTimeout(() => setTyping(`${speaker.name} 正在輸入...`), typingDelay);
+        try {
+          // 請求後端 AI 回覆
+          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/ai/reply`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              room,
+              aiName: speaker.name,
+              lastMessage: lastMessage.message,
+              roomContext: messages.map(m => ({ user: m.user?.name, text: m.message }))
+            })
+          });
+          const data = await response.json();
+          const aiReply = data.reply || "嗯～";
 
-        const targetUser = humanUsers.length && Math.random() < 0.7
-          ? humanUsers[Math.floor(Math.random() * humanUsers.length)].name
-          : "";
-
-        const profile = aiProfiles[speaker.name];
-        const template = profile.templates[Math.floor(Math.random() * profile.templates.length)];
-        const suffix = profile.phrases[Math.floor(Math.random() * profile.phrases.length)];
-        const aiReply = template.replace("{lastUser}", lastUser) + " " + suffix;
-
-        socket.emit("message", {
-          room,
-          message: aiReply,
-          user: { name: speaker.name },
-          target: targetUser
-        });
-
-        topicCountRef.current[topicKey] += 1;
-
-        setTimeout(() => setTyping(""), 3000);
-        setTimeout(() => activeAILoop[speaker.name] = false, 25000 + Math.random() * 15000);
+          // 發送 AI 回覆
+          socket.emit("message", { room, message: aiReply, user: { name: speaker.name }, target: lastMessage.user?.name || "" });
+          topicCountRef.current[topicKey] += 1;
+        } catch (err) {
+          console.error("[AI fetch error]", err);
+        } finally {
+          setTyping("");
+        }
       }
 
-      const nextDelay = 20000 + Math.random() * 20000; // 20~40 秒
+      // 下一輪延遲 20~40 秒
+      const nextDelay = 20000 + Math.random() * 20000;
       aiLoopRef.current = setTimeout(loop, nextDelay);
     };
 
