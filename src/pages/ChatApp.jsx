@@ -10,7 +10,7 @@ const socket = io(BACKEND);
 export default function ChatApp() {
   const [room, setRoom] = useState("public");
   const [name, setName] = useState("");
-  const [token, setToken] = useState("");      // 帳號 token
+  const [token, setToken] = useState("");
   const [guestToken, setGuestToken] = useState("");
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -19,10 +19,8 @@ export default function ChatApp() {
   const [typing, setTyping] = useState("");
   const [userList, setUserList] = useState([]);
   const [showUserList, setShowUserList] = useState(true);
-
-  // 點歌相關
   const [songText, setSongText] = useState("");
-  const [songList, setSongList] = useState([]);
+  const [songQueue, setSongQueue] = useState([]);
   const [currentSong, setCurrentSong] = useState(null);
 
   const messagesEndRef = useRef(null);
@@ -40,9 +38,7 @@ export default function ChatApp() {
     });
     socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
     socket.on("updateUsers", (list) => setUserList(list));
-
-    // 點歌事件
-    socket.on("songListUpdate", (list) => setSongList(list));
+    socket.on("songListUpdate", (queue) => setSongQueue(queue));
     socket.on("songPlay", (song) => setCurrentSong(song));
 
     return () => {
@@ -132,8 +128,8 @@ export default function ChatApp() {
   };
 
   // 點歌
-  const addSong = () => {
-    if (!songText.trim() || !joined) return;
+  const requestSong = () => {
+    if (!songText || !joined) return;
     socket.emit("songRequest", { user: name, text: songText });
     setSongText("");
   };
@@ -196,29 +192,23 @@ export default function ChatApp() {
 
           {/* 點歌區 */}
           <div className="song-box">
-            <h3>點歌 / 播放 YouTube</h3>
             <input
               type="text"
               value={songText}
               onChange={e => setSongText(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && addSong()}
               placeholder="輸入 YouTube 連結或歌曲名稱"
-              disabled={!joined}
             />
-            <button onClick={addSong} disabled={!joined}>加入播放清單</button>
+            <button onClick={requestSong}>點歌</button>
 
             {currentSong && (
               <div className="current-song">
-                <strong>正在播放:</strong> {currentSong.text} (由 {currentSong.user} 點)
+                <strong>正在播放：</strong> {currentSong.text} （由 {currentSong.user} 點播）
               </div>
             )}
-
-            <div className="song-list">
-              <strong>播放清單:</strong>
+            <div className="song-queue">
+              <strong>播放清單：</strong>
               <ul>
-                {songList.map((s, i) => (
-                  <li key={i}>{s.text} (由 {s.user} 點)</li>
-                ))}
+                {songQueue.map((s, i) => <li key={i}>{s.text}（{s.user}）</li>)}
               </ul>
             </div>
           </div>
@@ -237,7 +227,6 @@ export default function ChatApp() {
               {userList.map(u => {
                 const isSelected = u.name === target;
                 const avatar = aiAvatars[u.name];
-                // 取得等級：AI 從 aiProfiles，訪客或帳號預設 1
                 const level = aiProfiles[u.name]?.level || u.level || 1;
 
                 return (
