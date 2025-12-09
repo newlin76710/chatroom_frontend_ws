@@ -133,13 +133,6 @@ export default function ChatApp() {
     socket.emit("playVideo", { room, url, user: name });
   };
 
-  // 格式化時間
-  const formatTime = (sec) => {
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
-
   // 從 YouTube URL 取得 videoId
   const extractVideoID = (url) => {
     const reg = /v=([a-zA-Z0-9_-]{11})/;
@@ -242,7 +235,7 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* 浮動小播放器 */}
+      {/* 浮動小播放器（固定右下角） */}
       {currentVideo && extractVideoID(currentVideo.url) && (
         <div className="video-player-float">
           <YouTube
@@ -255,7 +248,6 @@ export default function ChatApp() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
