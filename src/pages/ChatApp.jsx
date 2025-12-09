@@ -2,13 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { aiAvatars, aiProfiles } from "./aiConfig";
 import YouTube from "react-youtube";
-import "./ChatApp.css";
+import './ChatApp.css';
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:10000';
 const socket = io(BACKEND);
 
 export default function ChatApp() {
-  const [room, setRoom] = useState("public");
+  const [room] = useState("public");
   const [name, setName] = useState("");
   const [token, setToken] = useState("");
   const [guestToken, setGuestToken] = useState("");
@@ -19,19 +19,18 @@ export default function ChatApp() {
   const [typing, setTyping] = useState("");
   const [userList, setUserList] = useState([]);
 
-  // === 影片播放 ===
-  const [currentVideo, setCurrentVideo] = useState(null); // { url, timestamp, isPlaying, lastUpdate }
-  const [player, setPlayer] = useState(null);
+  const [currentVideo, setCurrentVideo] = useState(null);
+  const [videoQueue, setVideoQueue] = useState([]);
+  const [videoUrl, setVideoUrl] = useState("");
 
   const messagesEndRef = useRef(null);
 
+  /* 自動捲到底部 */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ───────────────────────────────────────
-  // Socket 接收事件
-  // ───────────────────────────────────────
+  /* Socket 事件 */
   useEffect(() => {
     socket.on("message", (m) => {
       setMessages((s) => [...s, m]);
@@ -43,66 +42,24 @@ export default function ChatApp() {
     );
 
     socket.on("updateUsers", (list) => setUserList(list));
-
-    // 後端同步影片狀態
-    socket.on("videoUpdate", (state) => {
-      setCurrentVideo(state);
-      syncPlayer(state);
-    });
+    socket.on("videoUpdate", (video) => setCurrentVideo(video));
+    socket.on("videoQueueUpdate", (queue) => setVideoQueue(queue));
 
     return () => {
       socket.off("message");
       socket.off("systemMessage");
       socket.off("updateUsers");
       socket.off("videoUpdate");
+      socket.off("videoQueueUpdate");
     };
-  }, [player]);
+  }, []);
 
-  // ───────────────────────────────────────
-  // 同步播放
-  // ───────────────────────────────────────
-  const syncPlayer = (state) => {
-    if (!player || !state) return;
-
-    const elapsed = (Date.now() - state.lastUpdate) / 1000;
-    const shouldBeTime = state.isPlaying
-      ? state.timestamp + elapsed
-      : state.timestamp;
-
-    player.seekTo(shouldBeTime, true);
-
-    if (state.isPlaying) player.playVideo();
-    else player.pauseVideo();
-  };
-
-  // ───────────────────────────────────────
-  // YouTube 事件
-  // ───────────────────────────────────────
-  const onReady = (event) => {
-    setPlayer(event.target);
-
-    // iPhone 必須有第一次手動操作
-    event.target.playVideo();
-    setTimeout(() => event.target.pauseVideo(), 50);
-
-    if (currentVideo) syncPlayer(currentVideo);
-  };
-
-  const onPlay = () => {
-    socket.emit("resumeVideo", { room });
-  };
-
-  const onPause = () => {
-    socket.emit("pauseVideo", { room });
-  };
-
-  // ───────────────────────────────────────
-  // 登入流程
-  // ───────────────────────────────────────
+  /* 自動登入 */
   useEffect(() => {
     const storedName = localStorage.getItem("name");
     const storedToken =
       localStorage.getItem("token") || localStorage.getItem("guestToken");
+
     const type = localStorage.getItem("type");
 
     if (!storedName) return;
@@ -115,26 +72,31 @@ export default function ChatApp() {
       room,
       user: { name: storedName, type: type || "guest", token: storedToken },
     });
-
     setJoined(true);
   }, []);
 
-  // 訪客登入
+  /* 訪客登入 */
   const loginGuest = async () => {
-    const res = await fetch(`${BACKEND}/auth/guest`, { method: "POST" });
-    const data = await res.json();
+    try {
+      const res = await fetch(`${BACKEND}/auth/guest`, { method: "POST" });
+      const data = await res.json();
 
-    localStorage.setItem("guestToken", data.guestToken);
-    localStorage.setItem("name", data.name);
-    localStorage.setItem("type", "guest");
+      if (!data.guestToken) throw new Error("訪客登入失敗");
 
-    setName(data.name);
-    setGuestToken(data.guestToken);
+      localStorage.setItem("guestToken", data.guestToken);
+      localStorage.setItem("name", data.name);
+      localStorage.setItem("type", "guest");
 
-    joinRoom(data.name, "guest", data.guestToken);
+      setName(data.name);
+      setGuestToken(data.guestToken);
+
+      joinRoom(data.name, "guest", data.guestToken);
+    } catch (err) {
+      alert("訪客登入失敗: " + err.message);
+    }
   };
 
-  // 正式帳號登入
+  /* 正式帳號登入 */
   const loginAccount = (username, token) => {
     localStorage.setItem("token", token);
     localStorage.setItem("name", username);
@@ -146,64 +108,70 @@ export default function ChatApp() {
     joinRoom(username, "account", token);
   };
 
-  // 加入聊天室
+  /* 加入房間 */
   const joinRoom = (username, type = "guest", t = "") => {
-    socket.emit("joinRoom", {
-      room,
-      user: { name: username, type, token: t },
-    });
+    socket.emit("joinRoom", { room, user: { name: username, type, token: t } });
     setJoined(true);
   };
 
-  // 離開聊天室
+  /* 離開房間 */
   const leaveRoom = () => {
     socket.emit("leaveRoom", { room, user: { name } });
+    setJoined(false);
 
-    localStorage.clear();
+    localStorage.removeItem("guestToken");
+    localStorage.removeItem("token");
+    localStorage.removeItem("name");
+    localStorage.removeItem("type");
+
     window.location.href = "/login";
   };
 
-  // ───────────────────────────────────────
-  // 發送訊息
-  // ───────────────────────────────────────
+  /* 發送訊息 */
   const send = () => {
     if (!text || !joined) return;
+
     socket.emit("message", { room, message: text, user: { name }, target });
     setText("");
   };
 
-  // ───────────────────────────────────────
-  // 點播 YouTube
-  // ───────────────────────────────────────
+  /* 發送 YouTube 點播 */
+  const playVideo = () => {
+    if (!videoUrl.trim()) return;
+
+    socket.emit("playVideo", {
+      room,
+      url: videoUrl.trim(),
+      user: name,
+    });
+
+    setVideoUrl("");
+  };
+
+  /* 取得 YouTube videoId */
   const extractVideoID = (url) => {
     const reg = /v=([a-zA-Z0-9_-]{11})/;
     const match = url.match(reg);
     return match ? match[1] : null;
   };
 
-  const playVideo = (url) => {
-    if (!extractVideoID(url)) {
-      alert("YouTube 連結錯誤");
-      return;
-    }
-    socket.emit("playVideo", { room, url, user: name });
+  /* 播放器準備好後解除靜音（手機需要先 muted autoplay 才能啟動） */
+  const onPlayerReady = (event) => {
+    event.target.unMute();
+    event.target.setVolume(100);
   };
 
-  // ───────────────────────────────────────
-  // 畫面
-  // ───────────────────────────────────────
   return (
     <div className="chat-container">
       <h2>尋夢園聊天室</h2>
 
+      {/* 登入區 */}
       {!joined ? (
-        <div style={{ marginBottom: "1rem" }}>
-          <button onClick={loginGuest}>訪客登入</button>
-        </div>
+        <button onClick={loginGuest} className="login-btn">訪客登入</button>
       ) : (
-        <div style={{ marginBottom: "1rem" }}>
-          <strong>Hi, {name}</strong>{" "}
-          <button onClick={leaveRoom}>離開聊天室</button>
+        <div className="user-header">
+          <strong>Hi, {name}</strong>
+          <button onClick={leaveRoom}>離開</button>
         </div>
       )}
 
@@ -228,39 +196,34 @@ export default function ChatApp() {
                   {!isSelf && isAI && (
                     <img
                       src={aiAvatars[m.user?.name]}
-                      alt={m.user.name}
                       className="message-avatar"
                     />
                   )}
 
                   <div
-                    className={`chat-message${
-                      isSelf ? " self" : isAI ? " ai" : ""
-                    }${m.user?.name === "系統" ? " system" : ""}`}
-                    style={{
-                      color:
-                        m.user?.name === "系統"
-                          ? "#ff5555"
-                          : profile.color,
-                    }}
+                    className={`chat-message ${
+                      isSelf ? "self" : isAI ? "ai" : ""
+                    }`}
+                    style={{ color: profile.color }}
                   >
                     <strong>
                       {m.user?.name}
-                      {m.target ? ` 對 ${m.target} 說` : ""}：
+                      {m.target ? ` → ${m.target}` : ""}：
                     </strong>{" "}
                     {m.message}
                   </div>
                 </div>
               );
             })}
+
             {typing && <div className="typing">{typing}</div>}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Chat 輸入 */}
+          {/* 輸入區 */}
           <div className="chat-input">
             <select value={target} onChange={(e) => setTarget(e.target.value)}>
-              <option value="">發送給全部</option>
+              <option value="">全部</option>
               {userList.map((u) => (
                 <option key={u.id} value={u.name}>
                   {u.name}
@@ -273,73 +236,68 @@ export default function ChatApp() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && send()}
-              disabled={!joined}
-              placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先登入"}
+              placeholder="輸入訊息..."
             />
-            <button onClick={send} disabled={!joined}>
-              發送
-            </button>
+
+            <button onClick={send}>發送</button>
           </div>
 
-          {/* 點播影片 */}
-          <div style={{ marginTop: "0.5rem" }}>
+          {/* 🎵 點播功能 */}
+          <div className="video-request">
             <input
               type="text"
-              placeholder="輸入 YouTube URL"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") playVideo(e.target.value);
-              }}
+              placeholder="輸入 YouTube 連結"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && playVideo()}
             />
+
+            <button onClick={playVideo} className="play-btn">
+              🎵 點播
+            </button>
           </div>
         </div>
 
         {/* 使用者列表 */}
         <div className="user-list">
-          <div className="user-list-header">
-            <strong>在線人數: {userList.length}</strong>
-          </div>
-          <div className="user-list-content">
-            {userList.map((u) => (
-              <div
-                key={u.id}
-                className="user-item"
-                onClick={() => setTarget(u.name)}
-              >
-                {aiAvatars[u.name] && (
-                  <img
-                    src={aiAvatars[u.name]}
-                    alt={u.name}
-                    className="user-avatar"
-                  />
-                )}
-                <span>
-                  {u.name} (Lv.{aiProfiles[u.name]?.level || u.level || 1})
-                </span>
-              </div>
-            ))}
-          </div>
+          <strong>在線：{userList.length}</strong>
+          {userList.map((u) => (
+            <div
+              key={u.id}
+              className={`user-item ${target === u.name ? "selected" : ""}`}
+              onClick={() => setTarget(u.name)}
+            >
+              {aiAvatars[u.name] && (
+                <img src={aiAvatars[u.name]} className="user-avatar" />
+              )}
+              {u.name} (Lv.{u.level || 1})
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* 浮動播放器（同步） */}
+      {/* 浮動 YouTube 播放器 */}
       {currentVideo && extractVideoID(currentVideo.url) && (
         <div className="video-player-float">
           <YouTube
             videoId={extractVideoID(currentVideo.url)}
+            onReady={onPlayerReady}
             opts={{
               width: "240",
               height: "135",
-              playerVars: { autoplay: 1, controls: 1 },
+              playerVars: {
+                autoplay: 1,
+                playsinline: 1,
+                muted: 1, // 手機必須靜音才能 autoplay
+              },
             }}
-            onReady={onReady}
-            onPlay={onPlay}
-            onPause={onPause}
           />
 
           <div className="video-info">
-            🎧 正在播放：{currentVideo.url}
-            <br />
-            由 {currentVideo.user} 點播
+            🎧 正在播放（由 {currentVideo.user} 點播）
+            <button className="close-btn" onClick={() => setCurrentVideo(null)}>
+              ✖
+            </button>
           </div>
         </div>
       )}
