@@ -1,8 +1,8 @@
 // ChatApp.jsx
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import YouTube from "react-youtube";
 import { aiAvatars, aiProfiles } from "./aiConfig";
+import YouTube from "react-youtube";
 import './ChatApp.css';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:10000';
@@ -11,7 +11,7 @@ const socket = io(BACKEND);
 export default function ChatApp() {
   const [room, setRoom] = useState("public");
   const [name, setName] = useState("");
-  const [token, setToken] = useState("");      // 帳號 token
+  const [token, setToken] = useState("");
   const [guestToken, setGuestToken] = useState("");
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -39,8 +39,6 @@ export default function ChatApp() {
     });
     socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
     socket.on("updateUsers", (list) => setUserList(list));
-
-    // YouTube 相關
     socket.on("videoUpdate", (video) => setCurrentVideo(video));
     socket.on("videoQueueUpdate", (queue) => setVideoQueue(queue));
 
@@ -135,9 +133,17 @@ export default function ChatApp() {
     socket.emit("playVideo", { room, url, user: name });
   };
 
-  // 輔助：取得 YouTube videoId
+  // 格式化時間
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  // 從 YouTube URL 取得 videoId
   const extractVideoID = (url) => {
-    const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})(?:\?|&|$)/);
+    const reg = /v=([a-zA-Z0-9_-]{11})/;
+    const match = url.match(reg);
     return match ? match[1] : null;
   };
 
@@ -196,25 +202,13 @@ export default function ChatApp() {
             <button onClick={send} disabled={!joined}>發送</button>
           </div>
 
-          {/* YouTube 播放區 */}
-          {currentVideo && extractVideoID(currentVideo.url) && (
-            <div className="video-player">
-              <h4>正在播放：{currentVideo.url} （由 {currentVideo.user} 點播）</h4>
-              <YouTube
-                videoId={extractVideoID(currentVideo.url)}
-                opts={{ width: "100%", playerVars: { autoplay: 1 } }}
-              />
-            </div>
-          )}
-
           {/* 點播影片 */}
           <div style={{ marginTop: "0.5rem" }}>
-            <input type="text" placeholder="輸入 YouTube 影片 URL" onKeyDown={e => {
+            <input type="text" placeholder="輸入 YouTube URL" onKeyDown={e => {
               if (e.key === "Enter") playVideo(e.target.value);
             }} />
             <small>按 Enter 點播影片</small>
           </div>
-
         </div>
 
         {/* 使用者列表 */}
@@ -247,6 +241,21 @@ export default function ChatApp() {
           )}
         </div>
       </div>
+
+      {/* 浮動小播放器 */}
+      {currentVideo && extractVideoID(currentVideo.url) && (
+        <div className="video-player-float">
+          <YouTube
+            videoId={extractVideoID(currentVideo.url)}
+            opts={{ width: "240", height: "135", playerVars: { autoplay: 1 } }}
+          />
+          <div className="video-info">
+            正在播放：由 {currentVideo.user} 點播
+            <button onClick={() => setCurrentVideo(null)}>✖</button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
