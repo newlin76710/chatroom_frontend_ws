@@ -1,5 +1,7 @@
+// ChatApp.jsx
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
+import YouTube from "react-youtube";
 import { aiAvatars, aiProfiles } from "./aiConfig";
 import './ChatApp.css';
 
@@ -21,11 +23,8 @@ export default function ChatApp() {
 
   const [currentVideo, setCurrentVideo] = useState(null);
   const [videoQueue, setVideoQueue] = useState([]);
-  const [videoProgress, setVideoProgress] = useState(0);
-  const [videoDuration, setVideoDuration] = useState(0);
 
   const messagesEndRef = useRef(null);
-  const videoRef = useRef(null);
 
   // 自動滾動到底部
   useEffect(() => {
@@ -136,20 +135,10 @@ export default function ChatApp() {
     socket.emit("playVideo", { room, url, user: name });
   };
 
-  // 更新影片進度
-  useEffect(() => {
-    if (!videoRef.current || !currentVideo) return;
-    const interval = setInterval(() => {
-      setVideoProgress(videoRef.current.currentTime || 0);
-      setVideoDuration(videoRef.current.duration || 0);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [currentVideo]);
-
-  const formatTime = (sec) => {
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
+  // 輔助：取得 YouTube videoId
+  const extractVideoID = (url) => {
+    const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})(?:\?|&|$)/);
+    return match ? match[1] : null;
   };
 
   return (
@@ -208,26 +197,19 @@ export default function ChatApp() {
           </div>
 
           {/* YouTube 播放區 */}
-          {currentVideo && (
+          {currentVideo && extractVideoID(currentVideo.url) && (
             <div className="video-player">
               <h4>正在播放：{currentVideo.url} （由 {currentVideo.user} 點播）</h4>
-              <video
-                ref={videoRef}
-                src={currentVideo.url}
-                controls
-                autoPlay
-                style={{ width: "100%" }}
+              <YouTube
+                videoId={extractVideoID(currentVideo.url)}
+                opts={{ width: "100%", playerVars: { autoplay: 1 } }}
               />
-              <div className="video-progress">
-                <progress value={videoProgress} max={videoDuration}></progress>
-                <span>{formatTime(videoProgress)} / {formatTime(videoDuration)}</span>
-              </div>
             </div>
           )}
 
           {/* 點播影片 */}
           <div style={{ marginTop: "0.5rem" }}>
-            <input type="text" placeholder="輸入影片 URL" onKeyDown={e => {
+            <input type="text" placeholder="輸入 YouTube 影片 URL" onKeyDown={e => {
               if (e.key === "Enter") playVideo(e.target.value);
             }} />
             <small>按 Enter 點播影片</small>
