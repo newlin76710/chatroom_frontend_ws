@@ -134,24 +134,42 @@ export default function ChatApp() {
     setText("");
   };
 
+  /* 取得 YouTube videoId（支援多種連結格式） */
+  const extractVideoID = (url) => {
+    if (!url) return null;
+
+    // 支援完整連結
+    let match = url.match(/v=([a-zA-Z0-9_-]{11})/);
+    if (match) return match[1];
+
+    // 支援短連結 youtu.be/xxxx
+    match = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    if (match) return match[1];
+
+    // 支援 shorts 連結 youtube.com/shorts/xxxx
+    match = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+    if (match) return match[1];
+
+    return null;
+  };
+
   /* 發送 YouTube 點播 */
   const playVideo = () => {
     if (!videoUrl.trim()) return;
 
+    const videoId = extractVideoID(videoUrl.trim());
+    if (!videoId) {
+      alert("無法解析此 YouTube 連結，請確認格式是否正確。");
+      return;
+    }
+
     socket.emit("playVideo", {
       room,
-      url: videoUrl.trim(),
+      url: `https://www.youtube.com/watch?v=${videoId}`,
       user: name,
     });
 
     setVideoUrl("");
-  };
-
-  /* 取得 YouTube videoId */
-  const extractVideoID = (url) => {
-    const reg = /v=([a-zA-Z0-9_-]{11})/;
-    const match = url.match(reg);
-    return match ? match[1] : null;
   };
 
   /* 播放器準備好後解除靜音（手機需要先 muted autoplay 才能啟動） */
@@ -192,8 +210,8 @@ export default function ChatApp() {
               const color = isSystem
                 ? "#ff9900"
                 : isSelf
-                ? "#fff"
-                : profile?.color || "#eee";
+                  ? "#fff"
+                  : profile?.color || "#eee";
 
               return (
                 <div
