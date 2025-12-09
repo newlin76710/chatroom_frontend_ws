@@ -75,7 +75,7 @@ export default function ChatApp() {
     localStorage.removeItem("authToken");
 
     // 導回登入頁
-    navigate("/login");
+    window.location.href = "/login";
   };
 
   // 發送訊息
