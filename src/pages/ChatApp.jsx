@@ -1,17 +1,15 @@
-// ChatApp.jsx
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import ReactPlayer from "react-player";
 import { aiAvatars, aiProfiles } from "./aiConfig";
 import './ChatApp.css';
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:10000';
 const socket = io(BACKEND);
 
 export default function ChatApp() {
   const [room, setRoom] = useState("public");
   const [name, setName] = useState("");
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState("");      // 帳號 token
   const [guestToken, setGuestToken] = useState("");
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -20,9 +18,14 @@ export default function ChatApp() {
   const [typing, setTyping] = useState("");
   const [userList, setUserList] = useState([]);
   const [showUserList, setShowUserList] = useState(true);
+
   const [currentVideo, setCurrentVideo] = useState(null);
+  const [videoQueue, setVideoQueue] = useState([]);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
 
   const messagesEndRef = useRef(null);
+  const videoRef = useRef(null);
 
   // 自動滾動到底部
   useEffect(() => {
@@ -37,13 +40,17 @@ export default function ChatApp() {
     });
     socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
     socket.on("updateUsers", (list) => setUserList(list));
+
+    // YouTube 相關
     socket.on("videoUpdate", (video) => setCurrentVideo(video));
+    socket.on("videoQueueUpdate", (queue) => setVideoQueue(queue));
 
     return () => {
       socket.off("message");
       socket.off("systemMessage");
       socket.off("updateUsers");
       socket.off("videoUpdate");
+      socket.off("videoQueueUpdate");
     };
   }, []);
 
@@ -97,11 +104,13 @@ export default function ChatApp() {
     joinRoom(username, "account", token);
   };
 
+  // 加入聊天室
   const joinRoom = (username, type = "guest", t = "") => {
     socket.emit("joinRoom", { room, user: { name: username, type, token: t } });
     setJoined(true);
   };
 
+  // 離開聊天室
   const leaveRoom = () => {
     socket.emit("leaveRoom", { room, user: { name } });
     setJoined(false);
@@ -115,17 +124,32 @@ export default function ChatApp() {
     window.location.href = "/login";
   };
 
+  // 發送訊息
   const send = () => {
     if (!text || !joined) return;
     socket.emit("message", { room, message: text, user: { name }, target });
     setText("");
   };
 
-  // 點播 YouTube 影片
-  const playVideo = () => {
-    if (!text || !joined) return;
-    socket.emit("playVideo", { room, url: text, requestedBy: name });
-    setText("");
+  // 點播影片
+  const playVideo = (url) => {
+    socket.emit("playVideo", { room, url, user: name });
+  };
+
+  // 更新影片進度
+  useEffect(() => {
+    if (!videoRef.current || !currentVideo) return;
+    const interval = setInterval(() => {
+      setVideoProgress(videoRef.current.currentTime || 0);
+      setVideoDuration(videoRef.current.duration || 0);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [currentVideo]);
+
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -176,21 +200,39 @@ export default function ChatApp() {
               type="text"
               value={text}
               onChange={e => setText(e.target.value)}
-              onKeyDown={e => e.key === "Enter" ? send() : null}
+              onKeyDown={e => e.key === "Enter" && send()}
               disabled={!joined}
-              placeholder={joined ? "輸入訊息 / 點播 YouTube URL" : "請先登入"}
+              placeholder={joined ? "輸入訊息後按 Enter 發送" : "請先登入"}
             />
             <button onClick={send} disabled={!joined}>發送</button>
-            <button onClick={playVideo} disabled={!joined}>點播</button>
           </div>
 
-          {/* YouTube 播放器 */}
+          {/* YouTube 播放區 */}
           {currentVideo && (
             <div className="video-player">
-              <strong>正在播放：{currentVideo.url} （由 {currentVideo.requestedBy} 點播）</strong>
-              <ReactPlayer url={currentVideo.url} playing controls width="100%" />
+              <h4>正在播放：{currentVideo.url} （由 {currentVideo.user} 點播）</h4>
+              <video
+                ref={videoRef}
+                src={currentVideo.url}
+                controls
+                autoPlay
+                style={{ width: "100%" }}
+              />
+              <div className="video-progress">
+                <progress value={videoProgress} max={videoDuration}></progress>
+                <span>{formatTime(videoProgress)} / {formatTime(videoDuration)}</span>
+              </div>
             </div>
           )}
+
+          {/* 點播影片 */}
+          <div style={{ marginTop: "0.5rem" }}>
+            <input type="text" placeholder="輸入影片 URL" onKeyDown={e => {
+              if (e.key === "Enter") playVideo(e.target.value);
+            }} />
+            <small>按 Enter 點播影片</small>
+          </div>
+
         </div>
 
         {/* 使用者列表 */}
@@ -207,6 +249,7 @@ export default function ChatApp() {
                 const isSelected = u.name === target;
                 const avatar = aiAvatars[u.name];
                 const level = aiProfiles[u.name]?.level || u.level || 1;
+
                 return (
                   <div
                     key={u.id}
