@@ -190,10 +190,17 @@ export default function ChatApp() {
               {userList.map(u => {
                 const isSelected = u.name === target;
                 const avatar = aiAvatars[u.name];
+                // 取得等級：AI 從 aiProfiles，訪客或帳號預設 1
+                const level = aiProfiles[u.name]?.level || u.level || 1;
+
                 return (
-                  <div key={u.id} className={`user-item${isSelected ? " selected" : ""}`} onClick={() => setTarget(u.name)}>
+                  <div
+                    key={u.id}
+                    className={`user-item${isSelected ? " selected" : ""}`}
+                    onClick={() => setTarget(u.name)}
+                  >
                     {avatar && <img src={avatar} alt={u.name} className="user-avatar" />}
-                    {u.name}
+                    <span>{u.name} (Lv.{level})</span>
                   </div>
                 );
               })}
