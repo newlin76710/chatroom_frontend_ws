@@ -114,15 +114,18 @@ body, .chat-container {
   background-color: #2d1f0b;
   border-left: 4px solid #f59e0b;
 }
-
-/* 私聊標籤 */
-.private-tag {
-  background: #f59e0b;
+/* 私聊訊息 */
+.private-msg {
+  background: #fff4d6;
+  border-left: 4px solid #f59e0b;
   color: #000;
-  padding: 1px 4px;
-  border-radius: 4px;
-  font-size: 10px;
-  margin-left: 6px;
+}
+
+/* 公開對象訊息 */
+.public-target {
+  background: #2a2a50;
+  border-left: 4px solid #7c3aed;
+  color: #fff;
 }
 
 /* =========================
