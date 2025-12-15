@@ -141,7 +141,7 @@ export default function ChatApp() {
 
   return (
     <div className="chat-container">
-      <h2>尋夢園聊天室</h2>
+      <h2>尋夢園男歡女愛聊天室</h2>
 
       {!joined ? (
         <button onClick={loginGuest} className="login-btn">訪客登入</button>

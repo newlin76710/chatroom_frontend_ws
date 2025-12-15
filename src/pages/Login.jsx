@@ -70,7 +70,7 @@ export default function Login() {
 
   return (
     <div style={{ maxWidth: 500, margin: "60px auto", textAlign: "center" }}>
-      <h2>聊天室登入</h2>
+      <h2>男歡女愛聊天室登入</h2>
 
       <div style={{ margin: "20px 0" }}>
         <button onClick={() => setMode("guest")} style={{ marginRight: 10 }}>訪客登入</button>
