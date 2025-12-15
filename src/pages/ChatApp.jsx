@@ -21,13 +21,15 @@ export default function ChatApp() {
   const [userList, setUserList] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
-  const [chatMode, setChatMode] = useState("public"); // public | private
+  const [chatMode, setChatMode] = useState("public"); // public | publicTarget | private
   const messagesEndRef = useRef(null);
 
+  // 自動滾到底
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Socket 事件
   useEffect(() => {
     socket.on("message", (m) => setMessages((s) => [...s, m]));
     socket.on("systemMessage", (m) =>
@@ -44,6 +46,7 @@ export default function ChatApp() {
     };
   }, []);
 
+  // 自動登入
   useEffect(() => {
     const storedName = localStorage.getItem("name");
     const storedToken = localStorage.getItem("token") || localStorage.getItem("guestToken");
@@ -89,15 +92,16 @@ export default function ChatApp() {
 
   const send = () => {
     if (!text) return;
-    if (chatMode === "private" && !target) return;
+    if ((chatMode === "private" || chatMode === "publicTarget") && !target) return;
 
     socket.emit("message", {
       room,
       message: text,
       user: { name },
-      target: chatMode === "private" ? target : "",
+      target: target || "",
       mode: chatMode
     });
+
     setText("");
   };
 
@@ -133,17 +137,30 @@ export default function ChatApp() {
           <MessageList messages={messages} name={name} typing={typing} messagesEndRef={messagesEndRef} />
 
           <div className="chat-input">
+            {/* 聊天模式選擇 */}
             <div className="chat-mode">
               <label>
-                <input type="radio" value="public" checked={chatMode==="public"} onChange={() => { setChatMode("public"); setTarget(""); }} />公開
+                <input type="radio" value="public" checked={chatMode === "public"}
+                  onChange={() => { setChatMode("public"); setTarget(""); }} />
+                公開
               </label>
+
               <label>
-                <input type="radio" value="private" checked={chatMode==="private"} onChange={() => setChatMode("private")} />私聊
+                <input type="radio" value="publicTarget" checked={chatMode === "publicTarget"}
+                  onChange={() => setChatMode("publicTarget")} />
+                公開對象
+              </label>
+
+              <label>
+                <input type="radio" value="private" checked={chatMode === "private"}
+                  onChange={() => setChatMode("private")} />
+                私聊
               </label>
             </div>
 
-            {chatMode === "private" && (
-              <select value={target} onChange={(e)=>setTarget(e.target.value)} className="chat-target-select">
+            {/* 對象選擇 */}
+            {(chatMode === "private" || chatMode === "publicTarget") && (
+              <select value={target} onChange={e => setTarget(e.target.value)}>
                 <option value="">選擇對象</option>
                 {userList.filter(u => u.name !== name).map(u => (
                   <option key={u.id} value={u.name}>{u.name}</option>
@@ -151,14 +168,14 @@ export default function ChatApp() {
               </select>
             )}
 
-            <input type="text" value={text} onChange={(e)=>setText(e.target.value)}
-                   onKeyDown={(e)=>e.key==="Enter" && send()}
-                   placeholder={chatMode==="private" ? `私聊 ${target || ""}` : "輸入公開訊息..."} />
+            <input type="text" value={text} onChange={e => setText(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && send()}
+              placeholder={chatMode === "private" ? `私聊 ${target || ""}` : "輸入訊息..."} />
             <button onClick={send}>發送</button>
           </div>
 
           <div className="video-request">
-            <input type="text" placeholder="輸入 YouTube 連結" value={videoUrl} onChange={e=>setVideoUrl(e.target.value)} onKeyDown={e=>e.key==="Enter" && playVideo()} />
+            <input type="text" placeholder="輸入 YouTube 連結" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && playVideo()} />
             <button onClick={playVideo} className="play-btn">🎵 點播</button>
           </div>
         </div>
@@ -166,8 +183,8 @@ export default function ChatApp() {
         <div className="user-list">
           <strong>在線：{userList.length}</strong>
           {userList.map(u => (
-            <div key={u.id} className={`user-item ${u.name===target?"selected":""}`}
-                 onClick={() => { setChatMode("private"); setTarget(u.name); }}>
+            <div key={u.id} className={`user-item ${u.name === target ? "selected" : ""}`}
+              onClick={() => { setChatMode("private"); setTarget(u.name); }}>
               {aiAvatars[u.name] && <img src={aiAvatars[u.name]} className="user-avatar" />}
               {u.name} (Lv.{u.level || 1})
             </div>
@@ -175,7 +192,7 @@ export default function ChatApp() {
         </div>
       </div>
 
-      <VideoPlayer video={currentVideo} extractVideoID={extractVideoID} onClose={()=>setCurrentVideo(null)} />
+      <VideoPlayer video={currentVideo} extractVideoID={extractVideoID} onClose={() => setCurrentVideo(null)} />
     </div>
   );
 }
