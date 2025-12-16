@@ -234,14 +234,6 @@ export default function ChatApp() {
       {/* 🎤🎵 歌唱 + 播放 + 評分 整合 */}
       <SongFlow socket={socket} room={room} name={name} uploadSong={uploadSong} />
 
-      {songResult && (
-        <div className="song-result">
-          🎉 <strong>{songResult.singer}</strong>
-          平均分：⭐ {songResult.avg}
-          （{songResult.count} 人評分）
-        </div>
-      )}
-
       <VideoPlayer video={currentVideo} extractVideoID={extractVideoID} onClose={() => setCurrentVideo(null)} />
     </div>
   );
