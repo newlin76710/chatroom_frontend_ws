@@ -2,9 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { aiAvatars, aiProfiles } from "./aiConfig";
 import MessageList from "./MessageList";
-import SongPanel from "./SongPanel";
-import SongRating from "./SongRating";
 import VideoPlayer from "./VideoPlayer";
+import SongFlow from "../components/SongFlow";
 
 import './ChatApp.css';
 
@@ -232,13 +231,8 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* 🎤 歌唱區 */}
-      <SongPanel socket={socket} room={room} name={name} uploadSong={uploadSong} />
-
-      {/* 🎵 播放歌曲與評分 */}
-      {currentSong && (
-        <SongRating socket={socket} room={room} singer={currentSong.singer} songUrl={currentSong.songUrl} />
-      )}
+      {/* 🎤🎵 歌唱 + 播放 + 評分 整合 */}
+      <SongFlow socket={socket} room={room} name={name} uploadSong={uploadSong} />
 
       {songResult && (
         <div className="song-result">

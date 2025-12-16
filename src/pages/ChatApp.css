@@ -27,17 +27,6 @@ body, .chat-container {
   flex-direction: column;
 }
 
-.chat-mode {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 6px;
-  font-size: 13px;
-}
-
-.chat-mode label {
-  cursor: pointer;
-}
-
 .chat-messages {
   flex: 1;
   background-color: #1a1a1a;
@@ -45,54 +34,23 @@ body, .chat-container {
   overflow-y: auto;
   border-radius: 4px;
   border: 1px solid #555;
-  scroll-behavior: smooth;
 }
 
-.message-row {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 6px;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.chat-message {
-  max-width: 75%;
-  word-break: break-word;
-  padding: 6px 10px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-}
-
-.chat-message.self { 
-  align-self: flex-end; 
-  background-color: #2a2a2a; 
-}
-
-.chat-message.ai { background-color: #3d1a5f; }        /* AI 紫色 */
-.chat-message.system { background-color: #1a1a1a; font-weight: bold; color: #ff9900; }
+.message-row { display: flex; margin-bottom: 6px; }
+.chat-message { max-width: 75%; padding: 6px 10px; border-radius: 6px; }
+.chat-message.self { align-self: flex-end; background-color: #2a2a2a; }
+.chat-message.ai { background-color: #3d1a5f; }
+.chat-message.system { font-weight: bold; color: #ff9900; }
 .chat-message.other { background-color: #222; }
+.chat-message.male { color: #00cc66; }
+.chat-message.female { color: #ff66aa; }
 
-.chat-message.male { color: #00cc66; }   /* 男生深綠 */
-.chat-message.female { color: #ff66aa; } /* 女生粉紅 */
-
-.message-avatar,
-.user-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  margin-right: 6px;
-  border: 1px solid #555;
-  object-fit: cover;
-}
+.message-avatar, .user-avatar { width: 24px; height: 24px; border-radius: 50%; margin-right: 6px; object-fit: cover; }
 
 .user-list {
   flex: 0 0 200px;
   display: flex;
   flex-direction: column;
-}
-
-.user-list-content,
-.user-list {
   overflow-y: auto;
   background-color: #1a1a1a;
   border-radius: 4px;
@@ -107,10 +65,7 @@ body, .chat-container {
   align-items: center;
 }
 
-.user-item:hover,
-.user-item.selected {
-  background-color: #2a2a2a;
-}
+.user-item:hover, .user-item.selected { background-color: #2a2a2a; }
 
 .chat-input {
   display: flex;
@@ -118,8 +73,7 @@ body, .chat-container {
   gap: 6px;
 }
 
-.chat-input select,
-.chat-input input {
+.chat-input select, .chat-input input {
   padding: 6px 8px;
   background-color: #1a1a1a;
   border: 1px solid #555;
@@ -141,11 +95,9 @@ body, .chat-container {
 
 .chat-input button:hover { background-color: #7a33ff; }
 
-.typing { font-style: italic; color: #aaa; font-size: 12px; margin-top: 4px; }
-
 .video-player-float {
   position: fixed;
-  bottom: 10px;
+  top: 10px;      /* 改成右上角 */
   right: 10px;
   width: 240px;
   background: #000;
@@ -155,124 +107,47 @@ body, .chat-container {
   z-index: 999;
 }
 
-.video-player-float iframe { border-radius: 4px; }
-
-.video-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #fff;
-  font-size: 0.8rem;
-  margin-top: 4px;
+.video-player-float iframe {
+  border-radius: 4px;
 }
 
-.video-info button {
-  background: transparent;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-}
+.video-info { display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 0.8rem; margin-top: 4px; }
+.video-info button { background: transparent; border: none; color: #fff; cursor: pointer; }
 
-.private-tag {
-  color: #f59e0b;
-  font-size: 10px;
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  background: rgba(0,0,0,0.2);
-  padding: 0 3px;
-  border-radius: 2px;
-}
-.song-panel {
-  margin-top: 10px;
-  padding: 8px;
-  border-top: 1px solid #333;
-}
-
-.song-panel button {
-  padding: 6px 10px;
-  margin-right: 6px;
-}
-
-.song-playing {
-  margin-top: 8px;
-}
-
-.song-playing audio {
-  width: 100%;
-}
-
-.score {
-  margin-top: 6px;
-}
-.song-rating {
-  margin-top: 8px;
-  padding: 10px;
-  border-radius: 10px;
-  background: #1f1f1f;
-  text-align: center;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.15);
-}
-.song-result {
-  margin-top: 10px;
-  padding: 8px;
-  background: #2a2a2a;
-  border-radius: 8px;
-  text-align: center;
-  color: #ffd700;
-  font-size: 14px;
-}
-.rating-title {
-  color: #ffd700;
-  font-size: 14px;
-  margin-bottom: 6px;
-}
-
-.stars {
-  font-size: 26px;
-}
+.song-panel { margin-top: 10px; padding: 8px; border-top: 1px solid #333; }
+.song-panel button { padding: 6px 10px; margin-right: 6px; }
+.song-playing { margin-top: 8px; }
+.song-playing audio { width: 100%; }
+.score { margin-top: 6px; }
+.song-result { margin-top: 10px; padding: 8px; background: #2a2a2a; border-radius: 8px; text-align: center; color: #ffd700; font-size: 14px; }
 
 .star {
   cursor: pointer;
+  font-size: 26px;
   color: #555;
   margin: 0 4px;
   transition: transform 0.15s, color 0.15s;
 }
 
-.star:hover {
-  transform: scale(1.2);
-  color: #ffd700;
-}
+.star:hover { transform: scale(1.2); color: #ffd700; }
+.star.active { color: #ffd700; }
+.star.locked { cursor: default; }
 
-.star.active {
-  color: #ffd700;
-}
-
-.star.locked {
-  cursor: default;
-}
-
-.rated {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #aaa;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* 手機版優化 */
 @media (max-width: 480px) {
   .chat-main { flex-direction: column; height: auto; }
   .chat-box { flex: 1; margin-right: 0; }
   .user-list { flex: 0 0 auto; max-height: 120px; margin-top: 6px; }
-
   .chat-input select, .chat-input input { font-size: 14px; }
   .chat-input button { padding: 6px 10px; }
-
-  .video-player-float { width: 150px; padding: 3px; }
-  .video-player-float iframe { width: 100%; height: 85px; }
+  .video-player-float {
+    top: 10px;       /* 右上角 */
+    right: 10px;
+    width: 150px;
+    padding: 3px;
+  }
+  .video-player-float iframe {
+    width: 100%;
+    height: 85px;
+  }
   .video-info { font-size: 0.7rem; }
 }
