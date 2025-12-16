@@ -50,8 +50,8 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
   }, [timeLeft]);
 
   const handleSongEnded = () => {
-    // 歌播完才開始 90 秒倒數
-    setTimeLeft(90);
+    // 歌播完才開始 30 秒倒數
+    setTimeLeft(30);
   };
 
   // 🔊 接收後端歌曲播放
