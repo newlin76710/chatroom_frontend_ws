@@ -4,9 +4,11 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
   const [recording, setRecording] = useState(false);
-  const [currentSong, setCurrentSong] = useState(null);
+  const [playingSong, setPlayingSong] = useState(null);
   const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(0); // 剩餘評分時間
   const audioRef = useRef(null);
+  const timerRef = useRef(null);
 
   // 🎤 開始錄音
   const startRecord = async () => {
@@ -19,7 +21,9 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
 
     recorder.onstop = async () => {
       const blob = new Blob(audioChunks.current, { type: "audio/webm" });
-      if (uploadSong) await uploadSong(blob);
+      if (uploadSong) {
+        await uploadSong(blob);
+      }
     };
 
     recorder.start();
@@ -32,17 +36,38 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
     setRecording(false);
   };
 
-  // 🔊 監聽播放歌曲
+  // 🔊 播放房間內的歌
   useEffect(() => {
-    socket.on("playSong", song => {
-      setCurrentSong(song);
+    socket.on("playSong", ({ singer, songUrl }) => {
+      if (!singer) {
+        setPlayingSong(null);
+        setTimeLeft(0);
+        return;
+      }
+
+      setPlayingSong({ singer, songUrl });
       setScore(0);
+
+      // ⭐ 設定倒數 1.5 分鐘
+      setTimeLeft(90);
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     });
 
     socket.on("songResult", ({ singer, avg, count }) => {
-      alert(`🎤 ${singer} 平均分數：${avg}（${count} 人評分）`);
-      setCurrentSong(null);
+      alert(`🎤 ${singer} 平均分數：${avg}（${count}人評分）`);
+      setPlayingSong(null);
       setScore(0);
+      setTimeLeft(0);
+      if (timerRef.current) clearInterval(timerRef.current);
     });
 
     return () => {
@@ -53,7 +78,6 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
 
   // ⭐ 送出評分
   const sendScore = () => {
-    if (!currentSong) return;
     socket.emit("scoreSong", { room, score });
   };
 
@@ -67,10 +91,13 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
         <button onClick={stopRecord}>結束錄音</button>
       )}
 
-      {currentSong && (
+      {playingSong && (
         <div className="song-playing">
-          <p>🎶 正在播放：{currentSong.singer}</p>
-          <audio ref={audioRef} src={currentSong.url} controls autoPlay />
+          <p>🎶 正在播放：{playingSong.singer}</p>
+          <audio ref={audioRef} src={playingSong.songUrl} controls autoPlay />
+
+          {/* 倒數計時 */}
+          <p>⏱ 剩餘評分時間：{timeLeft}s</p>
 
           <div className="score">
             <select value={score} onChange={e => setScore(+e.target.value)}>
