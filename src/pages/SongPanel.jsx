@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import SongPanel from "./SongPanel";
+import MessageList from "./MessageList";
 import VideoPlayer from "./VideoPlayer";
+import SongPanel from "./SongPanel";
 import { aiAvatars } from "./aiConfig";
 
 import './ChatApp.css';
@@ -22,18 +23,20 @@ export default function ChatApp() {
   const [userList, setUserList] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
-  const [chatMode, setChatMode] = useState("public");
+  const [chatMode, setChatMode] = useState("public"); 
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // socket 事件
   useEffect(() => {
     socket.on("message", (m) => setMessages(s => [...s, m]));
-    socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
+    socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: String(m) }]));
     socket.on("updateUsers", setUserList);
     socket.on("videoUpdate", setCurrentVideo);
+
     return () => {
       socket.off("message");
       socket.off("systemMessage");
@@ -42,6 +45,7 @@ export default function ChatApp() {
     };
   }, []);
 
+  // 自動登入
   useEffect(() => {
     const storedName = localStorage.getItem("name");
     const storedToken = localStorage.getItem("token") || localStorage.getItem("guestToken");
@@ -73,7 +77,10 @@ export default function ChatApp() {
   const leaveRoom = () => {
     socket.emit("leaveRoom", { room, user: { name } });
     setJoined(false);
-    localStorage.clear();
+    localStorage.removeItem("guestToken");
+    localStorage.removeItem("token");
+    localStorage.removeItem("name");
+    localStorage.removeItem("type");
     window.location.href = "/login";
   };
 
@@ -120,13 +127,16 @@ export default function ChatApp() {
 
       <div className="chat-main">
         <div className="chat-box">
+          {/* 訊息列表 */}
           <div className="chat-messages">
-            {messages.map((m, i) => {
+            {messages.filter(Boolean).map((m, i) => {
               const username = m?.user?.name || "未知";
-              const content = m?.message || "";
+              let content = m?.message ?? "";
+              if (typeof content !== "string") content = JSON.stringify(content);
               const type = m?.user?.type || "other";
+
               return (
-                <div key={i} className={`message-row`}>
+                <div key={i} className="message-row">
                   {username !== "系統" && <img src={aiAvatars[username] || "/default-avatar.png"} className="message-avatar" />}
                   <div className={`chat-message ${username === name ? "self" : "other"} ${type}`}>
                     <strong>{username}: </strong>{content}
@@ -134,10 +144,10 @@ export default function ChatApp() {
                 </div>
               );
             })}
-            {typing && <div>{typing}</div>}
             <div ref={messagesEndRef} />
           </div>
 
+          {/* 輸入區 */}
           <div className="chat-input">
             <div className="chat-mode">
               <label><input type="radio" value="public" checked={chatMode === "public"} onChange={() => { setChatMode("public"); setTarget(""); }} /> 公開</label>
@@ -148,8 +158,8 @@ export default function ChatApp() {
             {(chatMode === "private" || chatMode === "publicTarget") && (
               <select value={target} onChange={e => setTarget(e.target.value)}>
                 <option value="">選擇對象</option>
-                {userList.filter(u => u.name !== name).map(u => (
-                  <option key={u?.id || u?.name} value={u.name}>{u.name}</option>
+                {userList.filter(u => u?.name && u.name !== name).map(u => (
+                  <option key={u.id || u.name} value={u.name}>{String(u.name)}</option>
                 ))}
               </select>
             )}
@@ -158,15 +168,17 @@ export default function ChatApp() {
             <button onClick={send}>發送</button>
           </div>
 
+          {/* YouTube 點播 */}
           <div className="video-request">
             <input type="text" placeholder="輸入 YouTube 連結" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && playVideo()} />
             <button onClick={playVideo}>🎵 點播</button>
           </div>
         </div>
 
+        {/* 在線名單 */}
         <div className="user-list">
           <strong>在線：{userList.length}</strong>
-          {userList.map(u => (
+          {userList.filter(Boolean).map(u => (
             <div key={u?.id || u?.name} className={`user-item ${u?.name === target ? "selected" : ""}`} onClick={() => { setChatMode("private"); setTarget(u?.name); }}>
               {aiAvatars[u?.name] && <img src={aiAvatars[u?.name]} className="user-avatar" />}
               {u?.name} (Lv.{u?.level || 1})
@@ -175,14 +187,21 @@ export default function ChatApp() {
         </div>
       </div>
 
-      <SongPanel socket={socket} room={room} name={name} uploadSong={async (blob) => {
-        const arrayBuffer = await blob.arrayBuffer();
-        const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""));
-        const res = await fetch(`${BACKEND}/song/upload`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ audioBase64: base64, singer: name }) });
-        const data = await res.json();
-        socket.emit("startSong", { room, singer: name, songUrl: `${BACKEND}${data.url}` });
-      }} />
+      {/* 唱歌區 */}
+      <SongPanel 
+        socket={socket} 
+        room={room} 
+        name={name} 
+        uploadSong={async (blob) => {
+          const arrayBuffer = await blob.arrayBuffer();
+          const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""));
+          const res = await fetch(`${BACKEND}/song/upload`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ audioBase64: base64, singer: name }) });
+          const data = await res.json();
+          socket.emit("startSong", { room, singer: name, songUrl: `${BACKEND}${data.url}` });
+        }}
+      />
 
+      {/* 影片播放 */}
       <VideoPlayer video={currentVideo} extractVideoID={extractVideoID} onClose={() => setCurrentVideo(null)} />
     </div>
   );
