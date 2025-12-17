@@ -27,7 +27,9 @@
   border-bottom: 1px dashed #333;
 }
 
-.queue-item:last-child { border-bottom: none; }
+.queue-item:last-child { 
+  border-bottom: none; 
+}
 
 .song-playing {
   margin-top: 12px;
@@ -38,41 +40,47 @@
 }
 
 /* ===== ⭐ 星星評分 ===== */
+.score-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.score-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd700;
+}
+
 .score {
   display: flex;
   gap: 6px;
-  margin-top: 6px;
 }
 
 .star {
   cursor: pointer;
   font-size: 26px;
-  color: #555; /* 預設灰色 */
+  color: #555;
   margin: 0 4px;
   transition: transform 0.15s, color 0.15s;
 }
 
-/* 滑鼠 hover 或未送分時 */
-.star:hover,
-.star:hover ~ .star {
-  color: #555; /* 右邊不亮 */
+.star.active { 
+  color: #ffd700; 
 }
 
-.star:hover,
-.star.active {
-  color: #ffd700; /* 左邊亮黃 */
-  transform: scale(1.2);
+.star:hover { 
+  transform: scale(1.2); 
+  color: #ffd700; 
 }
 
-/* 評分完成後鎖定 */
+.star:hover ~ .star { 
+  color: #555; 
+}
+
 .star.disabled {
   cursor: default;
-  transform: none;
-}
-
-.star.disabled,
-.star.disabled.active {
-  color: #ffd700; /* 已評分的星星保持黃 */
 }
 
 .star.disabled:hover {
@@ -97,7 +105,9 @@
   margin-right: 6px; 
 }
 
-.song-playing audio { width: 100%; }
+.song-playing audio { 
+  width: 100%; 
+}
 
 /* ===== 評分結果 ===== */
 .song-result {
@@ -108,5 +118,57 @@
   text-align: center;
   color: #ffd700;
   font-size: 14px;
-  font-weight: bold;
+}
+/* ===== 手機板調整 ===== */
+@media (max-width: 480px) {
+  .song-panel {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .song-queue {
+    padding: 6px;
+  }
+
+  .queue-item {
+    font-size: 12px;
+    padding: 3px 4px;
+  }
+
+  .song-playing {
+    padding: 8px;
+  }
+
+  .score-wrapper {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .score {
+    gap: 4px;
+  }
+
+  .star {
+    font-size: 22px;
+    margin: 0 2px;
+  }
+
+  .score-value {
+    font-size: 14px;
+  }
+
+  .score-timer {
+    font-size: 12px;
+  }
+
+  .song-panel button {
+    padding: 5px 8px;
+    margin-right: 4px;
+    font-size: 14px;
+  }
+
+  .song-playing audio {
+    width: 100%;
+  }
 }
