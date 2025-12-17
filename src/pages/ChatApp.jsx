@@ -35,6 +35,7 @@ export default function ChatApp() {
     socket.on("systemMessage", (m) => setMessages(s => [...s, { user: { name: "系統" }, message: m }]));
     socket.on("updateUsers", setUserList);
     socket.on("videoUpdate", setCurrentVideo);
+
     return () => {
       socket.off("message");
       socket.off("systemMessage");
@@ -97,7 +98,9 @@ export default function ChatApp() {
 
   const extractVideoID = (url) => {
     if (!url) return null;
-    const match = url.match(/v=([a-zA-Z0-9_-]{11})/) || url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) || url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+    const match = url.match(/v=([a-zA-Z0-9_-]{11})/) 
+               || url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) 
+               || url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
     return match ? match[1] : null;
   };
 
@@ -105,7 +108,8 @@ export default function ChatApp() {
     if (!videoUrl.trim()) return;
     const videoId = extractVideoID(videoUrl.trim());
     if (!videoId) return alert("無法解析此 YouTube 連結");
-    socket.emit("playVideo", { room, url: `https://www.youtube.com/watch?v=${videoId}`, user: { name } });
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    socket.emit("playVideo", { room, url: embedUrl, user: { name } });
     setVideoUrl("");
   };
 
@@ -136,8 +140,8 @@ export default function ChatApp() {
             {(chatMode === "private" || chatMode === "publicTarget") && (
               <select value={target} onChange={e => setTarget(e.target.value)}>
                 <option value="">選擇對象</option>
-                {userList.filter(u => u.name !== name).map(u => (
-                  <option key={u.id} value={u.name}>{u.name}</option>
+                {userList.filter(u => u.name !== name).map((u, i) => (
+                  <option key={u?.id || u?.name || i} value={u?.name}>{u?.name || "未知"}</option>
                 ))}
               </select>
             )}
@@ -154,10 +158,10 @@ export default function ChatApp() {
 
         <div className="user-list">
           <strong>在線：{userList.length}</strong>
-          {userList.map(u => (
-            <div key={u?.id} className={`user-item ${u?.name === target ? "selected" : ""}`} onClick={() => { setChatMode("private"); setTarget(u?.name); }}>
+          {userList.map((u, i) => (
+            <div key={u?.id || u?.name || i} className={`user-item ${u?.name === target ? "selected" : ""}`} onClick={() => { setChatMode("private"); setTarget(u?.name || ""); }}>
               {aiAvatars[u?.name] && <img src={aiAvatars[u?.name]} className="user-avatar" />}
-              {u?.name} (Lv.{u?.level || 1})
+              {u?.name || "未知"} (Lv.{u?.level || 1})
             </div>
           ))}
         </div>
