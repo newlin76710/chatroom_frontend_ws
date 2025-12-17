@@ -15,6 +15,7 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
     const [displayQueue, setDisplayQueue] = useState([]);
     const timerRef = useRef(null);
 
+    // 🎤 開始錄音
     const startRecord = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const recorder = new MediaRecorder(stream);
@@ -31,11 +32,13 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
         setRecording(true);
     };
 
+    // ⏹ 停止錄音
     const stopRecord = () => {
         mediaRecorderRef.current.stop();
         setRecording(false);
     };
 
+    // ⭐ 送出評分
     const sendScore = (n) => {
         if (scoreSent) return;
         setScore(n);
@@ -45,14 +48,20 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
         setTimeLeft(0);
     };
 
+    // ⏱️ 評分倒數
     useEffect(() => {
         if (timeLeft <= 0) return;
         timerRef.current = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
         return () => clearTimeout(timerRef.current);
     }, [timeLeft]);
 
-    const handleSongEnded = () => setTimeLeft(30);
+    const handleSongEnded = () => {
+        setTimeLeft(30); // 開始 30 秒評分倒數
+        // 移除已唱歌的人
+        setDisplayQueue(prev => prev.filter(q => q.name !== playingSong.singer));
+    };
 
+    // 🔊 Socket 事件
     useEffect(() => {
         socket.on("playSong", (song) => {
             if (!song) {
@@ -77,9 +86,14 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
             setHoverScore(0);
             setScoreSent(false);
             setTimeLeft(0);
+
+            // 確保輪候列隊更新
+            setDisplayQueue(prev => prev.filter(q => q.name !== singer));
         });
 
-        socket.on("displayQueueUpdate", (queue) => setDisplayQueue(queue || []));
+        socket.on("displayQueueUpdate", (queue) => {
+            setDisplayQueue(queue || []);
+        });
 
         return () => {
             socket.off("playSong");
@@ -88,8 +102,11 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
         };
     }, [socket]);
 
+    // ⏱️ 倒數結束自動送分
     useEffect(() => {
-        if (timeLeft === 0 && playingSong && score > 0 && !scoreSent) sendScore(score);
+        if (timeLeft === 0 && playingSong && score > 0 && !scoreSent) {
+            sendScore(score);
+        }
     }, [timeLeft]);
 
     return (
@@ -102,6 +119,7 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
                 <button onClick={stopRecord}>結束錄音</button>
             )}
 
+            {/* 輪候列隊 */}
             {displayQueue.length > 0 && (
                 <div className="song-queue">
                     <h5>📋 輪候中</h5>
@@ -129,7 +147,12 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
                     {timeLeft > 0 && (
                         <div className="score-timer">
                             ⏱️ 評分倒數：
-                            <span style={{ color: timeLeft <= 5 ? "#ff4d4f" : "#ffd700", fontWeight: "bold" }}>
+                            <span
+                                style={{
+                                    color: timeLeft <= 5 ? "#ff4d4f" : "#ffd700",
+                                    fontWeight: "bold",
+                                }}
+                            >
                                 {timeLeft} 秒
                             </span>
                         </div>
@@ -140,7 +163,9 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
                         {[1, 2, 3, 4, 5].map((n) => (
                             <span
                                 key={n}
-                                className={`star ${n <= (hoverScore || score) ? "active" : ""} ${scoreSent ? "disabled" : ""}`}
+                                className={`star ${n <= (hoverScore || score) ? "active" : ""} ${
+                                    scoreSent ? "disabled" : ""
+                                }`}
                                 onMouseEnter={() => !scoreSent && setHoverScore(n)}
                                 onMouseLeave={() => !scoreSent && setHoverScore(0)}
                                 onClick={() => !scoreSent && sendScore(n)}
@@ -148,8 +173,9 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
                                 ★
                             </span>
                         ))}
-                        {scoreSent && <span className="score-label">已評 {score} 分</span>}
                     </div>
+
+                    {scoreSent && <div className="song-result">你評了 {score} 分</div>}
                 </div>
             )}
         </div>
