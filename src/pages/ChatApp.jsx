@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import MessageList from "./MessageList";
-import VideoPlayer from "./VideoPlayer";
-import SongPanel from "./SongPanel";
+import MessageList from "./MessageList.jsx";
+import VideoPlayer from "./VideoPlayer.jsx";
+import SongPanel from "./SongPanel.jsx";
 import { aiAvatars } from "./aiConfig";
 import "./ChatApp.css";
 
