@@ -162,14 +162,14 @@ export default function ChatApp() {
           ))}
         </div>
       </div>
-
+{/*
       <SongPanel socket={socket} room={room} name={name} uploadSong={async (blob) => {
         const arrayBuffer = await blob.arrayBuffer();
         const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""));
         const res = await fetch(`${BACKEND}/song/upload`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ audioBase64: base64, singer: name }) });
         const data = await res.json();
         socket.emit("startSong", { room, singer: name, songUrl: `${BACKEND}${data.url}` });
-      }} />
+      }} />*/}
 
       <VideoPlayer video={currentVideo} extractVideoID={extractVideoID} onClose={() => setCurrentVideo(null)} />
     </div>
