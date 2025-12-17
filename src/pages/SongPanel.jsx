@@ -24,11 +24,30 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
       const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
       audioChunks.current = [];
+
       recorder.ondataavailable = (e) => audioChunks.current.push(e.data);
+
       recorder.onstop = async () => {
         const blob = new Blob(audioChunks.current, { type: "audio/webm" });
-        if (uploadSong && typeof uploadSong === "function") await uploadSong(blob);
+        const localUrl = URL.createObjectURL(blob);
+
+        // 立即播放錄音
+        setPlayingSong({ singer: name, songUrl: localUrl });
+        setScore(0);
+        setHoverScore(0);
+        setScoreSent(false);
+        setTimeLeft(0);
+
+        setTimeout(() => {
+          audioRef.current?.play().catch(() => {});
+        }, 50);
+
+        // 後端上傳
+        if (uploadSong && typeof uploadSong === "function") {
+          await uploadSong(blob);
+        }
       };
+
       recorder.start();
       setRecording(true);
     } catch (err) {
