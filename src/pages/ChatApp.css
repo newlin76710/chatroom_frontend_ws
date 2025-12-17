@@ -182,13 +182,14 @@ body {
   border: 1px solid #333;
 }
 
+/* ===== ⭐ 星星評分 ===== */
+/* ⭐ 星星評分 */
 .score {
-  margin-top: 8px;
   display: flex;
   gap: 6px;
+  margin-top: 6px;
 }
 
-/* ===== ⭐ 星星評分 ===== */
 .star {
   cursor: pointer;
   font-size: 26px;
@@ -196,9 +197,23 @@ body {
   transition: transform 0.15s, color 0.15s;
 }
 
-.star:hover, .star.active { 
-  color: #ffd700; 
+.star:hover {
   transform: scale(1.2);
+  color: #ffd700;
+}
+
+.star.active {
+  color: #ffd700;
+}
+
+.star.disabled {
+  cursor: default;       /* 禁止再點 */
+  color: #999;           /* 灰色顯示已送分 */
+}
+
+.star.disabled:hover {
+  transform: none;       /* 不再放大 */
+  color: #999;           /* 保持灰色 */
 }
 
 /* ===== 音樂控制按鈕 ===== */

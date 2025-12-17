@@ -8,8 +8,8 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
   const [recording, setRecording] = useState(false);
   const [playingSong, setPlayingSong] = useState(null);
   const [score, setScore] = useState(0);
+  const [scoreSent, setScoreSent] = useState(false); // 新增：是否已送分
   const [timeLeft, setTimeLeft] = useState(0);
-
   const [displayQueue, setDisplayQueue] = useState([]);
   const timerRef = useRef(null);
 
@@ -39,9 +39,9 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
 
   // ⭐ 送出評分
   const sendScore = () => {
-    if (!score) return;
+    if (!score || scoreSent) return;
     socket.emit("scoreSong", { room, score });
-    setScore(0);
+    setScoreSent(true);
     setTimeLeft(0);
   };
 
@@ -61,11 +61,14 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
     socket.on("playSong", song => {
       if (!song) {
         setPlayingSong(null);
+        setScore(0);
+        setScoreSent(false);
         setTimeLeft(0);
         return;
       }
       setPlayingSong({ singer: song.singer, songUrl: song.url });
       setScore(0);
+      setScoreSent(false); // 重置送分狀態
       setTimeLeft(0);
     });
 
@@ -73,6 +76,7 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
       alert(`🎤 ${singer} 平均分數：${avg}（${count}人評分）`);
       setPlayingSong(null);
       setScore(0);
+      setScoreSent(false);
       setTimeLeft(0);
     });
 
@@ -89,7 +93,7 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
 
   // ⏱️ 倒數結束自動送分
   useEffect(() => {
-    if (timeLeft === 0 && playingSong && score > 0) {
+    if (timeLeft === 0 && playingSong && score > 0 && !scoreSent) {
       sendScore();
     }
   }, [timeLeft]);
@@ -135,10 +139,11 @@ export default function SongPanel({ socket, room, name, uploadSong }) {
             {[1, 2, 3, 4, 5].map(n => (
               <span
                 key={n}
-                className={`star ${n <= score ? "active" : ""}`}
+                className={`star ${n <= score ? "active" : ""} ${scoreSent ? "disabled" : ""}`}
                 onClick={() => {
+                  if (scoreSent) return; // 已送分就不能再點
                   setScore(n);
-                  sendScore(); // 點星就送分
+                  sendScore();
                 }}
               >
                 ★
