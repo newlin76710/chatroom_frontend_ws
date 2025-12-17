@@ -1,5 +1,5 @@
 import { aiAvatars, aiProfiles } from "./aiConfig";
-import './MessageList.css'; // 確保有引用 CSS
+import './MessageList.css';
 import './ChatApp.css'
 
 export default function MessageList({ messages, name, typing, messagesEndRef }) {
@@ -37,6 +37,7 @@ export default function MessageList({ messages, name, typing, messagesEndRef }) 
                                 <img src={aiAvatars[m.user?.name] || "/avatars/default.png"} className="message-avatar" />
                             )}
                             <div className={msgClass} style={{ color, position: "relative", fontSize: "0.8rem" }}>
+                                
                                 {/* 標籤在箭頭上方 */}
                                 {(m.mode === "private" || m.mode === "publicTarget") && m.target && (
                                     <div style={{ fontSize: "0.7rem", color: "#ffd36a", marginBottom: "2px", textAlign: isSelf ? "right" : "left" }}>
@@ -44,7 +45,6 @@ export default function MessageList({ messages, name, typing, messagesEndRef }) 
                                     </div>
                                 )}
 
-                                {/* 名稱 + 箭頭 */}
                                 <strong style={{ color: color }}>
                                     {m.user?.name}{m.target ? ` → ${m.target}` : ""}：
                                 </strong> {m.message}

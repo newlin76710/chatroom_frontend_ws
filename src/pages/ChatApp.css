@@ -121,6 +121,20 @@ body {
 
 .chat-input button:hover { background-color: #7a33ff; }
 
+
+.song-panel-wrapper {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 300px;
+  z-index: 999;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  padding: 10px;
+}
+
+
 /* ===== 影片播放 ===== */
 .video-player-float {
   position: fixed;
