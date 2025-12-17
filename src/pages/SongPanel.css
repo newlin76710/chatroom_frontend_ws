@@ -15,7 +15,11 @@
   border: 1px solid #333;
 }
 
-.song-queue h5 { margin: 0 0 6px; font-size: 14px; color: #ffd36a; }
+.song-queue h5 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #ffd36a;
+}
 
 .queue-item {
   font-size: 13px;
@@ -23,7 +27,9 @@
   border-bottom: 1px dashed #333;
 }
 
-.queue-item:last-child { border-bottom: none; }
+.queue-item:last-child {
+  border-bottom: none;
+}
 
 .song-playing {
   margin-top: 12px;
@@ -45,20 +51,27 @@
   font-size: 26px;
   color: #555;
   margin: 0 4px;
-  transition: transform 0.15s, color 0.15s;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
-.star.active { color: #ffd700; }
-.star:hover { transform: scale(1.2); color: #ffd700; }
-.star:hover ~ .star { color: #555; }
+.star.active {
+  color: #ffd700;
+}
+
+.star:hover {
+  transform: scale(1.2);
+  color: #ffd700;
+}
+
+/* 只對左邊星星亮起 */
+.star:hover ~ .star {
+  color: #555;
+}
 
 .star.disabled {
   cursor: default;
-}
-
-.star.disabled:hover {
-  transform: none;
-  color: #ffd700; /* 鎖住後 hover 不變色 */
+  color: #ffd700; /* 鎖住後固定亮 */
+  transform: none; /* 鎖住後不縮放 */
 }
 
 /* ===== 評分倒數 ===== */
@@ -73,8 +86,14 @@
 }
 
 /* ===== 音樂控制按鈕 ===== */
-.song-panel button { padding: 6px 10px; margin-right: 6px; }
-.song-playing audio { width: 100%; }
+.song-panel button {
+  padding: 6px 10px;
+  margin-right: 6px;
+}
+
+.song-playing audio {
+  width: 100%;
+}
 
 /* ===== 評分結果 ===== */
 .song-result {
