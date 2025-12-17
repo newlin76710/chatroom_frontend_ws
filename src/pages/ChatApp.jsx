@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import MessageList from "./MessageList.jsx";
-import VideoPlayer from "./VideoPlayer.jsx";
-import SongPanel from "./SongPanel.jsx";
+import MessageList from "./MessageList";
+import VideoPlayer from "./VideoPlayer";
+import SongPanel from "./SongPanel";
 import { aiAvatars } from "./aiConfig";
 import "./ChatApp.css";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 const socket = io(BACKEND);
 
-/* ===== 永久防呆：任何值轉成可 render 的字串 ===== */
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
   if (typeof v === "string") return v;
@@ -37,12 +36,19 @@ export default function ChatApp() {
   const [chatMode, setChatMode] = useState("public");
   const messagesEndRef = useRef(null);
 
-  /* ===== 自動捲動 ===== */
+  const extractVideoID = (url) => {
+    if (!url) return null;
+    const match =
+      url.match(/v=([\w-]{11})/) ||
+      url.match(/youtu\.be\/([\w-]{11})/) ||
+      url.match(/shorts\/([\w-]{11})/);
+    return match ? match[1] : null;
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  /* ===== Socket 事件 ===== */
   useEffect(() => {
     socket.on("message", (m) => {
       if (!m) return;
@@ -80,20 +86,14 @@ export default function ChatApp() {
       setCurrentVideo(v || null);
     });
 
-    socket.on("typing", (user) => {
-      setTyping(user?.name ? `${user.name} 正在輸入...` : "");
-    });
-
     return () => {
       socket.off("message");
       socket.off("systemMessage");
       socket.off("updateUsers");
       socket.off("videoUpdate");
-      socket.off("typing");
     };
   }, []);
 
-  /* ===== 自動登入 ===== */
   useEffect(() => {
     const storedName = localStorage.getItem("name");
     const token = localStorage.getItem("token") || localStorage.getItem("guestToken");
@@ -108,7 +108,6 @@ export default function ChatApp() {
     setJoined(true);
   }, [room]);
 
-  /* ===== 訪客登入 ===== */
   const loginGuest = async () => {
     const res = await fetch(`${BACKEND}/auth/guest`, { method: "POST" });
     const data = await res.json();
@@ -125,10 +124,9 @@ export default function ChatApp() {
 
   const leaveRoom = () => {
     socket.emit("leaveRoom", { room, user: { name } });
+    localStorage.clear();
     setJoined(false);
-    setMessages([]);
-    setUserList([]);
-    setTarget("");
+    window.location.reload();
   };
 
   const send = () => {
@@ -143,16 +141,6 @@ export default function ChatApp() {
       mode: chatMode,
     });
     setText("");
-  };
-
-  /* ===== YouTube ===== */
-  const extractVideoID = (url) => {
-    if (!url) return null;
-    const match =
-      url.match(/v=([\w-]{11})/) ||
-      url.match(/youtu\.be\/([\w-]{11})/) ||
-      url.match(/shorts\/([\w-]{11})/);
-    return match ? match[1] : null;
   };
 
   const playVideo = () => {
@@ -211,7 +199,7 @@ export default function ChatApp() {
               /> 私聊
             </label>
 
-            {(chatMode !== "public") && (
+            {chatMode !== "public" && (
               <select value={target} onChange={(e) => setTarget(e.target.value)}>
                 <option value="">選擇對象</option>
                 {userList
@@ -241,7 +229,7 @@ export default function ChatApp() {
           </div>
         </div>
 
-        {/* <div className="user-list">
+        <div className="user-list">
           <strong>在線：{userList.length}</strong>
           {userList.map((u) => (
             <div
@@ -249,15 +237,26 @@ export default function ChatApp() {
               className={`user-item ${u.name === target ? "selected" : ""}`}
               onClick={() => { setChatMode("private"); setTarget(u.name); }}
             >
-              {aiAvatars[u.name] && <img src={aiAvatars[u.name]} alt={u.name} className="user-avatar" />}
+              {aiAvatars[u.name] && (
+                <img src={aiAvatars[u.name]} alt={u.name} className="user-avatar" />
+              )}
               {u.name} (Lv.{u.level})
             </div>
           ))}
-        </div> */}
+        </div>
       </div>
 
-      {/* <SongPanel socket={socket} room={room} name={name} /> */}
-      {/* <VideoPlayer video={currentVideo} onClose={() => setCurrentVideo(null)} /> */}
+      {/* 安全渲染 SongPanel */}
+      {socket && name && (
+        <SongPanel socket={socket} room={room} name={name} />
+      )}
+
+      {/* 安全渲染 VideoPlayer */}
+      <VideoPlayer
+        video={currentVideo}
+        onClose={() => setCurrentVideo(null)}
+        extractVideoID={extractVideoID}
+      />
     </div>
   );
 }

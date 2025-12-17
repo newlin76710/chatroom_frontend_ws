@@ -10,9 +10,9 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     if (isTouchDevice) {
-      event.target.mute();
+      event.target.mute(); // 手機先靜音
     } else {
-      event.target.unMute();
+      event.target.unMute(); // 桌面直接播放
       event.target.setVolume(100);
     }
 
@@ -38,7 +38,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
     };
   }, []);
 
-  if (!video || !video.url || !extractVideoID(video.url)) return null;
+  if (!video || !extractVideoID(video.url)) return null;
 
   return (
     <div className="video-player-float">
@@ -52,7 +52,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
         }}
       />
       <div className="video-info">
-        🎧 正在播放（由 {video.user?.name || video.user} 點播）
+        🎧 正在播放（由 {video.user} 點播）
         <button className="close-btn" onClick={onClose}>✖</button>
       </div>
     </div>
