@@ -13,8 +13,9 @@ export default function MessageList({ messages, name, typing, messagesEndRef }) 
         .map((m, i) => {
           const isSelf = m.user?.name === name;
           const isSystem = m.user?.name === "系統";
-          const isAI = aiAvatars[m.user?.name];
-          const profile = aiProfiles[m.user?.name];
+          const username = m.user?.name || "未知";
+          const isAI = aiAvatars[username];
+          const profile = aiProfiles[username] || {};
 
           let msgClass = "chat-message fade-in";
           if (isSystem) msgClass += " system";
@@ -24,29 +25,36 @@ export default function MessageList({ messages, name, typing, messagesEndRef }) 
 
           let color = "#eee";
           if (!isSystem && !isSelf) {
-            if (profile?.gender === "male") color = "#006633";
-            else if (profile?.gender === "female") color = "#ff66aa";
-            else color = profile?.color || "#eee";
+            color = profile.color || "#eee";
           } else if (isSelf) color = "#fff";
           else if (isSystem) color = "#ff9900";
 
           return (
             <div key={i} className="message-row" style={{ justifyContent: isSelf ? "flex-end" : "flex-start" }}>
               {!isSelf && !isSystem && (
-                <img src={aiAvatars[m.user?.name] || "/avatars/default.png"} className="message-avatar" />
+                <img src={aiAvatars[username] || "/avatars/default.png"} alt={username} className="message-avatar" />
               )}
 
               <div className={msgClass} style={{ color, position: "relative", fontSize: "0.8rem" }}>
                 
-                {/* 標籤在箭頭上方 */}
+                {/* 標籤固定在訊息框上方 */}
                 {(m.mode === "private" || m.mode === "publicTarget") && m.target && (
-                  <div style={{ fontSize: "0.7rem", color: "#ffd36a", marginBottom: "2px", textAlign: isSelf ? "right" : "left" }}>
+                  <div className="message-tag" style={{
+                    fontSize: "0.7rem",
+                    color: "#ffd36a",
+                    marginBottom: "2px",
+                    textAlign: isSelf ? "right" : "left",
+                    position: "absolute",
+                    top: "-16px",
+                    left: isSelf ? "auto" : "0",
+                    right: isSelf ? "0" : "auto"
+                  }}>
                     {m.mode === "private" ? "私聊" : "公開對象"}
                   </div>
                 )}
 
                 <strong>
-                  {m.user?.name}{m.target ? ` → ${m.target}` : ""}：
+                  {username}{m.target ? ` → ${m.target}` : ""}：
                 </strong> {m.message}
               </div>
             </div>
