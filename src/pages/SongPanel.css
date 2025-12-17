@@ -48,22 +48,17 @@
   transition: transform 0.15s, color 0.15s;
 }
 
-.star.active,
-.star.hovered {
-  color: #ffd700;
-}
-
-.star:hover {
-  transform: scale(1.2);
-}
+.star.active { color: #ffd700; }
+.star:hover { transform: scale(1.2); color: #ffd700; }
+.star:hover ~ .star { color: #555; }
 
 .star.disabled {
   cursor: default;
 }
 
 .star.disabled:hover {
-  color: #ffd700; /* 送分後 hover 不變色 */
   transform: none;
+  color: #ffd700; /* 鎖住後 hover 不變色 */
 }
 
 /* ===== 評分倒數 ===== */
