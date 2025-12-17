@@ -217,10 +217,6 @@ body {
   transition: transform 0.15s, color 0.15s;
 }
 
-.star.active {
-  color: #ffd700;
-}
-
 .star.disabled {
   cursor: default;
 }
