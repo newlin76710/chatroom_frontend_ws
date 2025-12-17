@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
+import { aiAvatars, aiProfiles } from "./aiConfig";
 import MessageList from "./MessageList";
 import VideoPlayer from "./VideoPlayer";
-import SongPanel from "./SongPanel";
-import { aiAvatars } from "./aiConfig";
+import SongFlow from "../components/SongFlow";
 
 import './ChatApp.css';
 
@@ -23,7 +23,10 @@ export default function ChatApp() {
   const [userList, setUserList] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
-  const [chatMode, setChatMode] = useState("public"); 
+  const [chatMode, setChatMode] = useState("public"); // public | publicTarget | private
+  const [currentSong, setCurrentSong] = useState(null);
+  const [songResult, setSongResult] = useState(null);
+
   const messagesEndRef = useRef(null);
 
   // 自動滾到底
@@ -33,18 +36,30 @@ export default function ChatApp() {
 
   // Socket 事件
   useEffect(() => {
-    socket.on("message", (m) => setMessages(s => [...s, m]));
+    socket.on("message", (m) => setMessages((s) => [...s, m]));
     socket.on("systemMessage", (m) =>
-      setMessages(s => [...s, { user: { name: "系統" }, message: m }])
+      setMessages((s) => [...s, { user: { name: "系統" }, message: m }])
     );
-    socket.on("updateUsers", setUserList);
-    socket.on("videoUpdate", setCurrentVideo);
+    socket.on("updateUsers", (list) => setUserList(list));
+    socket.on("videoUpdate", (video) => setCurrentVideo(video));
+
+    socket.on("playSong", ({ singer, songUrl }) => {
+      setCurrentSong({ singer, songUrl });
+      setSongResult(null);
+    });
+
+    socket.on("songResult", (result) => {
+      setSongResult(result);
+      setCurrentSong(null);
+    });
 
     return () => {
       socket.off("message");
       socket.off("systemMessage");
       socket.off("updateUsers");
       socket.off("videoUpdate");
+      socket.off("playSong");
+      socket.off("songResult");
     };
   }, []);
 
@@ -109,7 +124,7 @@ export default function ChatApp() {
 
   const extractVideoID = (url) => {
     if (!url) return null;
-    const match = url.match(/v=([a-zA-Z0-9_-]{11})/) || url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) || url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+    let match = url.match(/v=([a-zA-Z0-9_-]{11})/) || url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) || url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
     return match ? match[1] : null;
   };
 
@@ -117,8 +132,30 @@ export default function ChatApp() {
     if (!videoUrl.trim()) return;
     const videoId = extractVideoID(videoUrl.trim());
     if (!videoId) return alert("無法解析此 YouTube 連結");
-    socket.emit("playVideo", { room, url: `https://www.youtube.com/watch?v=${videoId}`, user: { name } });
+    socket.emit("playVideo", { room, url: `https://www.youtube.com/watch?v=${videoId}`, user: name });
     setVideoUrl("");
+  };
+
+  // 🔥 上傳歌曲並廣播
+  const uploadSong = async (blob) => {
+    const arrayBuffer = await blob.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(arrayBuffer)
+        .reduce((data, byte) => data + String.fromCharCode(byte), "")
+    );
+
+    const res = await fetch(`${BACKEND}/song/upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audioBase64: base64, singer: name })
+    });
+    const data = await res.json();
+
+    socket.emit("startSong", {
+      room,
+      singer: name,
+      songUrl: `${BACKEND}${data.url}`
+    });
   };
 
   return (
@@ -139,12 +176,28 @@ export default function ChatApp() {
           <MessageList messages={messages} name={name} typing={typing} messagesEndRef={messagesEndRef} />
 
           <div className="chat-input">
+            {/* 聊天模式選擇 */}
             <div className="chat-mode">
-              <label><input type="radio" value="public" checked={chatMode === "public"} onChange={() => { setChatMode("public"); setTarget(""); }} /> 公開</label>
-              <label><input type="radio" value="publicTarget" checked={chatMode === "publicTarget"} onChange={() => setChatMode("publicTarget")} /> 公開對象</label>
-              <label><input type="radio" value="private" checked={chatMode === "private"} onChange={() => setChatMode("private")} /> 私聊</label>
+              <label>
+                <input type="radio" value="public" checked={chatMode === "public"}
+                  onChange={() => { setChatMode("public"); setTarget(""); }} />
+                公開
+              </label>
+
+              <label>
+                <input type="radio" value="publicTarget" checked={chatMode === "publicTarget"}
+                  onChange={() => setChatMode("publicTarget")} />
+                公開對象
+              </label>
+
+              <label>
+                <input type="radio" value="private" checked={chatMode === "private"}
+                  onChange={() => setChatMode("private")} />
+                私聊
+              </label>
             </div>
 
+            {/* 對象選擇 */}
             {(chatMode === "private" || chatMode === "publicTarget") && (
               <select value={target} onChange={e => setTarget(e.target.value)}>
                 <option value="">選擇對象</option>
@@ -154,20 +207,23 @@ export default function ChatApp() {
               </select>
             )}
 
-            <input type="text" value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} placeholder={chatMode === "private" ? `私聊 ${target || ""}` : "輸入訊息..."} />
+            <input type="text" value={text} onChange={e => setText(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && send()}
+              placeholder={chatMode === "private" ? `私聊 ${target || ""}` : "輸入訊息..."} />
             <button onClick={send}>發送</button>
           </div>
 
           <div className="video-request">
             <input type="text" placeholder="輸入 YouTube 連結" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && playVideo()} />
-            <button onClick={playVideo}>🎵 點播</button>
+            <button onClick={playVideo} className="play-btn">🎵 點播</button>
           </div>
         </div>
 
         <div className="user-list">
           <strong>在線：{userList.length}</strong>
           {userList.map(u => (
-            <div key={u.id} className={`user-item ${u.name === target ? "selected" : ""}`} onClick={() => { setChatMode("private"); setTarget(u.name); }}>
+            <div key={u.id} className={`user-item ${u.name === target ? "selected" : ""}`}
+              onClick={() => { setChatMode("private"); setTarget(u.name); }}>
               {aiAvatars[u.name] && <img src={aiAvatars[u.name]} className="user-avatar" />}
               {u.name} (Lv.{u.level || 1})
             </div>
@@ -176,13 +232,7 @@ export default function ChatApp() {
       </div>
 
       {/* 🎤🎵 歌唱 + 播放 + 評分 整合 */}
-      <SongPanel socket={socket} room={room} name={name} uploadSong={async (blob) => {
-        const arrayBuffer = await blob.arrayBuffer();
-        const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ""));
-        const res = await fetch(`${BACKEND}/song/upload`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ audioBase64: base64, singer: name }) });
-        const data = await res.json();
-        socket.emit("startSong", { room, singer: name, songUrl: `${BACKEND}${data.url}` });
-      }} />
+      <SongFlow socket={socket} room={room} name={name} uploadSong={uploadSong} />
 
       <VideoPlayer video={currentVideo} extractVideoID={extractVideoID} onClose={() => setCurrentVideo(null)} />
     </div>
