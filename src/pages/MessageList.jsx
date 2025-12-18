@@ -1,7 +1,5 @@
 import { useEffect } from "react";
 import { aiAvatars, aiProfiles } from "./aiConfig";
-import "./ChatApp.css";
-import "./MessageList.css";
 
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
@@ -17,13 +15,12 @@ const safeText = (v) => {
 };
 
 export default function MessageList({ messages = [], name = "", typing = "", messagesEndRef }) {
-  // 自動滾動到底部
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
   return (
-    <div className="chat-messages">
+    <>
       {messages
         .filter(m => m && (m.mode !== "private" || m.user?.name === name || m.target === name))
         .map((m, i) => {
@@ -61,21 +58,12 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
                   alt={userName}
                 />
               )}
-
               <div className={msgClass} style={{ color, fontSize: "0.8rem" }}>
                 {(m.mode === "private" || m.mode === "publicTarget") && targetName && (
-                  <div
-                    style={{
-                      fontSize: "0.7rem",
-                      color: "#ffd36a",
-                      marginBottom: "2px",
-                      textAlign: isSelf ? "right" : "left"
-                    }}
-                  >
+                  <div style={{ fontSize: "0.7rem", color: "#ffd36a", marginBottom: "2px", textAlign: isSelf ? "right" : "left" }}>
                     {m.mode === "private" ? "私聊" : "公開對象"}
                   </div>
                 )}
-
                 <strong>{userName}{targetName ? ` → ${targetName}` : ""}：</strong> {messageText}
               </div>
             </div>
@@ -89,6 +77,6 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
       )}
 
       <div ref={messagesEndRef} />
-    </div>
+    </>
   );
 }

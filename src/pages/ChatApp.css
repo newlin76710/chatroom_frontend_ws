@@ -1,5 +1,6 @@
 /* ===== BODY & 全域 ===== */
-body {
+html, body {
+  height: 100%;
   margin: 0;
   padding: 0;
   background-color: #121212;
@@ -9,6 +10,7 @@ body {
 
 /* ===== 最外層 Layout ===== */
 .chat-layout {
+  min-height: 100vh;
   max-width: 1100px;
   margin: 0 auto;
   padding: 16px;
@@ -66,16 +68,12 @@ body {
 
 /* ================= 訊息區 ================= */
 .message-list {
-  flex: 1;
-  background-color: #1a1a1a;
-  padding: 10px;
+  height: 400px;           /* 桌面固定高度 */
+  max-height: 60vh;        /* 手機版保護 */
+  overflow-y: auto;
   border-radius: 4px;
   border: 1px solid #555;
-
-  /* 固定高度 + 滾動條 */
-  height: 400px;       /* 可調整固定高度 */
-  max-height: 60vh;    /* 手機板限制最大高度 */
-  overflow-y: auto;
+  background-color: #1a1a1a;
 
   display: flex;
   flex-direction: column;
@@ -85,7 +83,7 @@ body {
 /* ===== 訊息 ===== */
 .message-row {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .chat-message {
@@ -276,3 +274,12 @@ body {
   }
 }
 
+/* ================= 動畫 ================= */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
