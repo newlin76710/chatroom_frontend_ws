@@ -2,7 +2,7 @@ import { aiAvatars, aiProfiles } from "./aiConfig";
 import "./ChatApp.css";
 
 const safeText = (v) => {
-  if (v === null || v === undefined) return "";
+  if (!v) return "";
   if (typeof v === "string") return v;
   if (typeof v === "number") return String(v);
   if (typeof v === "object") {
@@ -16,7 +16,7 @@ const safeText = (v) => {
 
 export default function MessageList({ messages = [], name = "", typing = "", messagesEndRef }) {
   return (
-    <div className="message-list" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+    <div className="message-list">
       {messages
         .filter(m => m && (m.mode !== "private" || m.user?.name === name || m.target === name))
         .map((m, i) => {
@@ -28,12 +28,6 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
           const isAI = !!aiAvatars[userName];
           const profile = aiProfiles[userName];
 
-          let msgClass = "chat-message fade-in";
-          if (isSystem) msgClass += " system";
-          else if (isSelf) msgClass += " self";
-          else if (isAI) msgClass += " ai";
-          else msgClass += " other";
-
           let color = "#eee";
           if (isSystem) color = "#ff9900";
           else if (isSelf) color = "#fff";
@@ -44,32 +38,34 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
           return (
             <div key={i} className="message-row" style={{ justifyContent: isSelf ? "flex-end" : "flex-start" }}>
               {!isSelf && !isSystem && (
-                <img
-                  src={aiAvatars[userName] || "/avatars/default.png"}
-                  className="message-avatar"
-                  alt={userName}
-                />
+                <img src={aiAvatars[userName] || "/avatars/default.png"} className="message-avatar" alt={userName} />
               )}
 
-              <div className={msgClass} style={{ color, position: "relative", fontSize: "0.8rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", fontSize: "1rem", maxWidth: "75%", color }}>
+                {/* 公/私聊標籤 */}
                 {(m.mode === "private" || m.mode === "publicTarget") && targetName && (
                   <div style={{ fontSize: "0.7rem", color: "#ffd36a", marginBottom: "2px", textAlign: isSelf ? "right" : "left" }}>
                     {m.mode === "private" ? "私聊" : "公開對象"}
                   </div>
                 )}
 
-                <strong>{userName}{targetName ? ` → ${targetName}` : ""}：</strong> {messageText}
+                {/* 使用者名稱 + 箭頭 */}
+                <div style={{ fontWeight: "bold", marginBottom: "2px" }}>
+                  {userName}{targetName ? " → " + targetName : ""}：
+                </div>
+
+                {/* 訊息內容 */}
+                <div>{messageText}</div>
               </div>
             </div>
           );
         })}
 
       {typing && (
-        <div className="typing fade-in" style={{ fontSize: "0.8rem", color: "#aaa", marginTop: "4px" }}>
+        <div className="typing fade-in" style={{ fontSize: "0.9rem", color: "#aaa", marginTop: "4px" }}>
           {safeText(typing)}
         </div>
       )}
-
       <div ref={messagesEndRef} />
     </div>
   );

@@ -1,4 +1,3 @@
-// ChatApp.jsx
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import MessageList from "./MessageList";
@@ -10,7 +9,6 @@ import "./ChatApp.css";
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 const socket = io(BACKEND);
 
-// 安全文字轉換
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
   if (typeof v === "string") return v;
@@ -37,7 +35,7 @@ export default function ChatApp() {
   const [videoUrl, setVideoUrl] = useState("");
   const [chatMode, setChatMode] = useState("public");
   const [userListCollapsed, setUserListCollapsed] = useState(false);
-  const [showSongPanel, setShowSongPanel] = useState(false); // 浮動視窗控制
+  const [showSongPanel, setShowSongPanel] = useState(false);
   const messagesEndRef = useRef(null);
 
   // 自動捲動
@@ -92,17 +90,13 @@ export default function ChatApp() {
   // 自動登入
   useEffect(() => {
     const storedName = localStorage.getItem("name");
-    const token =
-      localStorage.getItem("token") || localStorage.getItem("guestToken");
+    const token = localStorage.getItem("token") || localStorage.getItem("guestToken");
     const type = localStorage.getItem("type") || "guest";
     if (!storedName) return;
 
     const safeName = safeText(storedName);
     setName(safeName);
-    socket.emit("joinRoom", {
-      room,
-      user: { name: safeName, type, token },
-    });
+    socket.emit("joinRoom", { room, user: { name: safeName, type, token } });
     setJoined(true);
   }, [room]);
 
@@ -158,11 +152,7 @@ export default function ChatApp() {
   const playVideo = () => {
     const id = extractVideoID(videoUrl);
     if (!id) return alert("無法解析 YouTube 連結");
-    socket.emit("playVideo", {
-      room,
-      url: `https://www.youtube.com/watch?v=${id}`,
-      user: { name },
-    });
+    socket.emit("playVideo", { room, url: `https://www.youtube.com/watch?v=${id}`, user: { name } });
     setVideoUrl("");
   };
 
@@ -171,10 +161,7 @@ export default function ChatApp() {
     try {
       const formData = new FormData();
       formData.append("file", blob, `${name}_song.webm`);
-      await fetch(`${BACKEND}/uploadSong`, {
-        method: "POST",
-        body: formData,
-      });
+      await fetch(`${BACKEND}/uploadSong`, { method: "POST", body: formData });
     } catch (err) {
       console.error("上傳錄音失敗：", err);
     }
@@ -182,7 +169,7 @@ export default function ChatApp() {
 
   return (
     <div className="chat-layout">
-      {/* 左側：聊天室 */}
+      {/* 左側聊天室 */}
       <div className="chat-left">
         <div className="chat-title">尋夢園男歡女愛聊天室</div>
 
@@ -192,11 +179,8 @@ export default function ChatApp() {
           <div className="chat-toolbar">
             <span>Hi, {name}</span>
             <button onClick={leaveRoom}>離開</button>
-            <button onClick={() => setShowSongPanel(!showSongPanel)}>
-              🎤 唱歌
-            </button>
+            <button onClick={() => setShowSongPanel(!showSongPanel)}>🎤 唱歌</button>
 
-            {/* YouTube 點播 */}
             <div className="video-request">
               <input
                 value={videoUrl}
@@ -209,60 +193,26 @@ export default function ChatApp() {
         )}
 
         {/* 訊息列表 */}
-        <div className="message-list">
-          <MessageList
-            messages={messages}
-            name={name}
-            typing={typing}
-            messagesEndRef={messagesEndRef}
-          />
-        </div>
+        <MessageList messages={messages} name={name} typing={typing} messagesEndRef={messagesEndRef} />
 
         {/* 聊天輸入 */}
         <div className="chat-input">
           <label>
-            <input
-              type="radio"
-              checked={chatMode === "public"}
-              onChange={() => {
-                setChatMode("public");
-                setTarget("");
-              }}
-            />{" "}
-            公開
+            <input type="radio" checked={chatMode === "public"} onChange={() => { setChatMode("public"); setTarget(""); }} /> 公開
           </label>
-
           <label>
-            <input
-              type="radio"
-              checked={chatMode === "publicTarget"}
-              onChange={() => setChatMode("publicTarget")}
-            />{" "}
-            公開對象
+            <input type="radio" checked={chatMode === "publicTarget"} onChange={() => setChatMode("publicTarget")} /> 公開對象
           </label>
-
           <label>
-            <input
-              type="radio"
-              checked={chatMode === "private"}
-              onChange={() => setChatMode("private")}
-            />{" "}
-            私聊
+            <input type="radio" checked={chatMode === "private"} onChange={() => setChatMode("private")} /> 私聊
           </label>
 
           {chatMode !== "public" && (
-            <select
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-            >
+            <select value={target} onChange={(e) => setTarget(e.target.value)}>
               <option value="">選擇對象</option>
-              {userList
-                .filter((u) => u.name !== name)
-                .map((u) => (
-                  <option key={u.id} value={u.name}>
-                    {u.name}
-                  </option>
-                ))}
+              {userList.filter((u) => u.name !== name).map((u) => (
+                <option key={u.id} value={u.name}>{u.name}</option>
+              ))}
             </select>
           )}
 
@@ -278,42 +228,23 @@ export default function ChatApp() {
 
       {/* 右側 */}
       <div className="chat-right">
-        <div className="right-youtube">
-          <VideoPlayer
-            video={currentVideo}
-            extractVideoID={extractVideoID}
-            onClose={() => setCurrentVideo(null)}
-          />
-        </div>
+        <VideoPlayer video={currentVideo} extractVideoID={extractVideoID} onClose={() => setCurrentVideo(null)} />
 
         <div className={`user-list ${userListCollapsed ? "collapsed" : ""}`}>
-          <div
-            className="user-list-header"
-            onClick={() => setUserListCollapsed(!userListCollapsed)}
-          >
+          <div className="user-list-header" onClick={() => setUserListCollapsed(!userListCollapsed)}>
             在線：{userList.length}
           </div>
 
-          {!userListCollapsed &&
-            userList.map((u) => (
-              <div
-                key={u.id}
-                className={`user-item ${u.name === target ? "selected" : ""}`}
-                onClick={() => {
-                  setChatMode("private");
-                  setTarget(u.name);
-                }}
-              >
-                {aiAvatars[u.name] && (
-                  <img
-                    src={aiAvatars[u.name]}
-                    alt={u.name}
-                    className="user-avatar"
-                  />
-                )}
-                {u.name} (Lv.{u.level})
-              </div>
-            ))}
+          {!userListCollapsed && userList.map((u) => (
+            <div
+              key={u.id}
+              className={`user-item ${u.name === target ? "selected" : ""}`}
+              onClick={() => { setChatMode("private"); setTarget(u.name); }}
+            >
+              {aiAvatars[u.name] && <img src={aiAvatars[u.name]} alt={u.name} className="user-avatar" />}
+              {u.name} (Lv.{u.level})
+            </div>
+          ))}
         </div>
       </div>
 
