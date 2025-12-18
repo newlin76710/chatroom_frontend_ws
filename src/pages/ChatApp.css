@@ -19,13 +19,29 @@ body {
 }
 
 /* ================= 左側：聊天室 ================= */
+/* 聊天左側 */
 .chat-left {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  height: 100%;
+  height: 100vh;        /* 鎖定高度為視窗高度 */
 }
+
+/* 訊息列表固定高度 */
+.message-list {
+  flex: 1 1 auto;        /* 填滿剩餘空間 */
+  min-height: 400px;     /* 桌面最小高度 */
+  max-height: 70vh;      /* 最大高度限制 */
+  overflow-y: auto;      /* 超出就滾動 */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background-color: #1a1a1a;
+}
+
 
 /* 標題 */
 .chat-title {
@@ -65,21 +81,6 @@ body {
   border: 1px solid #555;
   color: #fff;
   border-radius: 4px;
-}
-
-/* ================= 訊息區 ================= */
-.message-list {
-  flex: 1;              /* 佔滿剩餘高度 */
-  min-height: 400px;    /* 桌面固定高度 */
-  max-height: 60vh;     /* 手機版高度限制 */
-  overflow-y: auto;
-  border-radius: 4px;
-  border: 1px solid #555;
-  background-color: #1a1a1a;
-
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 /* ===== 訊息 ===== */
