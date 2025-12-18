@@ -9,7 +9,6 @@ import "./ChatApp.css";
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 const socket = io(BACKEND);
 
-/* ===== 永久防呆：任何值轉成可 render 的字串 ===== */
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
   if (typeof v === "string") return v;
@@ -36,14 +35,13 @@ export default function ChatApp() {
   const [videoUrl, setVideoUrl] = useState("");
   const [chatMode, setChatMode] = useState("public");
   const [userListCollapsed, setUserListCollapsed] = useState(false);
+  const [showSongPanel, setShowSongPanel] = useState(false); // 浮動視窗控制
   const messagesEndRef = useRef(null);
 
-  /* ===== 自動捲動 ===== */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  /* ===== Socket 事件 ===== */
   useEffect(() => {
     socket.on("message", (m) => {
       if (!m) return;
@@ -87,12 +85,10 @@ export default function ChatApp() {
     };
   }, []);
 
-  /* ===== 自動登入 ===== */
   useEffect(() => {
     const storedName = localStorage.getItem("name");
     const token =
-      localStorage.getItem("token") ||
-      localStorage.getItem("guestToken");
+      localStorage.getItem("token") || localStorage.getItem("guestToken");
     const type = localStorage.getItem("type") || "guest";
     if (!storedName) return;
 
@@ -105,7 +101,6 @@ export default function ChatApp() {
     setJoined(true);
   }, [room]);
 
-  /* ===== 訪客登入 ===== */
   const loginGuest = async () => {
     const res = await fetch(`${BACKEND}/auth/guest`, { method: "POST" });
     const data = await res.json();
@@ -143,7 +138,6 @@ export default function ChatApp() {
     setText("");
   };
 
-  /* ===== YouTube ===== */
   const extractVideoID = (url) => {
     if (!url) return null;
     const match =
@@ -164,7 +158,6 @@ export default function ChatApp() {
     setVideoUrl("");
   };
 
-  /* ===== 上傳錄音 ===== */
   const uploadSong = async (blob) => {
     try {
       const formData = new FormData();
@@ -182,9 +175,7 @@ export default function ChatApp() {
     <div className="chat-layout">
       {/* ===== 左側：聊天室 ===== */}
       <div className="chat-left">
-        <div className="chat-title">
-          尋夢園男歡女愛聊天室
-        </div>
+        <div className="chat-title">尋夢園男歡女愛聊天室</div>
 
         {!joined ? (
           <button onClick={loginGuest}>訪客登入</button>
@@ -192,6 +183,9 @@ export default function ChatApp() {
           <div className="chat-toolbar">
             <span>Hi, {name}</span>
             <button onClick={leaveRoom}>離開</button>
+            <button onClick={() => setShowSongPanel(!showSongPanel)}>
+              🎤 唱歌
+            </button>
 
             {/* YouTube 點播 */}
             <div className="video-request">
@@ -273,7 +267,6 @@ export default function ChatApp() {
 
       {/* ===== 右側 ===== */}
       <div className="chat-right">
-        {/* YouTube 播放（對齊 toolbar） */}
         <div className="right-youtube">
           <VideoPlayer
             video={currentVideo}
@@ -282,7 +275,6 @@ export default function ChatApp() {
           />
         </div>
 
-        {/* 在線列表（可收放） */}
         <div className={`user-list ${userListCollapsed ? "collapsed" : ""}`}>
           <div
             className="user-list-header"
@@ -295,9 +287,7 @@ export default function ChatApp() {
             userList.map((u) => (
               <div
                 key={u.id}
-                className={`user-item ${
-                  u.name === target ? "selected" : ""
-                }`}
+                className={`user-item ${u.name === target ? "selected" : ""}`}
                 onClick={() => {
                   setChatMode("private");
                   setTarget(u.name);
@@ -316,13 +306,21 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* ===== 唱歌 ===== */}
-      <SongPanel
-        socket={socket}
-        room={room}
-        name={name}
-        uploadSong={uploadSong}
-      />
+      {/* ===== 浮動唱歌視窗 ===== */}
+      {showSongPanel && (
+        <SongPanel
+          socket={socket}
+          room={room}
+          name={name}
+          uploadSong={uploadSong}
+          userList={userList}
+          chatMode={chatMode}
+          setChatMode={setChatMode}
+          target={target}
+          setTarget={setTarget}
+          onClose={() => setShowSongPanel(false)}
+        />
+      )}
     </div>
   );
 }

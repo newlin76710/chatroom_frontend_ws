@@ -10,6 +10,7 @@
   padding: 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   z-index: 999;
+  font-family: sans-serif;
 }
 
 .song-panel.collapsed {
@@ -40,30 +41,20 @@
   font-size: 0.8rem;
 }
 
-.song-panel button { margin: 5px 0; }
-
-.song-queue {
-  margin-top: 10px;
-  padding: 8px;
-  background: #1b1b1b;
-  border-radius: 6px;
-  border: 1px solid #333;
+.song-panel button {
+  margin: 5px 0;
+  background: #6200ee;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
 }
 
-.song-queue h5 { 
-  margin: 0 0 6px; 
-  font-size: 14px; 
-  color: #ffd36a; 
-}
-
-.queue-item {
-  font-size: 13px;
-  padding: 4px 6px;
-  border-bottom: 1px dashed #333;
-}
-
-.queue-item:last-child { 
-  border-bottom: none; 
+.song-panel button:hover {
+  background: #7e39ff;
 }
 
 .song-playing {
@@ -81,18 +72,76 @@
   margin-top: 6px;
 }
 
-.score-value { font-size: 16px; font-weight: bold; color: #ffd700; }
-.score { display: flex; gap: 6px; }
-.star { cursor: pointer; font-size: 26px; color: #555; transition: transform 0.15s, color 0.15s; }
-.star.active, .star:hover { color: #ffd700; transform: scale(1.2); }
-.star.disabled { cursor: default; }
-.star.disabled:hover { transform: none; color: #ffd700; }
+.score-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd700;
+}
 
-.score-timer { margin-bottom: 4px; font-size: 14px; color: #ffd700; }
+.score {
+  display: flex;
+  gap: 6px;
+}
 
-.song-playing audio { width: 100%; }
+.star {
+  cursor: pointer;
+  font-size: 26px;
+  color: #555;
+  transition: transform 0.15s, color 0.15s;
+}
 
+.star.active,
+.star:hover {
+  color: #ffd700;
+  transform: scale(1.2);
+}
+
+.star.disabled {
+  cursor: default;
+}
+
+.star.disabled:hover {
+  transform: none;
+  color: #ffd700;
+}
+
+.score-timer {
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #ffd700;
+}
+
+.song-playing audio {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.info-text {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #aaa;
+  text-align: center;
+}
+
+/* 手機版響應式 */
 @media (max-width: 480px) {
-  .song-panel { width: 200px; padding: 8px; }
-  .star { font-size: 22px; margin: 0 2px; }
+  .song-panel {
+    width: 200px;
+    padding: 8px;
+  }
+  .star {
+    font-size: 22px;
+    margin: 0 2px;
+  }
+  .song-header h4 {
+    font-size: 0.9rem;
+  }
+  .song-header button {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+  }
+  .song-panel button {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
 }
