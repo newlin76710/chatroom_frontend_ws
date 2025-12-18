@@ -62,6 +62,7 @@ export default function ChatApp() {
           user: { name: safeText(m.user?.name) },
           target: safeText(m.target),
           mode: safeText(m.mode),
+          timestamp: m.timestamp || new Date().toLocaleTimeString(), // 保險用
         },
       ]);
     };
@@ -130,12 +131,15 @@ export default function ChatApp() {
   const leaveRoom = () => {
     socket.emit("leaveRoom", { room, user: { name } });
     localStorage.clear();
-    window.location.href = "/login"; 
+    window.location.href = "/login";
   };
 
   const send = () => {
     if (!text.trim()) return;
     if (chatMode !== "public" && !target) return;
+
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString(); // 或 toLocaleString() 顯示日期+時間
 
     socket.emit("message", {
       room,
@@ -143,9 +147,11 @@ export default function ChatApp() {
       user: { name },
       target: target || "",
       mode: chatMode,
+      timestamp, // 新增欄位
     });
     setText("");
   };
+
 
   const extractVideoID = (url) => {
     if (!url) return null;

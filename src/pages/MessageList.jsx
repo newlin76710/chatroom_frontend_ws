@@ -23,6 +23,7 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
           const userName = safeText(m.user?.name);
           const targetName = safeText(m.target);
           const messageText = safeText(m.message);
+          const timestamp = m.timestamp || new Date().toLocaleTimeString();
           const isSelf = userName === name;
           const isSystem = userName === "系統";
           const profile = aiProfiles[userName];
@@ -58,7 +59,7 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
                 />
               )}
 
-              {/* 訊息內容一行 */}
+              {/* 訊息內容 + 時間同一行 */}
               <div
                 style={{
                   display: "inline-flex",
@@ -66,16 +67,19 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
                   color,
                   fontSize: "1rem",
                   maxWidth: "100%",
-                  whiteSpace: "nowrap",      // 文字不換行
+                  whiteSpace: "nowrap",
                   overflow: "hidden",
-                  textOverflow: "ellipsis", // 過長顯示省略號
+                  textOverflow: "ellipsis",
                 }}
               >
                 {tag && <span style={{ fontSize: "0.7rem", color: "#ffd36a", marginRight: "4px" }}>{tag}</span>}
                 <span style={{ fontWeight: "bold" }}>
                   {userName}{targetName ? ` → ${targetName}` : ""}：
                 </span>
-                <span style={{ marginLeft: "4px" }}>{messageText}</span>
+                <span style={{ marginLeft: "4px", marginRight: "6px" }}>{messageText}</span>
+                <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: "auto", whiteSpace: "nowrap" }}>
+                  {timestamp}
+                </span>
               </div>
             </div>
           );
@@ -95,5 +99,3 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
     </div>
   );
 }
-
-
