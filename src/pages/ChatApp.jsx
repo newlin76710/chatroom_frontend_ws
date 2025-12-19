@@ -81,14 +81,19 @@ export default function ChatApp() {
             avatar: u?.avatar && u.avatar !== "" ? u.avatar : aiAvatars[u?.name] || "/avatars/g01.gif",
           }))
           .sort((a, b) => {
-            // 真人 (account) 優先
+            // 真人 (account) 優先，再等級排序
             if (a.type === "account" && b.type !== "account") return -1;
             if (a.type !== "account" && b.type === "account") return 1;
             return b.level - a.level;
           })
       );
 
-      const me = list.find((u) => safeText(u.name || u.user) === name);
+      // 找自己資料，保證對應正確的 type
+      const me = list.find(
+        (u) =>
+          safeText(u.name || u.user) === name &&
+          (u.type || "guest") === (localStorage.getItem("type") || "guest")
+      );
       if (!me) return;
 
       // 更新 LV
@@ -105,7 +110,7 @@ export default function ChatApp() {
         localStorage.setItem("exp", me.exp || 0);
       }
 
-      // 更新 gender，僅在與現有 gender 不同時更新
+      // 更新 gender
       if (me.gender && me.gender !== gender) {
         setGender(me.gender);
         localStorage.setItem("gender", me.gender);
@@ -180,11 +185,23 @@ export default function ChatApp() {
   }, [room, socket, joined, name]);
 
   // --- 訪客登入 ---
+  // --- 訪客登入 ---
   const loginGuest = async () => {
     try {
+      // 清掉舊資料
+      localStorage.removeItem("name");
+      localStorage.removeItem("level");
+      localStorage.removeItem("exp");
+      localStorage.removeItem("gender");
+      localStorage.removeItem("type");
+      localStorage.removeItem("guestToken");
+
+      // 生成唯一訪客名稱
+      const guestName = `訪客${Date.now()}${Math.floor(Math.random() * 999)}`;
+
       const res = await fetch(`${BACKEND}/auth/guest`, { method: "POST" });
       const data = await res.json();
-      const safeName = safeText(data.name);
+      const safeName = safeText(data.name || guestName);
 
       localStorage.setItem("guestToken", data.guestToken);
       localStorage.setItem("name", safeName);
@@ -207,6 +224,7 @@ export default function ChatApp() {
       alert("訪客登入失敗：" + err.message);
     }
   };
+
 
   const leaveRoom = () => {
     socket.emit("leaveRoom", { room, user: { name } });
