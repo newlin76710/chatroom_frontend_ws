@@ -1,16 +1,15 @@
 /* ===== Song Panel 基本樣式 ===== */
 .song-panel {
   position: fixed;
-  top: 40%;
-  left: 20px;
-  transform: translateY(-50%);
-  width: 300px;
+  top: 100px; /* 180px / 2 高度置中對齊浮動播放器 */
+  right: 300px;             /* 距離頁面左側 20px */
+  width: 280px;
   background: #121212;
   color: #fff;
   border-radius: 10px;
   padding: 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  z-index: 999;
+  z-index: 9999;
   font-family: sans-serif;
 }
 
