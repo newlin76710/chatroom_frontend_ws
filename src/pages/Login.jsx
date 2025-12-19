@@ -4,21 +4,53 @@ import { useNavigate } from "react-router-dom";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
+const inputStyle = {
+  width: "100%",
+  padding: "10px 12px",
+  marginBottom: 12,
+  borderRadius: 6,
+  border: "1px solid #333",
+  background: "#121212",
+  color: "#fff",
+  fontSize: "0.95rem",
+};
+
+const buttonStyle = {
+  width: "100%",
+  padding: "10px",
+  borderRadius: 6,
+  border: "none",
+  background: "#ff66aa",
+  color: "#000",
+  fontWeight: "bold",
+  cursor: "pointer",
+};
+
 export default function Login() {
   const navigate = useNavigate();
+
+  const [mode, setMode] = useState("guest"); // guest | login | register
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState("guest"); // guest / login / register
+  const [gender, setGender] = useState("female");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
 
   // 訪客登入
   const guestLogin = async () => {
     try {
-      const res = await fetch(`${BACKEND}/auth/guest`, { method: "POST" });
+      const res = await fetch(`${BACKEND}/auth/guest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gender }),
+      });
       const data = await res.json();
-      if (!data.guestToken) throw new Error("訪客登入失敗");
+      if (!res.ok) throw new Error(data.error || "訪客登入失敗");
 
       localStorage.setItem("guestToken", data.guestToken);
       localStorage.setItem("name", data.name);
+      localStorage.setItem("gender", data.gender);
+      localStorage.setItem("last_login", data.last_login);
       localStorage.setItem("type", "guest");
 
       navigate("/chat");
@@ -30,17 +62,20 @@ export default function Login() {
   // 帳號登入
   const accountLogin = async () => {
     if (!username || !password) return alert("請輸入帳號與密碼");
+
     try {
       const res = await fetch(`${BACKEND}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, gender }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "登入失敗");
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("name", data.name);
+      localStorage.setItem("gender", data.gender);
+      localStorage.setItem("last_login", data.last_login);
       localStorage.setItem("type", "account");
 
       navigate("/chat");
@@ -49,19 +84,20 @@ export default function Login() {
     }
   };
 
-  // 帳號註冊
+  // 註冊
   const registerAccount = async () => {
-    if (!username || !password) return alert("請輸入帳號與密碼");
+    if (!username || !password) return alert("請填寫帳號與密碼");
+
     try {
       const res = await fetch(`${BACKEND}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, gender, phone, email }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "註冊失敗");
 
-      alert("註冊成功！請登入");
+      alert("註冊成功，請登入");
       setMode("login");
     } catch (e) {
       alert("註冊失敗：" + e.message);
@@ -69,41 +105,116 @@ export default function Login() {
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: "60px auto", textAlign: "center" }}>
-      <h2>男歡女愛聊天室登入</h2>
-
-      <div style={{ margin: "20px 0" }}>
-        <button onClick={() => setMode("guest")} style={{ marginRight: 10 }}>訪客登入</button>
-        <button onClick={() => setMode("login")} style={{ marginRight: 10 }}>帳號登入</button>
-        <button onClick={() => setMode("register")}>註冊帳號</button>
+    <div style={{ maxWidth: 420, margin: "60px auto", padding: 20 }}>
+      <h2 style={{ textAlign: "center", marginBottom: 10 }}>男歡女愛聊天室</h2>
+      <div style={{ textAlign: "center", color: "#aaa", fontSize: 14 }}>
+        聊天越多，等級越高（最高 Lv.99）
       </div>
 
-      {mode === "guest" && (
-        <div>
-          <p>以匿名訪客身份進入聊天室</p>
-          <button onClick={guestLogin}>以訪客登入</button>
-        </div>
-      )}
+      {/* 模式切換 */}
+      <div style={{ display: "flex", gap: 8, margin: "20px 0" }}>
+        {["guest", "login", "register"].map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            style={{
+              flex: 1,
+              padding: "8px 0",
+              borderRadius: 6,
+              border: "1px solid #333",
+              background: mode === m ? "#ff66aa" : "#1e1e1e",
+              color: mode === m ? "#000" : "#aaa",
+              cursor: "pointer",
+            }}
+          >
+            {m === "guest" ? "訪客" : m === "login" ? "登入" : "註冊"}
+          </button>
+        ))}
+      </div>
 
+      {/* 性別選擇 */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+        {[
+          { v: "female", label: "♀ 女生" },
+          { v: "male", label: "♂ 男生" },
+        ].map((g) => (
+          <label
+            key={g.v}
+            style={{
+              flex: 1,
+              textAlign: "center",
+              padding: "8px 0",
+              borderRadius: 6,
+              cursor: "pointer",
+              background: gender === g.v ? "#333" : "#1e1e1e",
+              border: "1px solid #333",
+            }}
+          >
+            <input
+              type="radio"
+              value={g.v}
+              checked={gender === g.v}
+              onChange={() => setGender(g.v)}
+              style={{ display: "none" }}
+            />
+            {g.label}
+          </label>
+        ))}
+      </div>
+
+      {/* 帳號登入/註冊表單 */}
       {(mode === "login" || mode === "register") && (
-        <div style={{ marginTop: 20 }}>
+        <>
           <input
-            type="text"
+            style={inputStyle}
             placeholder="帳號"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            style={{ display: "block", margin: "10px auto" }}
           />
           <input
+            style={inputStyle}
             type="password"
             placeholder="密碼"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ display: "block", margin: "10px auto" }}
           />
-          {mode === "login" && <button onClick={accountLogin}>登入</button>}
-          {mode === "register" && <button onClick={registerAccount}>註冊</button>}
-        </div>
+        </>
+      )}
+
+      {mode === "register" && (
+        <>
+          <input
+            style={inputStyle}
+            placeholder="手機（選填）"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <input
+            style={inputStyle}
+            placeholder="Email（選填）"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </>
+      )}
+
+      {/* 送出按鈕 */}
+      {mode === "guest" && (
+        <button style={buttonStyle} onClick={guestLogin}>
+          以訪客身分進入
+        </button>
+      )}
+
+      {mode === "login" && (
+        <button style={buttonStyle} onClick={accountLogin}>
+          登入聊天室
+        </button>
+      )}
+
+      {mode === "register" && (
+        <button style={buttonStyle} onClick={registerAccount}>
+          建立帳號
+        </button>
       )}
     </div>
   );
