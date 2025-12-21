@@ -18,13 +18,13 @@ export default function UserList({
         在線：{userList.length}
       </div>
       {!userListCollapsed &&
-        userList.map((u) => {
+        userList.map((u, idx) => {
           // 先用使用者自訂 avatar，沒有才用 AI avatar
           const avatarUrl = u.avatar || aiAvatars[u.name];
 
           return (
             <div
-              key={u.id}
+              key={`${u.id}-${idx}`}
               className={`user-item ${u.name === target ? "selected" : ""}`}
               onClick={() => { setChatMode("private"); setTarget(u.name); }}
             >

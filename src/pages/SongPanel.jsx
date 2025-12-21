@@ -23,6 +23,7 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
   // ===== 新增倒數計時狀態 =====
   const [scoreCountdown, setScoreCountdown] = useState(0);
   const countdownRef = useRef(null);
+  const [canScore, setCanScore] = useState(true);
 
   // ===== 開始唱歌 =====
   const startSinging = async () => {
@@ -94,6 +95,8 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
   // ===== 評分 =====
   const scoreSong = (score) => {
     if (phase !== "scoring") return;
+    if (!canScore) return;
+    setCanScore(false);
     setMyScore(score);
     socket.emit("scoreSong", { room, score });
   };
@@ -242,6 +245,7 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
       }
     };
   }, [phase, scoreCountdown]);
+
   // ===== songResult 接收後清理倒數 =====
   useEffect(() => {
     socket.on("songResult", ({ avg, count }) => {
@@ -250,6 +254,7 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
       setAvgScore(avg);
       setScoreCount(count);
       setPhase("idle");
+      setCanScore(true); //重新可以給分
       setMyScore(null);
 
       if (countdownRef.current) {
