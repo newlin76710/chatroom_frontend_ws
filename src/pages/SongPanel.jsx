@@ -49,7 +49,7 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
 
       setPhase("singing");
       setMyScore(null);
-      setAvgScore(null);
+      setAvgScore(0);
       setScoreCount(0);
 
       socket.emit("start-singing", { room, singer: socket.id });
@@ -86,18 +86,6 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
 
     // 倒數設定，例如 15 秒
     setScoreCountdown(15);
-    countdownRef.current = setInterval(() => {
-      setScoreCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdownRef.current);
-          countdownRef.current = null;
-          // 可選：強制結束評分
-          socket.emit("scoreTimeUp", { room });
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
 
     socket.emit("stop-singing", { room, singer: socket.id });
     console.log("🎤 歌唱結束，開始評分倒數");
@@ -116,7 +104,7 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
 
   // ===== 唱歌者處理新聽眾 =====
   useEffect(() => {
-        socket.on("update-room-phase", ({ phase, singer }) => {
+    socket.on("update-room-phase", ({ phase, singer }) => {
       setPhase(phase);
       setCurrentSinger(singer || null);
     });
@@ -221,16 +209,44 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
   // ===== 接收目前唱歌者 =====
   useEffect(() => {
     socket.on("user-start-singing", ({ singer }) => setCurrentSinger(singer));
-    socket.on("user-stop-singing", () => setCurrentSinger(null));
+    socket.on("user-stop-singing", () => {
+      setCurrentSinger(null)
+      setScoreCountdown(15);
+    });
     return () => {
       socket.off("user-start-singing"); socket.off("user-stop-singing");
     };
   }, [socket]);
 
+  // ===== 評分倒數 =====
+  useEffect(() => {
+    if (phase !== "scoring") return;
 
+    if (scoreCountdown <= 0) return;
+
+    countdownRef.current = setInterval(() => {
+      setScoreCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current);
+          countdownRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+    };
+  }, [phase, scoreCountdown]);
   // ===== songResult 接收後清理倒數 =====
   useEffect(() => {
     socket.on("songResult", ({ avg, count }) => {
+      console.log("avg= ", avg)
+      console.log("count= ", count)
       setAvgScore(avg);
       setScoreCount(count);
       setPhase("idle");
@@ -284,26 +300,29 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
     <div className="song-panel">
       <h4>🎤 唱歌區</h4>
 
-      <button onClick={startSinging} disabled={phase !== "idle" || currentSinger}>開始唱歌</button>
-      <button onClick={stopSinging} disabled={phase !== "singing"}>停止唱歌</button>
+      {/* 唱歌控制按鈕 */}
+      <div className="controls">
+        <button onClick={startSinging} disabled={phase !== "idle" || currentSinger}>
+          開始唱歌
+        </button>
+        <button onClick={stopSinging} disabled={phase !== "singing"}>
+          停止唱歌
+        </button>
+      </div>
 
+      {/* 麥克風音量表 */}
       {(phase === "singing" || phase === "scoring") && (
         <div className="mic-meter">
           {phase === "singing" && <div className="mic-bar" style={{ width: `${micLevel * 100}%` }} />}
-          {phase === "scoring" && (
-            <div className="my-score">
-              {myScore ? <>你給了 <strong>{myScore}</strong> 分 ⭐</> : <>請評分…</>}
-              {avgScore !== null && <> / 平均: {avgScore.toFixed(1)} ({scoreCount}人)</>}
-            </div>
-          )}
         </div>
       )}
 
+      {/* 評分區 */}
       {phase === "scoring" && (
         <div className="score-container">
           <div className="score-countdown">評分倒數: {scoreCountdown} 秒</div>
           <div className="score-stars">
-            {[1, 2, 3, 4, 5].map((n) => (
+            {[1, 2, 3, 4, 5].map(n => (
               <span
                 key={n}
                 className={`star ${myScore >= n ? "selected" : ""}`}
@@ -314,16 +333,32 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
             ))}
           </div>
           {myScore && <div className="your-score">你給了 <strong>{myScore}</strong> 分 ⭐</div>}
-          {avgScore !== null && <div className="avg-score">平均: {avgScore.toFixed(1)} ({scoreCount}人)</div>}
         </div>
       )}
-
+      {/* 永遠顯示上一位平均分數 */}
+      <div className="avg-score">
+        上一位平均: {avgScore !== null ? avgScore.toFixed(1) : "--"}  分 ⭐ ({scoreCount}人)
+      </div>
+      {/* 聽眾區 */}
       <div className="listeners">
         <h4>聽眾 ({listeners.length})</h4>
-        {phase === "canListen" && <>
-          <button onClick={startListening}>開始聽歌</button>
-          <button onClick={stopListening}>取消聽歌</button>
-        </>}
+
+        {/* 聽歌控制 */}
+        {phase === "canListen" && (
+          <div className="listener-controls">
+            <button onClick={startListening}>開始聽歌</button>
+            <button onClick={stopListening}>取消聽歌</button>
+          </div>
+        )}
+
+        {/* 聽眾列表 */}
+        <ul className="listener-list">
+          {listeners.map(listener => (
+            <li key={`${listener.id}-${listener.name}`}>
+              {listener.name || listener.id}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
