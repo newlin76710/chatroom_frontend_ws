@@ -1,56 +1,68 @@
-// SongPanel.jsx
 import { useRef, useState, useEffect } from "react";
 import "./SongPanel.css";
 
 export default function SongPanel({ socket, room }) {
-  const [isSinging, setIsSinging] = useState(false);
+  // ===== 狀態機 =====
+  const [phase, setPhase] = useState("idle"); // idle | singing | scoring
   const [listeners, setListeners] = useState([]);
   const [micLevel, setMicLevel] = useState(0);
+  const [myScore, setMyScore] = useState(null);
 
   const localStreamRef = useRef(null);
-  const pcsRef = useRef(new Map()); // 唱歌者對聽眾的 PC
-  const audioRefs = useRef(new Map()); // 聽眾音訊
+  const pcsRef = useRef(new Map());
+  const audioRefs = useRef(new Map());
+  const listenerPCRef = useRef(null);
+
   const audioCtxRef = useRef(null);
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
   const animationIdRef = useRef(null);
 
   // =========================
-  // 唱歌者
+  // 🎤 開始唱歌
   // =========================
   const startSinging = async () => {
+    if (phase !== "idle") return;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       localStreamRef.current = stream;
 
-      // 麥克風音量監控
       audioCtxRef.current = new AudioContext();
       const source = audioCtxRef.current.createMediaStreamSource(stream);
       analyserRef.current = audioCtxRef.current.createAnalyser();
       analyserRef.current.fftSize = 256;
       source.connect(analyserRef.current);
+
       dataArrayRef.current = new Uint8Array(analyserRef.current.frequencyBinCount);
 
       const updateMicMeter = () => {
         analyserRef.current.getByteFrequencyData(dataArrayRef.current);
-        const avg = dataArrayRef.current.reduce((a, b) => a + b, 0) / dataArrayRef.current.length;
+        const avg =
+          dataArrayRef.current.reduce((a, b) => a + b, 0) /
+          dataArrayRef.current.length;
         setMicLevel(avg / 255);
         animationIdRef.current = requestAnimationFrame(updateMicMeter);
       };
       updateMicMeter();
 
-      setIsSinging(true);
+      setPhase("singing");
+      setMyScore(null);
       socket.emit("start-singing", { room, singer: socket.id });
-      console.log("🎤 開始唱歌", socket.id);
-    } catch (err) {
-      console.error("麥克風錯誤:", err);
+    } catch (e) {
+      console.error("麥克風失敗", e);
     }
   };
 
+  // =========================
+  // 🛑 停止唱歌 → 進入 15 秒評分
+  // =========================
   const stopSinging = () => {
-    // 停止本地音訊
-    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    if (phase !== "singing") return;
+
+    localStreamRef.current?.getTracks().forEach(t => t.stop());
     localStreamRef.current = null;
+
     cancelAnimationFrame(animationIdRef.current);
     audioCtxRef.current?.close();
 
@@ -61,72 +73,76 @@ export default function SongPanel({ socket, room }) {
     });
     pcsRef.current.clear();
 
-    // 移除所有聽眾 audio
-    audioRefs.current.forEach((audio) => audio.remove());
+    // 移除所有 audio
+    audioRefs.current.forEach(a => {
+      a.pause();
+      a.srcObject = null;
+      a.remove();
+    });
     audioRefs.current.clear();
 
-    setIsSinging(false);
     setMicLevel(0);
+    setPhase("scoring");
+
     socket.emit("stop-singing", { room, singer: socket.id });
-    console.log("🛑 停止唱歌，所有聽眾已踢出", socket.id);
+
+    // 15 秒後回 idle
+    setTimeout(() => setPhase("idle"), 15000);
   };
 
   // =========================
-  // 聽眾
+  // ⭐ 評分
+  // =========================
+  const scoreSong = (score) => {
+    if (phase !== "scoring") return;
+    setMyScore(score);
+    socket.emit("scoreSong", { room, score });
+  };
+
+  // =========================
+  // 👂 聽眾
   // =========================
   const startListening = () => {
     socket.emit("listener-ready", { room, listenerId: socket.id });
-    console.log("👂 點開始聽歌", socket.id);
   };
+
   const stopListening = () => {
     socket.emit("stop-listening", { room, listenerId: socket.id });
-    console.log("🛑 取消聽歌", socket.id);
-
-    const audio = audioRefs.current.get(socket.id);
-    if (audio) {
-      audio.pause();
-      audio.srcObject = null;
-      audio.remove();
-      audioRefs.current.delete(socket.id);
-    }
-
-    const pc = pcsRef.current.get(socket.id);
-    if (pc) {
-      pc.close();
-      pcsRef.current.delete(socket.id);
-    }
   };
 
   // =========================
-  // 唱歌者收到新聽眾 → 建立 PC
+  // 唱歌者 → 新聽眾
   // =========================
   useEffect(() => {
     socket.on("new-listener", async ({ listenerId }) => {
-      if (!isSinging || !localStreamRef.current) return;
+      if (phase !== "singing" || !localStreamRef.current) return;
       if (pcsRef.current.has(listenerId)) return;
 
       const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-      localStreamRef.current.getTracks().forEach((t) => pc.addTrack(t, localStreamRef.current));
+      localStreamRef.current.getTracks().forEach(t => pc.addTrack(t, localStreamRef.current));
 
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          socket.emit("webrtc-candidate", { to: listenerId, candidate: e.candidate, sender: socket.id });
-        }
+      pc.onicecandidate = e => {
+        if (e.candidate) socket.emit("webrtc-candidate", { to: listenerId, candidate: e.candidate });
       };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      socket.emit("webrtc-offer", { to: listenerId, offer, sender: socket.id });
+      socket.emit("webrtc-offer", { to: listenerId, offer });
 
       pcsRef.current.set(listenerId, pc);
     });
 
     socket.on("listener-left", ({ listenerId }) => {
       const pc = pcsRef.current.get(listenerId);
-      if (pc) {
-        pc.close();
-        pcsRef.current.delete(listenerId);
-        console.log("[唱歌者] 聽眾退出", listenerId);
+      if (pc) pc.close();
+      pcsRef.current.delete(listenerId);
+
+      const audio = audioRefs.current.get(listenerId);
+      if (audio) {
+        audio.pause();
+        audio.srcObject = null;
+        audio.remove();
+        audioRefs.current.delete(listenerId);
       }
     });
 
@@ -137,7 +153,7 @@ export default function SongPanel({ socket, room }) {
 
     socket.on("webrtc-candidate", async ({ from, candidate }) => {
       const pc = pcsRef.current.get(from);
-      if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => { });
+      if (pc) await pc.addIceCandidate(candidate).catch(() => {});
     });
 
     return () => {
@@ -146,35 +162,31 @@ export default function SongPanel({ socket, room }) {
       socket.off("webrtc-answer");
       socket.off("webrtc-candidate");
     };
-  }, [socket, isSinging]);
+  }, [socket, phase]);
 
   // =========================
   // 聽眾接收音訊
   // =========================
   useEffect(() => {
     socket.on("webrtc-offer", async ({ from, offer }) => {
-      if (isSinging) return;
+      if (phase === "singing") return;
 
       const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+      listenerPCRef.current = pc;
 
-      pc.ontrack = (e) => {
+      pc.ontrack = e => {
         let audio = audioRefs.current.get(from);
         if (!audio) {
           audio = document.createElement("audio");
           audio.autoplay = true;
-          audio.controls = true;
-          audio.className = "listener-audio";
           document.body.appendChild(audio);
           audioRefs.current.set(from, audio);
         }
         audio.srcObject = e.streams[0];
-        audio.play().catch(() => { });
       };
 
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          socket.emit("webrtc-candidate", { to: from, candidate: e.candidate, sender: socket.id });
-        }
+      pc.onicecandidate = e => {
+        if (e.candidate) socket.emit("webrtc-candidate", { to: from, candidate: e.candidate });
       };
 
       await pc.setRemoteDescription(offer);
@@ -184,49 +196,71 @@ export default function SongPanel({ socket, room }) {
     });
 
     return () => socket.off("webrtc-offer");
-  }, [socket, isSinging]);
+  }, [socket, phase]);
+
+  // =========================
+  // 聽眾清理
+  // =========================
+  useEffect(() => {
+    const onListenerLeft = () => {
+      if (listenerPCRef.current) {
+        listenerPCRef.current.close();
+        listenerPCRef.current = null;
+      }
+
+      audioRefs.current.forEach(audio => {
+        audio.pause();
+        audio.srcObject = null;
+        audio.remove();
+      });
+      audioRefs.current.clear();
+    };
+
+    socket.on("listener-left", onListenerLeft);
+    return () => socket.off("listener-left", onListenerLeft);
+  }, [socket]);
 
   // =========================
   // 更新聽眾列表
   // =========================
   useEffect(() => {
-    socket.on("update-listeners", ({ listeners }) => setListeners(listeners));
+    socket.on("update-listeners", ({ listeners }) => setListeners(listeners || []));
     return () => socket.off("update-listeners");
   }, [socket]);
 
+  // =========================
+  // UI
+  // =========================
   return (
     <div className="song-panel">
-      <div className="song-header">
-        <h4>🎤 唱歌區</h4>
-      </div>
+      <h4>🎤 唱歌區</h4>
 
-      <div className="controls">
-        {!isSinging ? (
-          <button onClick={startSinging}>開始唱歌</button>
-        ) : (
-          <button onClick={stopSinging}>停止唱歌</button>
-        )}
-      </div>
+      <button onClick={startSinging} disabled={phase !== "idle"}>開始唱歌</button>
+      <button onClick={stopSinging} disabled={phase !== "singing"}>停止唱歌</button>
 
-      {isSinging && (
+      {(phase === "singing" || phase === "scoring") && (
         <div className="mic-meter">
-          <div className="mic-bar" style={{ width: `${micLevel * 100}%` }}></div>
+          {phase === "singing" && <div className="mic-bar" style={{ width: `${micLevel * 100}%` }} />}
+          {phase === "scoring" && (
+            <div className="my-score">{myScore ? <>你給了 <strong>{myScore}</strong> 分 ⭐</> : <>請評分…</>}</div>
+          )}
+        </div>
+      )}
+
+      {phase === "scoring" && (
+        <div className="score-buttons">
+          {[1,2,3,4,5].map(n => <button key={n} onClick={() => scoreSong(n)}>{n}</button>)}
         </div>
       )}
 
       <div className="listeners">
         <h4>聽眾 ({listeners.length})</h4>
-        {!isSinging && (
+        {phase !== "singing" && (
           <>
             <button onClick={startListening}>開始聽歌</button>
             <button onClick={stopListening}>取消聽歌</button>
           </>
         )}
-        <div className="listener-list">
-          {listeners.map((l) => (
-            <span key={l} className="singer-item">{l}</span>
-          ))}
-        </div>
       </div>
     </div>
   );
