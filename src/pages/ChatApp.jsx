@@ -230,12 +230,43 @@ export default function ChatApp() {
     }
   };
 
-
+  // --- 離開房間清理 + 斷線 ---
   const leaveRoom = () => {
-    socket.emit("leaveRoom", { room, user: { name } });
-    localStorage.clear();
-    window.location.href = "/login";
+    try {
+      // 先告訴後端自己離開
+      socket.emit("stop-listening", { room, listenerId: name });
+      socket.emit("leaveRoom", { room, user: { name } });
+
+      // 清理 localStorage
+      localStorage.clear();
+
+      // 斷開 WebRTC 音訊
+      // 這裡如果有 SongPanel 的 ref，可呼叫它的 leaveRoom 或 stopListening
+
+      // 斷開 Socket
+      socket.disconnect();
+
+      // 導回登入頁
+      window.location.href = "/login";
+    } catch (e) {
+      console.error("離開房間失敗", e);
+      window.location.href = "/login";
+    }
   };
+
+  // --- 自動處理刷新 / 關閉瀏覽器 ---
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try {
+        socket.emit("stop-listening", { room, listenerId: name });
+        socket.emit("leaveRoom", { room, user: { name } });
+        socket.disconnect();
+      } catch { }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [socket, room, name]);
 
   // --- 發訊息 ---
   const send = () => {
