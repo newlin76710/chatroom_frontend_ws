@@ -1,3 +1,4 @@
+// SongPanel.jsx
 import { useRef, useState, useEffect } from "react";
 import "./SongPanel.css";
 
@@ -7,7 +8,7 @@ export default function SongPanel({ socket, room }) {
   const [micLevel, setMicLevel] = useState(0);
 
   const localStreamRef = useRef(null);
-  const pcsRef = useRef(new Map()); // 唱歌者對每個聽眾
+  const pcsRef = useRef(new Map()); // 唱歌者對聽眾的 PC
   const audioRefs = useRef(new Map()); // 聽眾音訊
   const audioCtxRef = useRef(null);
   const analyserRef = useRef(null);
@@ -22,7 +23,7 @@ export default function SongPanel({ socket, room }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       localStreamRef.current = stream;
 
-      // Mic meter
+      // 麥克風音量監控
       audioCtxRef.current = new AudioContext();
       const source = audioCtxRef.current.createMediaStreamSource(stream);
       analyserRef.current = audioCtxRef.current.createAnalyser();
@@ -47,63 +48,60 @@ export default function SongPanel({ socket, room }) {
   };
 
   const stopSinging = () => {
+    // 停止本地音訊
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
     cancelAnimationFrame(animationIdRef.current);
     audioCtxRef.current?.close();
 
-    pcsRef.current.forEach((pc) => pc.close());
+    // 關閉所有對聽眾的 PC
+    pcsRef.current.forEach((pc, listenerId) => {
+      pc.close();
+      socket.emit("listener-left", { room, listenerId });
+    });
     pcsRef.current.clear();
+
+    // 移除所有聽眾 audio
     audioRefs.current.forEach((audio) => audio.remove());
     audioRefs.current.clear();
 
     setIsSinging(false);
     setMicLevel(0);
     socket.emit("stop-singing", { room, singer: socket.id });
-    console.log("🛑 停止唱歌", socket.id);
+    console.log("🛑 停止唱歌，所有聽眾已踢出", socket.id);
   };
 
   // =========================
-  // 聽眾按鈕建立 / 取消 WebRTC
+  // 聽眾
   // =========================
-  const startListening = (listenerId) => {
-    setListeners((prev) => {
-      if (prev.includes(listenerId)) return prev;
-      return [...prev, listenerId];
-    });
-    socket.emit("listener-ready", { room, listenerId });
-    console.log("👂 點開始聽歌", listenerId);
+  const startListening = () => {
+    socket.emit("listener-ready", { room, listenerId: socket.id });
+    console.log("👂 點開始聽歌", socket.id);
   };
+  const stopListening = () => {
+    socket.emit("stop-listening", { room, listenerId: socket.id });
+    console.log("🛑 取消聽歌", socket.id);
 
-  const stopListening = (listenerId) => {
-    setListeners((prev) => prev.filter((id) => id !== listenerId));
-    socket.emit("stop-listening", { room, listenerId });
-    console.log("🛑 取消聽歌", listenerId);
-
-    // 移除 audio
-    const audio = audioRefs.current.get(listenerId);
+    const audio = audioRefs.current.get(socket.id);
     if (audio) {
       audio.pause();
       audio.srcObject = null;
       audio.remove();
-      audioRefs.current.delete(listenerId);
+      audioRefs.current.delete(socket.id);
     }
 
-    // 關閉對應 PC
-    const pc = pcsRef.current.get(listenerId);
+    const pc = pcsRef.current.get(socket.id);
     if (pc) {
       pc.close();
-      pcsRef.current.delete(listenerId);
+      pcsRef.current.delete(socket.id);
     }
   };
-
 
   // =========================
   // 唱歌者收到新聽眾 → 建立 PC
   // =========================
   useEffect(() => {
     socket.on("new-listener", async ({ listenerId }) => {
-      console.log("[唱歌者] 收到 new-listener", listenerId);
       if (!isSinging || !localStreamRef.current) return;
       if (pcsRef.current.has(listenerId)) return;
 
@@ -113,14 +111,12 @@ export default function SongPanel({ socket, room }) {
       pc.onicecandidate = (e) => {
         if (e.candidate) {
           socket.emit("webrtc-candidate", { to: listenerId, candidate: e.candidate, sender: socket.id });
-          console.log("[唱歌者] 送 ICE candidate 給聽眾", listenerId, e.candidate);
         }
       };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       socket.emit("webrtc-offer", { to: listenerId, offer, sender: socket.id });
-      console.log("[唱歌者] send offer to", listenerId);
 
       pcsRef.current.set(listenerId, pc);
     });
@@ -130,24 +126,18 @@ export default function SongPanel({ socket, room }) {
       if (pc) {
         pc.close();
         pcsRef.current.delete(listenerId);
-        console.log("[唱歌者] 聽眾退出，關閉 PC", listenerId);
+        console.log("[唱歌者] 聽眾退出", listenerId);
       }
     });
 
     socket.on("webrtc-answer", async ({ from, answer }) => {
       const pc = pcsRef.current.get(from);
-      if (pc) {
-        await pc.setRemoteDescription(answer);
-        console.log("[唱歌者] setRemoteDescription answer from", from);
-      }
+      if (pc) await pc.setRemoteDescription(answer);
     });
 
     socket.on("webrtc-candidate", async ({ from, candidate }) => {
       const pc = pcsRef.current.get(from);
-      if (pc) {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => { });
-        console.log("[唱歌者] 收到 candidate from", from, candidate);
-      }
+      if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => { });
     });
 
     return () => {
@@ -165,8 +155,6 @@ export default function SongPanel({ socket, room }) {
     socket.on("webrtc-offer", async ({ from, offer }) => {
       if (isSinging) return;
 
-      console.log("[聽眾] 收到 offer", from);
-
       const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
 
       pc.ontrack = (e) => {
@@ -180,14 +168,12 @@ export default function SongPanel({ socket, room }) {
           audioRefs.current.set(from, audio);
         }
         audio.srcObject = e.streams[0];
-        audio.play().then(() => console.log("[聽眾] audio 播放成功", from))
-          .catch((err) => console.error("[聽眾] audio 播放失敗", from, err));
+        audio.play().catch(() => { });
       };
 
       pc.onicecandidate = (e) => {
         if (e.candidate) {
           socket.emit("webrtc-candidate", { to: from, candidate: e.candidate, sender: socket.id });
-          console.log("[聽眾] 送 ICE candidate 給唱歌者", from, e.candidate);
         }
       };
 
@@ -195,11 +181,18 @@ export default function SongPanel({ socket, room }) {
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socket.emit("webrtc-answer", { to: from, answer });
-      console.log("[聽眾] 送 answer 給", from);
     });
 
     return () => socket.off("webrtc-offer");
   }, [socket, isSinging]);
+
+  // =========================
+  // 更新聽眾列表
+  // =========================
+  useEffect(() => {
+    socket.on("update-listeners", ({ listeners }) => setListeners(listeners));
+    return () => socket.off("update-listeners");
+  }, [socket]);
 
   return (
     <div className="song-panel">
@@ -222,22 +215,16 @@ export default function SongPanel({ socket, room }) {
       )}
 
       <div className="listeners">
-        <h4>聽眾</h4>
+        <h4>聽眾 ({listeners.length})</h4>
         {!isSinging && (
-          <button onClick={() => startListening(socket.id)}>開始聽歌</button>
+          <>
+            <button onClick={startListening}>開始聽歌</button>
+            <button onClick={stopListening}>取消聽歌</button>
+          </>
         )}
         <div className="listener-list">
-          {listeners.map((listenerId) => (
-            <span key={listenerId} className="singer-item">
-              {listenerId}
-              {/* 退出按鈕 */}
-              <button
-                onClick={() => stopListening(listenerId)}
-                style={{ marginLeft: "4px" }}
-              >
-                ❌
-              </button>
-            </span>
+          {listeners.map((l) => (
+            <span key={l} className="singer-item">{l}</span>
           ))}
         </div>
       </div>
