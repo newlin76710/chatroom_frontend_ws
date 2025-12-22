@@ -7,7 +7,7 @@ const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 const socket = io(BACKEND, { transports: ["websocket"] });
 
 export default function SongPanel({ room, name }) {
-  const [phase, setPhase] = useState("idle"); // idle | singing | scoring | canListen
+  const [phase, setPhase] = useState("idle");
   const [micLevel, setMicLevel] = useState(0);
   const [myScore, setMyScore] = useState(null);
   const [avgScore, setAvgScore] = useState(null);
@@ -24,11 +24,9 @@ export default function SongPanel({ room, name }) {
   const animationIdRef = useRef(null);
   const countdownRef = useRef(null);
 
-  // mediasoup
   const deviceRef = useRef(null);
   const sendTransportRef = useRef(null);
   const producerRef = useRef(null);
-
   const startedRef = useRef(false);
 
   // ===== 加入隊列 =====
@@ -62,14 +60,12 @@ export default function SongPanel({ room, name }) {
       };
       updateMic();
 
-      // ===== 初始化 mediasoup client =====
+      // mediasoup 初始化
       const device = new mediasoupClient.Device();
       deviceRef.current = device;
-
       const { rtpCapabilities } = await fetch(`${BACKEND}/mediasoup-rtpCapabilities`).then(r => r.json());
       await device.load({ routerRtpCapabilities: rtpCapabilities });
 
-      // 建立 sendTransport
       socket.emit("create-transport", { direction: "send" }, async transportInfo => {
         const transport = device.createSendTransport(transportInfo);
         sendTransportRef.current = transport;
@@ -166,11 +162,21 @@ export default function SongPanel({ room, name }) {
       startedRef.current = false;
     });
 
+    // 離開房間 / 關閉頁面清理
+    const handleUnload = () => {
+      stopSinging();
+      if (joinedQueue) {
+        socket.emit("leaveQueue", { room, singer: name });
+      }
+    };
+    window.addEventListener("beforeunload", handleUnload);
+
     return () => {
       socket.off("queueUpdate");
       socket.off("songResult");
+      window.removeEventListener("beforeunload", handleUnload);
     };
-  }, [name]);
+  }, [name, joinedQueue]);
 
   return (
     <div className="song-panel">
