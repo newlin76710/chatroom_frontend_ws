@@ -117,7 +117,15 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
       if (phase !== "singing" || !localStreamRef.current) return;
       if (pcsRef.current.has(listenerId)) return;
 
-      const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          {
+            urls: "turn:openrelay.metered.ca:80",
+            username: "openrelayproject",
+            credential: "openrelayproject"
+          }]
+      });
       localStreamRef.current.getTracks().forEach(t => pc.addTrack(t, localStreamRef.current));
 
       pc.onicecandidate = e => {
@@ -165,7 +173,15 @@ export default function SongPanel({ socket, room, onLeaveRoom }) {
   useEffect(() => {
     socket.on("webrtc-offer", async ({ from, offer }) => {
       if (phase === "singing") return;
-      const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          {
+            urls: "turn:openrelay.metered.ca:80",
+            username: "openrelayproject",
+            credential: "openrelayproject"
+          }]
+      });
       listenerPCRef.current = pc;
 
       pc.ontrack = e => {
