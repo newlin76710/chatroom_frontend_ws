@@ -1,4 +1,4 @@
-/* ===== Song Panel（桌機預設）===== */
+/* ===== Song Panel ===== */
 .song-panel {
   position: fixed;
   top: 100px;
@@ -13,11 +13,7 @@
   z-index: 9999;
 }
 
-.song-panel.collapsed {
-  width: 160px;
-  padding: 5px;
-  overflow: hidden;
-}
+.song-panel.collapsed { width: 160px; padding: 5px; overflow: hidden; }
 
 /* ===== 標題 ===== */
 .song-header {
@@ -27,19 +23,32 @@
   cursor: pointer;
 }
 .song-header h4 { margin: 0; font-size: 1rem; }
+.song-header button {
+  background: #6200ee;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
 
 /* ===== 按鈕 ===== */
 button {
   margin: 5px 0;
   padding: 5px 10px;
+  border: none;
   border-radius: 4px;
   background: #6200ee;
   color: #fff;
   font-size: 0.85rem;
   cursor: pointer;
+  transition: background 0.2s;
 }
+button:hover { background: #7e39ff; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ===== Mic ===== */
+/* ===== Mic Meter ===== */
 .mic-meter {
   width: 100%;
   height: 8px;
@@ -51,35 +60,38 @@ button {
 .mic-bar {
   height: 100%;
   background: #0f0;
+  transition: width 0.1s;
 }
 
-/* ===== 手機 / 平板（<= 768px）===== */
-@media (max-width: 768px) {
-  .song-panel {
-    top: auto;
-    right: 0;
-    left: 0;
-    bottom: 0;
+/* ===== 星星打分 ===== */
+.score-container { margin-top: 12px; text-align: center; }
+.score-countdown { font-size: 14px; margin-bottom: 5px; color: #ff5555; }
+.score-stars { font-size: 24px; cursor: pointer; }
+.score-stars .selected { color: gold; }
+.your-score, .avg-score { margin-top: 5px; font-size: 14px; }
 
-    width: 100%;
-    max-width: 100%;
-    padding: 12px;
-
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 -4px 12px rgba(0,0,0,0.6);
-  }
-
-  /* 🔑 手機版不要縮寬 */
-  .song-panel.collapsed {
-    width: 100%;
-    padding: 8px;
-  }
+/* ===== 聽眾列表 ===== */
+.listeners { margin-top: 16px; text-align: center; }
+.listener-list {
+  list-style: none;
+  padding-left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.listener-list li {
+  font-size: 14px;
+  background-color: #3a3a3a;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-/* ===== 小手機（<= 480px）===== */
+/* ===== 響應式 ===== */
 @media (max-width: 480px) {
+  .song-panel { width: 200px; padding: 8px; }
   .score-stars { font-size: 22px; }
   .song-header h4 { font-size: 0.9rem; }
-  button { font-size: 0.75rem; padding: 4px 8px; }
+  .song-header button, button { font-size: 0.7rem; padding: 4px 8px; }
   .listener-list li { font-size: 12px; }
 }
