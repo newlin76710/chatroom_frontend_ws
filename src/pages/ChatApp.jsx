@@ -371,7 +371,7 @@ export default function ChatApp() {
               <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>
-
+            <Listener socket={socket} room={room} />
             {showSongPanel && (
               <SongPanel
                 socket={socket}
