@@ -9,8 +9,30 @@ export default function Listener({ socket, room }) {
     if (pcRef.current) return;
     const pc = new RTCPeerConnection({
       iceServers: [
-        { urls: "stun:stun.l.google.com:19302" }
-      ]
+        {
+          urls: "stun:stun.relay.metered.ca:80",
+        },
+        {
+          urls: "turn:global.relay.metered.ca:80",
+          username: "8377acb6c166cbf568e9e013",
+          credential: "v+uDnYMJ5YIejFhv",
+        },
+        {
+          urls: "turn:global.relay.metered.ca:80?transport=tcp",
+          username: "8377acb6c166cbf568e9e013",
+          credential: "v+uDnYMJ5YIejFhv",
+        },
+        {
+          urls: "turn:global.relay.metered.ca:443",
+          username: "8377acb6c166cbf568e9e013",
+          credential: "v+uDnYMJ5YIejFhv",
+        },
+        {
+          urls: "turns:global.relay.metered.ca:443?transport=tcp",
+          username: "8377acb6c166cbf568e9e013",
+          credential: "v+uDnYMJ5YIejFhv",
+        },
+      ],
     });
 
     pcRef.current = pc;
