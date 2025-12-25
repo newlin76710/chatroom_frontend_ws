@@ -352,7 +352,24 @@ export default function ChatApp() {
                 <button onClick={playVideo}>🎵 點播</button>
               </div>
               <button onClick={() => setShowSongPanel(!showSongPanel)}>🎤 唱歌</button>
+              {showSongPanel && (
+                <SongPanel
+                  socket={socket}
+                  room={room}
+                  name={name}
+                  uploadSong={uploadSong}
+                  userList={userList}
+                  chatMode={chatMode}
+                  setChatMode={setChatMode}
+                  target={target}
+                  setTarget={setTarget}
+                  onClose={() => setShowSongPanel(false)}
+                  inline
+                />
+              )}
+              <Listener socket={socket} room={room} />
             </div>
+
 
             <MessageList messages={messages} name={name} typing={typing} messagesEndRef={messagesEndRef} />
 
@@ -371,22 +388,7 @@ export default function ChatApp() {
               <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>
-            <Listener socket={socket} room={room} />
-            {showSongPanel && (
-              <SongPanel
-                socket={socket}
-                room={room}
-                name={name}
-                uploadSong={uploadSong}
-                userList={userList}
-                chatMode={chatMode}
-                setChatMode={setChatMode}
-                target={target}
-                setTarget={setTarget}
-                onClose={() => setShowSongPanel(false)}
-                inline
-              />
-            )}
+
           </>
         )}
       </div>

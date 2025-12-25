@@ -70,8 +70,7 @@ export default function SongPanel({ socket, room, name }) {
   });
 
   return (
-    <div className="song-panel-inline">
-      <h4>🎤 唱歌（MVP）</h4>
+    <div>
       {!singing ? (
         <button onClick={startSing}>開始唱</button>
       ) : (

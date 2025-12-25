@@ -57,6 +57,13 @@ export default function Listener({ socket, room }) {
       >
         🔊 開始收聽
       </button>
+      <button
+        onClick={() => {
+          audioRef.current.pause();
+        }}
+      >
+        ⏹️ 停止收聽
+      </button>
     </>
   );
 }
