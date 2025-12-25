@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 export default function Listener({ socket, room }) {
   const audioRef = useRef(null);
   const pcRef = useRef(null);
-
+  console.log("joinRoom", room);
   useEffect(() => {
     if (pcRef.current) return;
     const pc = new RTCPeerConnection({

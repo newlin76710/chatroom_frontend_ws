@@ -5,7 +5,7 @@ export default function SongPanel({ socket, room, name }) {
   const pcRef = useRef(null);
   const streamRef = useRef(null);
   const [singing, setSinging] = useState(false);
-
+  console.log("joinRoom", room);
   async function startSing() {
     if (singing) return;
 
