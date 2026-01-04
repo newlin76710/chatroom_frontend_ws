@@ -150,12 +150,25 @@ export default function ChatApp() {
   useEffect(() => {
     const handleMessage = (m) => {
       if (!m) return;
+
+      // 🔑 從 userList 補完整 user（avatar / gender / level）
+      const fullUser = userList.find(
+        (u) => u.name === m.user?.name
+      );
+
+      console.log("RAW MESSAGE =", m);
+      console.log("FULL USER FROM LIST =", fullUser);
+
       setMessages((s) => [
         ...s,
         {
           ...m,
           message: safeText(m.message),
-          user: { name: safeText(m.user?.name) },
+          user: {
+            ...m.user,
+            ...fullUser,                 // ✅ avatar 在這裡回來
+            name: safeText(m.user?.name),
+          },
           target: safeText(m.target),
           mode: safeText(m.mode),
           timestamp: m.timestamp || new Date().toLocaleTimeString(),
@@ -164,7 +177,18 @@ export default function ChatApp() {
     };
 
     const handleSystemMessage = (m) => {
-      setMessages((s) => [...s, { user: { name: "系統" }, message: safeText(m) }]);
+      setMessages((s) => [
+        ...s,
+        {
+          user: {
+            name: "系統",
+            avatar: "/avatars/system.png",
+            type: "system",
+          },
+          message: safeText(m),
+          timestamp: new Date().toLocaleTimeString(),
+        },
+      ]);
     };
 
     const handleVideoUpdate = (v) => setCurrentVideo(v || null);
@@ -178,7 +202,8 @@ export default function ChatApp() {
       socket.off("systemMessage", handleSystemMessage);
       socket.off("videoUpdate", handleVideoUpdate);
     };
-  }, [socket]);
+  }, [socket, userList]); // ⚠ 一定要有 userList
+
 
   // --- 自動 joinRoom 帶 token ---
   useEffect(() => {

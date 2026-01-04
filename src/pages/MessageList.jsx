@@ -53,7 +53,7 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
               {/* Avatar */}
               {!isSelf && !isSystem && (
                 <img
-                  src={aiAvatars[userName] || "/avatars/default.png"}
+                  src={m.user?.avatar && m.user?.avatar !== "" ? m.user?.avatar : aiAvatars[userName] || "/avatars/g01.gif"}
                   alt={userName}
                   className="message-avatar"
                 />
