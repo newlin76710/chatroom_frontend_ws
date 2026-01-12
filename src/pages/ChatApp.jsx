@@ -104,15 +104,22 @@ export default function ChatApp() {
       );
       if (!me) return;
 
-      if (me.level > level) {
+      // 等級變化
+      if (me.level !== level) {
+        if (me.level > level) {
+          setLevelUpTips(s => [...s, { id: Date.now(), value: "LV UP!" }]);
+        }
         setLevel(me.level || 1);
-        setLevelUpTips((s) => [...s, { id: Date.now(), value: "LV UP!" }]);
         sessionStorage.setItem("level", me.level || 1);
       }
 
-      if (me.exp > exp) {
+      // EXP 變化（⭐ 重點）
+      if (me.exp !== exp) {
+        const diff = me.exp - exp;
+        if (diff > 0) {
+          setExpTips(s => [...s, { id: Date.now(), value: `+${diff}` }]);
+        }
         setExp(me.exp || 0);
-        setExpTips((s) => [...s, { id: Date.now(), value: `+${me.exp - exp}` }]);
         sessionStorage.setItem("exp", me.exp || 0);
       }
 
