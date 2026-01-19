@@ -25,7 +25,8 @@ export default function UserList({
       </div>
 
       {!userListCollapsed &&
-        userList.map((u, idx) => {
+        userList.filter(u => u.type !== "AI") // ✅ AI 不顯示
+          .map((u, idx) => {
           const avatarUrl = u.avatar || aiAvatars[u.name];
           //console.log(userList)
           return (
