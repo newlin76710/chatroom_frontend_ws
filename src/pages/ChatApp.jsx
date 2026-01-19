@@ -412,7 +412,7 @@ export default function ChatApp() {
               {chatMode !== "public" && (
                 <select value={target} onChange={(e) => setTarget(e.target.value)}>
                   <option value="">選擇對象</option>
-                  {userList.filter((u) => u.name !== name).map((u) => (
+                  {userList.filter(u => u.type !== "AI").filter((u) => u.name !== name).map((u) => (
                     <option key={u.id} value={u.name}>{u.name}</option>
                   ))}
                 </select>
