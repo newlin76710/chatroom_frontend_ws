@@ -21,7 +21,7 @@ export default function UserList({
         className="user-list-header"
         onClick={() => setUserListCollapsed(!userListCollapsed)}
       >
-        在線：{userList.length}
+        在線：{userList.filter(u => u.type !== "AI").length}
       </div>
 
       {!userListCollapsed &&
