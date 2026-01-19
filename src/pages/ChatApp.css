@@ -130,12 +130,30 @@ body {
   margin-right: 6px;
   object-fit: cover;
 }
-
-/* 聊天輸入 */
 .chat-input {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px; /* 比較小 */
+  align-items: center;
+}
+
+.chat-input input[type="text"] {
+  flex: 1 1 auto;  /* 只讓文字輸入框拉伸 */
+  min-width: 80px; /* 避免太小 */
+  padding: 4px 6px;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.chat-input input[type="color"] {
+  flex: 0 0 auto;  /* 不拉伸 */
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .chat-input input,

@@ -60,6 +60,9 @@ export default function ChatApp() {
   const socket = globalSocket;
   const [expTips, setExpTips] = useState([]);
   const [levelUpTips, setLevelUpTips] = useState([]);
+  const [chatColor, setChatColor] = useState(
+    sessionStorage.getItem("chatColor") || "#ffffff"
+  );
 
   // --- 初始化 sessionStorage ---
   useEffect(() => {
@@ -290,6 +293,7 @@ export default function ChatApp() {
     socket.emit("message", {
       room,
       message: text,
+      color: chatColor,     // ⭐ 關鍵
       user: { name },
       target: target || "",
       mode: chatMode,
@@ -417,6 +421,24 @@ export default function ChatApp() {
                   ))}
                 </select>
               )}
+              <input
+                type="color"
+                value={chatColor}
+                title="選擇聊天顏色"
+                onChange={(e) => {
+                  setChatColor(e.target.value);
+                  sessionStorage.setItem("chatColor", e.target.value);
+                }}
+                style={{
+                  width: "24px",     // 調小寬度
+                  height: "24px",    // 調小高度
+                  padding: "0",      // 移除內邊距
+                  marginLeft: "6px", // 和文字間距
+                  border: "1px solid #ccc", // 可選邊框
+                  borderRadius: "4px",      // 圓角
+                  verticalAlign: "middle"   // 對齊輸入框
+                }}
+              />
               <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>

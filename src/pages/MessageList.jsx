@@ -29,12 +29,12 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
           const profile = aiProfiles[userName];
 
           // 訊息顏色
-          let color = "#eee";
-          if (isSystem) color = "#ff9900";
+          let color = "#eee"; // 預設
+          if (m.color) color = m.color;           // ✅ 使用訊息的顏色
+          else if (isSystem) color = "#ff9900";
           else if (isSelf) color = "#fff";
           else if (profile?.gender === "男") color = "#006633";
           else if (profile?.gender === "女") color = "#ff66aa";
-          else if (profile?.color) color = profile.color;
 
           // 標籤
           const tag = (m.mode === "private" ? "(私聊)" : m.mode === "publicTarget" ? "(公開對象)" : "");
