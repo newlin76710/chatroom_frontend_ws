@@ -126,7 +126,7 @@ export default function Login() {
 
   return (
     <div style={{ maxWidth: 420, margin: "60px auto", padding: 20 }}>
-      <h2 style={{ textAlign: "center", marginBottom: 10 }}>男歡女愛聊天室</h2>
+      <h2 style={{ textAlign: "center", marginBottom: 10 }}>聽風的歌聊天室</h2>
       <div style={{ textAlign: "center", color: "#aaa", fontSize: 14 }}>
         聊天越多，等級越高（最高 Lv.99）
       </div>

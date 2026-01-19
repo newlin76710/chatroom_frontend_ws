@@ -363,7 +363,7 @@ export default function ChatApp() {
     <div className="chat-layout">
       {/* 左側聊天區 */}
       <div className="chat-left">
-        <div className="chat-title">尋夢園男歡女愛聊天室</div>
+        <div className="chat-title">尋夢園聽風的歌聊天室</div>
         {!joined ? (
           <button onClick={loginGuest}>訪客登入</button>
         ) : (
