@@ -52,11 +52,15 @@ export default function Login() {
       return alert("你剛剛被踢出，請等待 5 秒後再登入");
     }
 
+    if (!username) {
+      return alert("請輸入暱稱");
+    }
+
     try {
       const res = await fetch(`${BACKEND}/auth/guest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gender }),
+        body: JSON.stringify({ gender, username }), // ✅ 傳暱稱
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "訪客登入失敗");
@@ -239,9 +243,17 @@ export default function Login() {
 
       {/* 送出按鈕 */}
       {mode === "guest" && (
-        <button style={buttonStyle} onClick={guestLogin}>
-          以訪客身分進入
-        </button>
+        <>
+          <input
+            style={inputStyle}
+            placeholder="輸入暱稱"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <button style={buttonStyle} onClick={guestLogin}>
+            以訪客身分進入
+          </button>
+        </>
       )}
 
       {mode === "login" && (
