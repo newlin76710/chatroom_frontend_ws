@@ -259,10 +259,18 @@ export default function ChatApp() {
   };
 
   // --- 離開房間 / 斷線 ---
-  const leaveRoom = () => {
+  const leaveRoom = async () => {
     try {
       socket.emit("stop-listening", { room, listenerId: name });
       socket.emit("leaveRoom", { room, user: { name } });
+
+      // 不論 guest 或 account 都登出
+      await fetch(`${BACKEND}/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: name })
+      });
+
       sessionStorage.clear();
       socket.disconnect();
       window.location.href = "/login";
@@ -274,13 +282,24 @@ export default function ChatApp() {
 
   // --- 自動處理刷新 / 關閉瀏覽器 ---
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = async () => {
       try {
         socket.emit("stop-listening", { room, listenerId: name });
         socket.emit("leaveRoom", { room, user: { name } });
+
+        // 不論 guest 或 account 都登出
+        await fetch(`${BACKEND}/auth/logout`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: name })
+        });
+
         socket.disconnect();
-      } catch { }
+      } catch (err) {
+        console.error("自動登出失敗", err);
+      }
     };
+
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [socket, room, name]);
