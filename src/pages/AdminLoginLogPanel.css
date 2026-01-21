@@ -1,19 +1,34 @@
-/* Admin 按鈕 */
-.admin-btn {
-  margin-left: 8px;
+/* Admin 按鈕（所有按鈕統一藍色） */
+.admin-btn,
+.admin-header button,
+.admin-pagination button {
+  margin-left: 6px;
   padding: 6px 10px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
-  background-color: #1976d2;
-  color: #fff;
+  background-color: #1976d2; /* 藍色 */
+  color: #fff;               /* 白字 */
   font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.admin-btn:hover,
+.admin-header button:hover,
+.admin-pagination button:hover:not(:disabled) {
+  background-color: #1565c0; /* 深藍 hover */
+}
+
+.admin-pagination button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* 半透明遮罩 */
 .admin-overlay {
   position: fixed;
-  inset: 0; /* top:0; right:0; bottom:0; left:0; */
+  inset: 0;
   background: rgba(0, 0, 0, 0.4);
   z-index: 1000;
   display: flex;
@@ -32,7 +47,8 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
-  overflow: hidden; /* 防止滾動超出 */
+  overflow: hidden;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* header */
@@ -48,20 +64,14 @@
 .admin-header h3 {
   margin: 0;
   font-size: 16px;
-}
-
-.admin-header button {
-  border: none;
-  background: none;
-  font-size: 18px;
-  cursor: pointer;
+  font-weight: 600;
 }
 
 /* 表格容器 */
 .admin-table-wrapper {
+  flex: 1;
   overflow: auto;
   padding: 10px;
-  flex: 1; /* 讓表格占據剩餘高度 */
 }
 
 /* 表格 */
@@ -77,6 +87,7 @@
   border-bottom: 1px solid #eee;
   text-align: left;
   white-space: nowrap;
+  color: #222;
 }
 
 .admin-table th {
@@ -84,30 +95,25 @@
   position: sticky;
   top: 0;
   z-index: 1;
+  font-weight: 600;
 }
 
 .admin-table tr:hover {
   background: #f0f7ff;
 }
 
-/* 分頁按鈕 */
+/* 分頁容器 */
 .admin-pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   margin-top: 8px;
-  gap: 8px;
+  gap: 6px;
 }
 
-.admin-pagination button {
-  padding: 4px 8px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.admin-pagination button:disabled {
-  opacity: 0.5;
-  cursor: default;
+/* 錯誤 / 提示訊息 */
+.admin-error {
+  font-size: 12px;
+  color: red;
+  margin-top: 4px;
 }
