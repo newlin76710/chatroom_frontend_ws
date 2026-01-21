@@ -1,0 +1,113 @@
+/* Admin 按鈕 */
+.admin-btn {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background-color: #1976d2;
+  color: #fff;
+  font-size: 13px;
+}
+
+/* 半透明遮罩 */
+.admin-overlay {
+  position: fixed;
+  inset: 0; /* top:0; right:0; bottom:0; left:0; */
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 視窗本體 */
+.admin-modal {
+  background: #fff;
+  color: #222;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 80%;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  overflow: hidden; /* 防止滾動超出 */
+}
+
+/* header */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid #ddd;
+  background-color: #f5f5f5;
+}
+
+.admin-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.admin-header button {
+  border: none;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* 表格容器 */
+.admin-table-wrapper {
+  overflow: auto;
+  padding: 10px;
+  flex: 1; /* 讓表格占據剩餘高度 */
+}
+
+/* 表格 */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-table th {
+  background: #f5f5f5;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.admin-table tr:hover {
+  background: #f0f7ff;
+}
+
+/* 分頁按鈕 */
+.admin-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+  gap: 8px;
+}
+
+.admin-pagination button {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.admin-pagination button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

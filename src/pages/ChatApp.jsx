@@ -7,6 +7,7 @@ import VideoPlayer from "./VideoPlayer";
 import SongPanel from "./SongPanel";
 import Listener from "./Listener";
 import UserList from "./UserList";
+import AdminLoginLogPanel from "./AdminLoginLogPanel";
 import { aiAvatars } from "./aiConfig";
 import "./ChatApp.css";
 
@@ -77,6 +78,13 @@ export default function ChatApp() {
     setGender(storedGender);
   }, []);
 
+  const [token, setToken] = useState("");
+  // 初始化 token
+  useEffect(() => {
+    const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
+    if (storedToken) setToken(storedToken);
+  }, []);
+  
   // --- updateUsers 處理 ---
   useEffect(() => {
     const handleUpdateUsers = (list = []) => {
@@ -429,6 +437,13 @@ export default function ChatApp() {
             <MessageList messages={messages} name={name} typing={typing} messagesEndRef={messagesEndRef} />
 
             <div className="chat-input">
+              {/* 🛡 管理按鈕（小） */}
+              <AdminLoginLogPanel
+                myName={name}
+                myLevel={level}
+                minLevel={99}
+                token={token}
+              />
               <label><input type="radio" checked={chatMode === "public"} onChange={() => { setChatMode("public"); setTarget(""); }} /> 公開</label>
               <label><input type="radio" checked={chatMode === "publicTarget"} onChange={() => setChatMode("publicTarget")} /> 公開對象</label>
               <label><input type="radio" checked={chatMode === "private"} onChange={() => setChatMode("private")} /> 私聊</label>
