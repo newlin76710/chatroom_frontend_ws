@@ -3,16 +3,15 @@ import { useEffect, useState } from "react";
 import "./AdminLoginLogPanel.css";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+const PAGE_SIZE = 20;
 
 export default function AdminLoginLogPanel({ myName, myLevel, minLevel, token }) {
   const [logs, setLogs] = useState([]);
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const pageSize = 20;
   const [totalCount, setTotalCount] = useState(0);
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  // 權限不足直接不 render
   if (!token || myLevel < minLevel) return null;
 
   const loadLogs = async (pageNum = 1) => {
@@ -23,9 +22,9 @@ export default function AdminLoginLogPanel({ myName, myLevel, minLevel, token })
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ username: myName, page: pageNum, pageSize }),
+        body: JSON.stringify({ username: myName, page: pageNum, pageSize: PAGE_SIZE }),
       });
 
       if (!res.ok) {
@@ -37,7 +36,7 @@ export default function AdminLoginLogPanel({ myName, myLevel, minLevel, token })
       const data = await res.json();
       setLogs(data.logs || []);
       setPage(data.page || 1);
-      setTotalCount(data.totalCount || data.logs?.length || 0);
+      setTotalCount(data.totalCount || Math.max(data.logs?.length * 10, 200)); // 至少 10 頁
     } catch (err) {
       console.error(err);
       alert("查詢登入紀錄失敗");
@@ -45,10 +44,6 @@ export default function AdminLoginLogPanel({ myName, myLevel, minLevel, token })
   };
 
   const handleOpen = () => {
-    if (!token) {
-      alert("尚未登入或權限不足");
-      return;
-    }
     setOpen(true);
     loadLogs(1);
   };
@@ -56,6 +51,30 @@ export default function AdminLoginLogPanel({ myName, myLevel, minLevel, token })
   const handlePage = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
     loadLogs(newPage);
+  };
+
+  const renderPageButtons = () => {
+    const maxButtons = 10;
+    let start = Math.max(1, page - Math.floor(maxButtons / 2));
+    let end = Math.min(totalPages, start + maxButtons - 1);
+
+    if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
+
+    const buttons = [];
+    for (let i = start; i <= end; i++) {
+      buttons.push(
+        <button
+          key={i}
+          className="admin-btn"
+          style={{ backgroundColor: i === page ? "#1565c0" : "#1976d2" }}
+          onClick={() => handlePage(i)}
+          disabled={i === page}
+        >
+          {i}
+        </button>
+      );
+    }
+    return buttons;
   };
 
   return (
@@ -83,17 +102,18 @@ export default function AdminLoginLogPanel({ myName, myLevel, minLevel, token })
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map(l => (
-                    <tr key={l.id}>
-                      <td>{l.username}</td>
-                      <td>{l.login_type}</td>
-                      <td>{l.ip_address}</td>
-                      <td>{l.success ? "✅" : "❌"}</td>
-                      <td>{l.fail_reason || "-"}</td>
-                      <td>{new Date(l.login_at).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  {logs.length === 0 && (
+                  {logs.length > 0 ? (
+                    logs.map(l => (
+                      <tr key={l.id}>
+                        <td>{l.username}</td>
+                        <td>{l.login_type}</td>
+                        <td>{l.ip_address}</td>
+                        <td>{l.success ? "✅" : "❌"}</td>
+                        <td>{l.fail_reason || "-"}</td>
+                        <td>{new Date(l.login_at).toLocaleString()}</td>
+                      </tr>
+                    ))
+                  ) : (
                     <tr>
                       <td colSpan={6} style={{ textAlign: "center" }}>無資料</td>
                     </tr>
@@ -103,9 +123,9 @@ export default function AdminLoginLogPanel({ myName, myLevel, minLevel, token })
 
               {/* 分頁 */}
               <div className="admin-pagination">
-                <button onClick={() => handlePage(page - 1)} disabled={page <= 1}>上一頁</button>
-                <span>第 {page} / {totalPages || 1} 頁</span>
-                <button onClick={() => handlePage(page + 1)} disabled={page >= totalPages}>下一頁</button>
+                <button className="admin-btn" onClick={() => handlePage(page - 1)} disabled={page <= 1}>上一頁</button>
+                {renderPageButtons()}
+                <button className="admin-btn" onClick={() => handlePage(page + 1)} disabled={page >= totalPages}>下一頁</button>
               </div>
             </div>
           </div>
