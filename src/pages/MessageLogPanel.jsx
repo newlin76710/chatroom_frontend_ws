@@ -134,6 +134,7 @@ export default function MessageLogPanel({ myName, myLevel, minLevel, token, user
                                         <th>使用者</th>
                                         <th>對象</th>
                                         <th>內容</th>
+                                        <th>類型</th> {/* 新增 */}
                                         <th>IP</th>
                                         <th>時間</th>
                                     </tr>
@@ -145,13 +146,14 @@ export default function MessageLogPanel({ myName, myLevel, minLevel, token, user
                                                 <td>{l.username}</td>
                                                 <td>{l.target || "-"}</td>
                                                 <td style={{ maxWidth: 300, whiteSpace: "pre-wrap" }}>{l.message}</td>
+                                                <td>{l.mode === "private" ? "私聊" : "公開"}</td> {/* 新增 */}
                                                 <td>{l.ip || "-"}</td>
                                                 <td>{new Date(l.created_at).toLocaleString()}</td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={5} style={{ textAlign: "center" }}>無資料</td>
+                                            <td colSpan={6} style={{ textAlign: "center" }}>無資料</td>
                                         </tr>
                                     )}
                                 </tbody>
