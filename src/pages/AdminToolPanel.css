@@ -1,116 +1,198 @@
-/* AdminToolPanel.css */
-
-/* --- 管理工具容器 --- */
+/* ===============================
+   小浮窗管理按鈕（AdminToolPanel 小按鈕）
+   =============================== */
 .admin-tool {
   position: relative;
   display: inline-block;
-  font-family: sans-serif;
-  z-index: 1000;
 }
 
-/* 🛡 管理按鈕（小） */
-.admin-btn {
+.admin-tool .admin-btn {
   padding: 4px 6px;
   font-size: 14px;
   border-radius: 6px;
-  border: 1px solid #ccc;
-  background: #f7f7f7;
+  border: none;
+  background-color: #1976d2; /* 藍色 */
+  color: #fff;               /* 白字 */
   cursor: pointer;
   transition: background 0.2s;
 }
-.admin-btn:hover {
-  background: #eee;
+
+.admin-tool .admin-btn:hover {
+  background-color: #1565c0; /* 深藍 hover */
 }
 
-/* 🔲 小型浮窗 */
-.admin-popup {
+/* 小浮窗內容 */
+.admin-tool .admin-popup {
   position: absolute;
-  bottom: 36px; /* 上方距離按鈕 */
+  bottom: 36px;
   left: 0;
-  width: 200px;            /* ⭐ 可以調整浮窗寬度 */
-  max-height: 360px;       /* ⭐ 不要太高 */
+  width: 200px;
+  max-height: 360px;
   background: #fff;
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  z-index: 999;
 }
 
-/* Tabs（小） */
-.admin-tabs {
+/* 小浮窗 Tabs */
+.admin-tool .admin-tabs {
   display: flex;
   background: #f2f3f5;
   padding: 4px;
   gap: 4px;
-  border-bottom: 1px solid #ddd;
 }
 
-.admin-tabs button {
+.admin-tool .admin-tabs button {
   flex: 1;
-  padding: 4px 0;          /* ⭐ 小尺寸 */
+  padding: 4px 0;
   font-size: 12px;
-  border-radius: 6px;
   border: none;
   background: transparent;
   cursor: pointer;
   color: #555;
-  transition: background 0.2s, color 0.2s;
+  border-radius: 4px;
+  transition: background 0.2s;
 }
 
-.admin-tabs button:hover {
-  background: #e6e6e6;
-}
-
-.admin-tabs button.active {
+.admin-tool .admin-tabs button.active {
   background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
   font-weight: 600;
-  color: #000;
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
 }
 
-/* 內容區 */
-.admin-content {
+/* 小浮窗內容區 */
+.admin-tool .admin-content {
   padding: 6px;
   overflow: auto;
   background: #fafafa;
   flex: 1;
 }
 
-/* 登入紀錄 / 發言紀錄列表樣式 */
-.admin-content table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
+/* ===============================
+   Admin Modal（大視窗）
+   =============================== */
+
+/* 按鈕統一藍色 */
+.admin-modal .admin-btn,
+.admin-modal .admin-header button,
+.admin-modal .admin-pagination button,
+.admin-tool .admin-tabs button.active { /* 選中 tab 也變藍 */
+  margin-left: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background-color: #1976d2;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s;
 }
 
-.admin-content th,
-.admin-content td {
-  padding: 4px 6px;
+.admin-modal .admin-btn:hover,
+.admin-modal .admin-header button:hover,
+.admin-modal .admin-pagination button:hover:not(:disabled),
+.admin-tool .admin-tabs button:hover {
+  background-color: #1565c0;
+}
+
+.admin-modal .admin-pagination button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* 半透明遮罩 */
+.admin-modal .admin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 視窗本體 */
+.admin-modal {
+  background: #fff;
+  color: #222;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 80%;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  overflow: hidden;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* header */
+.admin-modal .admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
   border-bottom: 1px solid #ddd;
-  text-align: left;
+  background-color: #f5f5f5;
 }
 
-.admin-content th {
-  background: #f2f2f2;
+.admin-modal .admin-header h3 {
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
 }
 
-/* 滾動條美化（可選） */
-.admin-content::-webkit-scrollbar {
-  width: 6px;
+/* 表格容器 */
+.admin-modal .admin-table-wrapper {
+  flex: 1;
+  overflow: auto;
+  padding: 10px;
 }
 
-.admin-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
+/* 表格 */
+.admin-modal .admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
 }
 
-.admin-content::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
+.admin-modal .admin-table th,
+.admin-modal .admin-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  white-space: nowrap;
+  color: #222;
 }
 
-.admin-content::-webkit-scrollbar-thumb:hover {
-  background: #999;
+.admin-modal .admin-table th {
+  background: #f5f5f5;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 600;
+}
+
+.admin-modal .admin-table tr:hover {
+  background: #f0f7ff;
+}
+
+/* 分頁容器 */
+.admin-modal .admin-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+  gap: 6px;
+}
+
+/* 錯誤 / 提示訊息 */
+.admin-modal .admin-error {
+  font-size: 12px;
+  color: red;
+  margin-top: 4px;
 }
