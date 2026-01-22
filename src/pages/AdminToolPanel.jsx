@@ -13,7 +13,7 @@ export default function AdminToolPanel({ myLevel, minLevel, token }) {
     <div className="admin-tool">
       {/* 🛡 管理按鈕 */}
       <button className="admin-btn" onClick={() => setOpen(o => !o)}>
-        🛡管理
+        🛡 管理
       </button>
 
       {open && (
