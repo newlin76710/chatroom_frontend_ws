@@ -169,9 +169,6 @@ export default function ChatApp() {
     const handleMessage = (m) => {
       if (!m) return;
 
-      // 保留 IP 和監控標記
-      const ipInfo = m.ip ? ` ${m.monitored ? `(IP: ${m.ip})` : ""}` : "";
-
       // 補完整 user
       const fullUser = userList.find((u) => u.name === m.user?.name) || {};
 
@@ -179,7 +176,7 @@ export default function ChatApp() {
         ...s,
         {
           ...m,
-          message: safeText(m.message) + ipInfo, // ⭐ 把 IP 加到訊息文字
+          message: safeText(m.message),
           user: {
             ...m.user,
             ...fullUser,

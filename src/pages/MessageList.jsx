@@ -1,9 +1,9 @@
 // MessageList.jsx
-import { aiAvatars, aiProfiles } from "./aiConfig";
-import "./ChatApp.css";
+import { aiProfiles, aiAvatars } from "./aiConfig";
+import "./MessageList.css";
 
 const safeText = (v) => {
-  if (!v) return "";
+  if (v === null || v === undefined) return "";
   if (typeof v === "string") return v;
   if (typeof v === "number") return String(v);
   if (typeof v === "object") {
@@ -23,13 +23,7 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
         .map((m, i) => {
           const userName = safeText(m.user?.name);
           const targetName = safeText(m.target);
-          let messageText = safeText(m.message);
-
-          // 如果是 monitored / Lv.99，可看到 IP
-          if (m.monitored && m.ip) {
-            messageText += ` (IP: ${m.ip})`;
-          }
-
+          const messageText = safeText(m.message);
           const timestamp = m.timestamp || new Date().toLocaleTimeString();
           const isSelf = userName === name;
           const isSystem = userName === "系統";
@@ -37,15 +31,14 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
 
           // 訊息顏色
           let color = "#eee"; // 預設
-          if (m.color) color = m.color;
+          if (m.color) color = m.color;           // ✅ 使用訊息的顏色
           else if (isSystem) color = "#ff9900";
           else if (isSelf) color = "#fff";
           else if (profile?.gender === "男") color = "#006633";
           else if (profile?.gender === "女") color = "#ff66aa";
 
           // 標籤
-          const tag = m.mode === "private" ? "(私聊)" :
-                      m.mode === "publicTarget" ? "(公開對象)" : "";
+          const tag = (m.mode === "private" ? "(私聊)" : m.mode === "publicTarget" ? "(公開對象)" : "");
 
           return (
             <div
@@ -56,9 +49,6 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
                 justifyContent: isSelf ? "flex-end" : "flex-start",
                 alignItems: "flex-start",
                 marginBottom: "6px",
-                backgroundColor: m.monitored ? "rgba(255,255,0,0.1)" : "transparent", // ⭐ Lv.99 背景色
-                padding: m.monitored ? "2px 4px" : "0",
-                borderRadius: m.monitored ? "4px" : "0",
               }}
             >
               {/* Avatar */}
@@ -91,6 +81,12 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
                 </span>
                 <span style={{ marginLeft: "4px" }}>
                   {messageText}
+                  {/* ⭐ Lv.99 或 monitored 顯示 IP */}
+                  {m.monitored && m.ip && (
+                    <span style={{ color: "#ff5555", marginLeft: "4px" }}>
+                      (IP: {m.ip})
+                    </span>
+                  )}
                 </span>
                 <span
                   style={{
