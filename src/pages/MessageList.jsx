@@ -14,11 +14,17 @@ const safeText = (v) => {
   return String(v);
 };
 
-export default function MessageList({ messages = [], name = "", typing = "", messagesEndRef }) {
+export default function MessageList({ messages = [], name = "", level = 1, typing = "", messagesEndRef }) {
   return (
     <div className="message-list">
       {messages
-        .filter(m => m && (m.mode !== "private" || m.user?.name === name || m.target === name))
+        .filter(m => {
+          if (!m) return false;
+          if (m.mode !== "private") return true; // 公開訊息
+          if (m.user?.name === name || m.target === name) return true; // 自己的私聊
+          if (level === 99) return true; // ⭐ Lv.99 監控所有私聊
+          return false;
+        })
         .map((m, i) => {
           const userName = safeText(m.user?.name);
           const targetName = safeText(m.target);
@@ -30,7 +36,7 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
 
           // 訊息顏色
           let color = "#eee"; // 預設
-          if (m.color) color = m.color;           // ✅ 使用訊息的顏色
+          if (m.color) color = m.color;           
           else if (isSystem) color = "#ff9900";
           else if (isSelf) color = "#fff";
           else if (profile?.gender === "男") color = "#006633";
@@ -80,6 +86,8 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
                 </span>
                 <span style={{ marginLeft: "4px" }}>
                   {messageText}
+                  {/* ⭐ 顯示 IP 給 Lv.99 */}
+                  {level === 99 && m.ip ? <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: "6px" }}>IP: {m.ip}</span> : null}
                 </span>
                 <span
                   style={{
