@@ -79,7 +79,7 @@ export default function AdminLoginLogPanel({ myName, myLevel, minLevel, token })
 
   return (
     <>
-      <button className="admin-btn" onClick={handleOpen}>🛡管理</button>
+      <button className="admin-btn" onClick={handleOpen}>🛡管理登入記錄</button>
 
       {open && (
         <div className="admin-overlay" onClick={() => setOpen(false)}>

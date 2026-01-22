@@ -7,7 +7,7 @@ import VideoPlayer from "./VideoPlayer";
 import SongPanel from "./SongPanel";
 import Listener from "./Listener";
 import UserList from "./UserList";
-import AdminLoginLogPanel from "./AdminLoginLogPanel";
+import AdminToolPanel from "./AdminToolPanel";
 import { aiAvatars } from "./aiConfig";
 import "./ChatApp.css";
 
@@ -84,7 +84,7 @@ export default function ChatApp() {
     const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
     if (storedToken) setToken(storedToken);
   }, []);
-  
+
   // --- updateUsers 處理 ---
   useEffect(() => {
     const handleUpdateUsers = (list = []) => {
@@ -438,7 +438,7 @@ export default function ChatApp() {
 
             <div className="chat-input">
               {/* 🛡 管理按鈕（小） */}
-              <AdminLoginLogPanel
+              <AdminToolPanel
                 myName={name}
                 myLevel={level}
                 minLevel={99}
