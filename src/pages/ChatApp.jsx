@@ -169,22 +169,20 @@ export default function ChatApp() {
     const handleMessage = (m) => {
       if (!m) return;
 
-      // 🔑 從 userList 補完整 user（avatar / gender / level）
-      const fullUser = userList.find(
-        (u) => u.name === m.user?.name
-      );
+      // 保留 IP 和監控標記
+      const ipInfo = m.ip ? ` ${m.monitored ? `(IP: ${m.ip})` : ""}` : "";
 
-      console.log("RAW MESSAGE =", m);
-      console.log("FULL USER FROM LIST =", fullUser);
+      // 補完整 user
+      const fullUser = userList.find((u) => u.name === m.user?.name) || {};
 
       setMessages((s) => [
         ...s,
         {
           ...m,
-          message: safeText(m.message),
+          message: safeText(m.message) + ipInfo, // ⭐ 把 IP 加到訊息文字
           user: {
             ...m.user,
-            ...fullUser,                 // ✅ avatar 在這裡回來
+            ...fullUser,
             name: safeText(m.user?.name),
           },
           target: safeText(m.target),

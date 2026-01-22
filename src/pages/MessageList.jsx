@@ -1,3 +1,4 @@
+// MessageList.jsx
 import { aiAvatars, aiProfiles } from "./aiConfig";
 import "./ChatApp.css";
 
@@ -14,21 +15,21 @@ const safeText = (v) => {
   return String(v);
 };
 
-export default function MessageList({ messages = [], name = "", level = 1, typing = "", messagesEndRef }) {
+export default function MessageList({ messages = [], name = "", typing = "", messagesEndRef }) {
   return (
     <div className="message-list">
       {messages
-        .filter(m => {
-          if (!m) return false;
-          if (m.mode !== "private") return true; // 公開訊息
-          if (m.user?.name === name || m.target === name) return true; // 自己的私聊
-          if (level === 99) return true; // ⭐ Lv.99 監控所有私聊
-          return false;
-        })
+        .filter(m => m && (m.mode !== "private" || m.user?.name === name || m.target === name || m.monitored))
         .map((m, i) => {
           const userName = safeText(m.user?.name);
           const targetName = safeText(m.target);
-          const messageText = safeText(m.message);
+          let messageText = safeText(m.message);
+
+          // 如果是 monitored / Lv.99，可看到 IP
+          if (m.monitored && m.ip) {
+            messageText += ` (IP: ${m.ip})`;
+          }
+
           const timestamp = m.timestamp || new Date().toLocaleTimeString();
           const isSelf = userName === name;
           const isSystem = userName === "系統";
@@ -36,14 +37,15 @@ export default function MessageList({ messages = [], name = "", level = 1, typin
 
           // 訊息顏色
           let color = "#eee"; // 預設
-          if (m.color) color = m.color;           
+          if (m.color) color = m.color;
           else if (isSystem) color = "#ff9900";
           else if (isSelf) color = "#fff";
           else if (profile?.gender === "男") color = "#006633";
           else if (profile?.gender === "女") color = "#ff66aa";
 
           // 標籤
-          const tag = (m.mode === "private" ? "(私聊)" : m.mode === "publicTarget" ? "(公開對象)" : "");
+          const tag = m.mode === "private" ? "(私聊)" :
+                      m.mode === "publicTarget" ? "(公開對象)" : "";
 
           return (
             <div
@@ -54,6 +56,9 @@ export default function MessageList({ messages = [], name = "", level = 1, typin
                 justifyContent: isSelf ? "flex-end" : "flex-start",
                 alignItems: "flex-start",
                 marginBottom: "6px",
+                backgroundColor: m.monitored ? "rgba(255,255,0,0.1)" : "transparent", // ⭐ Lv.99 背景色
+                padding: m.monitored ? "2px 4px" : "0",
+                borderRadius: m.monitored ? "4px" : "0",
               }}
             >
               {/* Avatar */}
@@ -86,8 +91,6 @@ export default function MessageList({ messages = [], name = "", level = 1, typin
                 </span>
                 <span style={{ marginLeft: "4px" }}>
                   {messageText}
-                  {/* ⭐ 顯示 IP 給 Lv.99 */}
-                  {level === 99 && m.ip ? <span style={{ fontSize: "0.7rem", color: "#888", marginLeft: "6px" }}>IP: {m.ip}</span> : null}
                 </span>
                 <span
                   style={{
