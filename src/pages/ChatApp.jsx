@@ -327,11 +327,11 @@ export default function ChatApp() {
 
     setText("");
     setCooldown(true);
-    setPlaceholder("請等待 3 秒後再發送…");
+    setPlaceholder("請等待 1 秒後再發送…");
     setTimeout(() => {
       setCooldown(false);
       setPlaceholder("輸入訊息...");
-    }, 3000);
+    }, 1000);
   };
 
   const extractVideoID = (url) => {
