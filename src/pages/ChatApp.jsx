@@ -410,6 +410,7 @@ export default function ChatApp() {
                 <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube 連結" />
                 <button onClick={playVideo}>🎵 點播</button>
               </div>
+              <button onClick={() => setShowSongPanel(!showSongPanel)}>🎤 唱歌</button>
               {/* 🎤 歌手 / 麥克風面板 */}
               {showSongPanel && (
                 <SongRoom room={room} name={name} socket={socket} />
