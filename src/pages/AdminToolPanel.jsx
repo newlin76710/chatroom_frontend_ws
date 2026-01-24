@@ -1,17 +1,17 @@
 import { useState } from "react";
 import AdminLoginLogPanel from "./AdminLoginLogPanel";
 import MessageLogPanel from "./MessageLogPanel";
+import AdminLevelPanel from "./AdminLevelPanel"; // ⭐ 新增
 import "./AdminToolPanel.css";
 
 export default function AdminToolPanel({ myLevel, minLevel, token }) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState("login"); // login | message
+  const [tab, setTab] = useState("login"); // login | message | level
 
   if (myLevel < minLevel) return null;
 
   return (
     <div className="admin-tool">
-      {/* 🛡 管理按鈕 */}
       <button className="admin-btn" onClick={() => setOpen(o => !o)}>
         🛡 管理
       </button>
@@ -32,17 +32,19 @@ export default function AdminToolPanel({ myLevel, minLevel, token }) {
             >
               發言紀錄
             </button>
+            <button
+              className={tab === "level" ? "active" : ""}
+              onClick={() => setTab("level")}
+            >
+              等級管理
+            </button>
           </div>
 
           {/* Content */}
           <div className="admin-content">
-            {tab === "login" && (
-              <AdminLoginLogPanel token={token} />
-            )}
-
-            {tab === "message" && (
-              <MessageLogPanel token={token} />
-            )}
+            {tab === "login" && <AdminLoginLogPanel token={token} />}
+            {tab === "message" && <MessageLogPanel token={token} />}
+            {tab === "level" && <AdminLevelPanel token={token} myLevel={myLevel} />}
           </div>
         </div>
       )}
