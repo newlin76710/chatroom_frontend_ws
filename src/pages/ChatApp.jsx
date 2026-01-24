@@ -334,9 +334,10 @@ export default function ChatApp() {
   const extractVideoID = (url) => {
     if (!url) return null;
     const match =
-      url.match(/v=([\w-]{11})/) ||
-      url.match(/youtu\.be\/([\w-]{11})/) ||
-      url.match(/shorts\/([\w-]{11})/);
+      url.match(/[?&]v=([\w-]{11})/) ||        // 一般 watch / live watch
+      url.match(/youtu\.be\/([\w-]{11})/) ||   // youtu.be
+      url.match(/shorts\/([\w-]{11})/) ||      // shorts
+      url.match(/live\/([\w-]{11})/);          // live
     return match ? match[1] : null;
   };
 
@@ -407,25 +408,8 @@ export default function ChatApp() {
               <button onClick={leaveRoom}>離開</button>
               <div className="video-request">
                 <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube 連結" />
-                <button onClick={playVideo}>🎵 點播</button>
+                <button onClick={playVideo}>🎵 點播(可放直播唱歌)</button>
               </div>
-              <button onClick={() => setShowSongPanel(!showSongPanel)}>🎤 唱歌</button>
-              {showSongPanel && (
-                <SongPanel
-                  socket={socket}
-                  room={room}
-                  name={name}
-                  uploadSong={uploadSong}
-                  userList={userList}
-                  chatMode={chatMode}
-                  setChatMode={setChatMode}
-                  target={target}
-                  setTarget={setTarget}
-                  onClose={() => setShowSongPanel(false)}
-                  inline
-                />
-              )}
-              <Listener socket={socket} room={room} />
             </div>
 
 
