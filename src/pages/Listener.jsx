@@ -1,86 +1,156 @@
-// Listener.jsx
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Room } from "livekit-client";
 
-export default function Listener({ socket, room }) {
-  const audioRef = useRef(null);
-  const pcRef = useRef(null);
-  const pendingCandidates = useRef([]);
+export default function Listener({ room, name, socket }) {
+  const [lkRoom, setLkRoom] = useState(null);
   const [listening, setListening] = useState(false);
+  const [currentSinger, setCurrentSinger] = useState(null);
 
+  // 記住目前正在播放的 audio elements（避免疊音）
+  const audioElementsRef = useRef({});
+
+  /* ===== 監聽目前演唱者（Socket） ===== */
   useEffect(() => {
-    if (pcRef.current) return;
+    if (!socket) return;
 
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: "stun:stun.relay.metered.ca:80" },
-        {
-          urls: [
-            "turn:turn.ek21.com:3478?transport=udp",
-            "turn:turn.ek21.com:3478?transport=tcp",
-          ],
-          username: "webrtcuser",
-          credential: "Abc76710",
-        },
-      ],
+    const handler = (data) => {
+      console.log("[Listener] micStateUpdate:", data);
+      setCurrentSinger(data.currentSinger || null);
+    };
+
+    socket.on("micStateUpdate", handler);
+    return () => socket.off("micStateUpdate", handler);
+  }, [socket]);
+
+  /* ===== 停止收聽（清乾淨） ===== */
+  const stopListening = () => {
+    console.log("[Listener] stopping listening");
+
+    if (lkRoom) {
+      lkRoom.disconnect();
+      lkRoom.removeAllListeners();
+    }
+
+    Object.values(audioElementsRef.current).forEach((el) => {
+      el.pause?.();
+      el.remove();
     });
-    pcRef.current = pc;
 
-    pc.oniceconnectionstatechange = () => console.log("ICE state:", pc.iceConnectionState);
-    pc.onconnectionstatechange = () => console.log("PC state:", pc.connectionState);
+    audioElementsRef.current = {};
+    setLkRoom(null);
+    setListening(false);
+  };
 
-    pc.ontrack = e => {
-      console.log("🎧 ontrack");
-      if (audioRef.current) {
-        audioRef.current.srcObject = e.streams[0];
-        if (listening) audioRef.current.play().catch(() => {});
-      }
-    };
+  /* ===== 開始 / 停止收聽 ===== */
+  const toggleListening = async () => {
+    if (!name) return;
 
-    pc.onicecandidate = e => {
-      if (e.candidate) socket.emit("webrtc-ice", { room, candidate: e.candidate });
-    };
+    if (listening) {
+      stopListening();
+      return;
+    }
 
-    const onOffer = async ({ offer }) => {
-      if (!pcRef.current) return;
-      await pc.setRemoteDescription(offer);
-      for (const c of pendingCandidates.current) await pcRef.current.addIceCandidate(c);
-      pendingCandidates.current = [];
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      socket.emit("webrtc-answer", { room, answer });
-    };
+    try {
+      console.log(`[Listener] requesting token for ${name} @ ${room}`);
 
-    const onIce = async ({ candidate }) => {
-      if (!pcRef.current || !candidate) return;
-      if (!pcRef.current.remoteDescription) pendingCandidates.current.push(candidate);
-      else {
-        try { await pcRef.current.addIceCandidate(candidate); }
-        catch (err) { console.warn("addIceCandidate failed", err); }
-      }
-    };
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/livekit-token?room=${room}&name=${name}`
+      );
+      const data = await res.json();
+      if (!data.token) return;
 
-    socket.on("webrtc-offer", onOffer);
-    socket.on("webrtc-ice", onIce);
+      const lk = new Room();
 
-    return () => {
-      pc.close();
-      socket.off("webrtc-offer", onOffer);
-      socket.off("webrtc-ice", onIce);
-    };
-  }, [socket, room, listening]);
+      lk.on("connected", () =>
+        console.log("[Listener] LiveKit connected")
+      );
 
-  const toggleListening = () => {
-    if (!audioRef.current) return;
-    if (listening) audioRef.current.pause();
-    else audioRef.current.play().catch(() => {});
-    setListening(!listening);
+      lk.on("disconnected", () =>
+        console.log("[Listener] LiveKit disconnected")
+      );
+
+      /* ===== 收到音訊 Track ===== */
+      lk.on("trackSubscribed", (track, publication, participant) => {
+        console.log(
+          "[Listener] trackSubscribed:",
+          track.kind,
+          participant.identity
+        );
+
+        if (track.kind !== "audio") return;
+
+        // 👉 如果你「只想聽目前唱歌的人」，打開這段
+        if (currentSinger && participant.identity !== currentSinger) {
+          console.log("[Listener] ignore non-singer:", participant.identity);
+          return;
+        }
+
+        // 移除舊的（避免疊音）
+        if (audioElementsRef.current[participant.identity]) {
+          audioElementsRef.current[participant.identity].remove();
+          delete audioElementsRef.current[participant.identity];
+        }
+
+        // ✅ 正確方式：attach()
+        const audioEl = track.attach();
+
+        audioEl.autoplay = true;
+        audioEl.muted = false;
+        audioEl.volume = 1;
+
+        audioEl.id = `audio-${participant.identity}`;
+        document.body.appendChild(audioEl);
+
+        // 行動裝置保險
+        audioEl.play?.().catch(() => {});
+
+        audioElementsRef.current[participant.identity] = audioEl;
+
+        console.log(
+          "[Listener] audio playing:",
+          participant.identity
+        );
+      });
+
+      /* ===== Track 被移除 ===== */
+      lk.on("trackUnsubscribed", (track, publication, participant) => {
+        console.log(
+          "[Listener] trackUnsubscribed:",
+          track.kind,
+          participant.identity
+        );
+
+        if (track.kind !== "audio") return;
+
+        const el = audioElementsRef.current[participant.identity];
+        if (el) {
+          el.pause?.();
+          el.remove();
+          delete audioElementsRef.current[participant.identity];
+        }
+
+        track.detach().forEach((e) => e.remove());
+      });
+
+      await lk.connect(import.meta.env.VITE_LIVEKIT_URL, data.token, {
+        autoSubscribe: true,
+      });
+
+      setLkRoom(lk);
+      setListening(true);
+
+      console.log("[Listener] listening started");
+    } catch (err) {
+      console.error("[Listener] failed to listen:", err);
+      stopListening();
+    }
   };
 
   return (
     <div>
-      <audio ref={audioRef} autoPlay playsInline />
+      <p>🎤 目前演唱者：{currentSinger || "無人唱歌"}</p>
       <button onClick={toggleListening}>
-        {listening ? "⏹️ 停止收聽" : "🔊 開始收聽"}
+        {listening ? "🛑 停止收聽" : "🎧 開始收聽"}
       </button>
     </div>
   );

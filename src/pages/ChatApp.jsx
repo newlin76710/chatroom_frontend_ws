@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import MessageList from "./MessageList";
 import VideoPlayer from "./VideoPlayer";
-import SongPanel from "./SongPanel";
+import SongRoom from "./SongRoom";
 import Listener from "./Listener";
 import UserList from "./UserList";
 import AdminToolPanel from "./AdminToolPanel";
@@ -408,10 +408,15 @@ export default function ChatApp() {
               <button onClick={leaveRoom}>離開</button>
               <div className="video-request">
                 <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube 連結" />
-                <button onClick={playVideo}>🎵 點播(可放直播唱歌)</button>
+                <button onClick={playVideo}>🎵 點播</button>
               </div>
+              {/* 🎤 歌手 / 麥克風面板 */}
+              {showSongPanel && (
+                <SongRoom room={room} name={name} socket={socket} />
+              )}
+              {/* 👂 聽眾面板 */}
+              <Listener room={room} name={name} socket={socket} />
             </div>
-
 
             <MessageList messages={messages} name={name} typing={typing} messagesEndRef={messagesEndRef} />
 
