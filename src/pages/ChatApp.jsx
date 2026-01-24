@@ -85,6 +85,15 @@ export default function ChatApp() {
     if (storedToken) setToken(storedToken);
   }, []);
 
+  useEffect(() => {
+    // 心跳 10 秒一次
+    const heartbeatInterval = setInterval(() => {
+      socket.emit("heartbeat");
+    }, 10000);
+
+    return () => clearInterval(heartbeatInterval);
+  }, [socket]);
+  
   // --- updateUsers 處理 ---
   useEffect(() => {
     const handleUpdateUsers = (list = []) => {
