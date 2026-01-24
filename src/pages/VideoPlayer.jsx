@@ -20,7 +20,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
       event.target.setVolume(100);
     }
 
-    event.target.playVideo();
+    // ❌ 不要在這裡 play（避免新人進來重播）
   };
 
   /* ===== 行動裝置：首次觸控解除靜音 ===== */
@@ -42,6 +42,18 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
     return () => window.removeEventListener("touchstart", handleTouch);
   }, []);
 
+  /* ===== 只有「影片真的換了」才播放 ===== */
+  const lastVideoIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!playerRef.current || !videoId) return;
+
+    if (lastVideoIdRef.current !== videoId) {
+      playerRef.current.playVideo(); // ✅ 換歌才播
+      lastVideoIdRef.current = videoId;
+    }
+  }, [videoId]);
+
   return (
     <div className="video-player-float">
       {videoId ? (
@@ -53,7 +65,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
               width: "100%",
               height: "100%",
               playerVars: {
-                autoplay: 1,
+                autoplay: 0, // ❌ 關掉自動播放
                 playsinline: 1,
                 controls: 1,
                 rel: 0,
@@ -70,10 +82,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
           </div>
         </>
       ) : (
-        /* ===== 尚未播放：預留畫面 ===== */
-        <div className="video-placeholder">
-          🎬 尚未播放影片
-        </div>
+        <div className="video-placeholder">🎬 尚未播放影片</div>
       )}
     </div>
   );
