@@ -1,7 +1,6 @@
-// Login.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { aiAvatars } from "./aiConfig"; // AI 預設頭像列表
+import { aiAvatars } from "./aiConfig";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
@@ -29,38 +28,35 @@ const buttonStyle = {
 
 export default function Login() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState("guest"); // guest | login | register
+  const [mode, setMode] = useState("guest"); // guest | login | register | edit
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [gender, setGender] = useState("女");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [avatar, setAvatar] = useState(""); // 頭像
+  const [editLoggedIn, setEditLoggedIn] = useState(false);
 
-  // 檢查是否被禁止登入
+  // 讀取已登入的使用者資料
   useEffect(() => {
-    const blockedUntil = sessionStorage.getItem("blockedUntil");
-    if (blockedUntil && Date.now() < parseInt(blockedUntil)) {
-      alert("你剛剛被踢出，請等待 5 秒後再登入");
+    const type = sessionStorage.getItem("type");
+    if (type) {
+      const name = sessionStorage.getItem("name") || "";
+      const g = sessionStorage.getItem("gender") || "女";
+      const a = sessionStorage.getItem("avatar") || "";
+      setUsername(name);
+      setGender(g);
+      setAvatar(a);
     }
   }, []);
 
-  // 訪客登入
   const guestLogin = async () => {
-    const blockedUntil = sessionStorage.getItem("blockedUntil");
-    if (blockedUntil && Date.now() < parseInt(blockedUntil)) {
-      return alert("你剛剛被踢出，請等待 5 秒後再登入");
-    }
-
-    if (!username) {
-      return alert("請輸入暱稱");
-    }
-
+    if (!username) return alert("請輸入暱稱");
     try {
       const res = await fetch(`${BACKEND}/auth/guest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gender, username }), // ✅ 傳暱稱
+        body: JSON.stringify({ gender, username }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "訪客登入失敗");
@@ -77,15 +73,8 @@ export default function Login() {
     }
   };
 
-  // 帳號登入
   const accountLogin = async () => {
-    const blockedUntil = sessionStorage.getItem("blockedUntil");
-    if (blockedUntil && Date.now() < parseInt(blockedUntil)) {
-      return alert("你剛剛被踢出，請等待 5 秒後再登入");
-    }
-
     if (!username || !password) return alert("請輸入帳號與密碼");
-
     try {
       const res = await fetch(`${BACKEND}/auth/login`, {
         method: "POST",
@@ -102,16 +91,19 @@ export default function Login() {
       sessionStorage.setItem("last_login", data.last_login);
       sessionStorage.setItem("type", "account");
 
+      // 帶入修改模式資料
+      setUsername(data.name);
+      setGender(data.gender);
+      setAvatar(data.avatar || "");
+
       navigate("/chat");
     } catch (e) {
       alert("帳號登入失敗：" + e.message);
     }
   };
 
-  // 註冊
   const registerAccount = async () => {
     if (!username || !password) return alert("請填寫帳號與密碼");
-
     try {
       const res = await fetch(`${BACKEND}/auth/register`, {
         method: "POST",
@@ -128,6 +120,32 @@ export default function Login() {
     }
   };
 
+  const updateProfile = async () => {
+    try {
+      const token = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken");
+      if (!token) return alert("請先登入");
+
+      const res = await fetch(`${BACKEND}/auth/updateProfile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ username, password, gender, avatar }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "修改失敗");
+
+      alert("資料更新成功！");
+      // 更新 sessionStorage
+      sessionStorage.setItem("name", username);
+      sessionStorage.setItem("gender", gender);
+      sessionStorage.setItem("avatar", avatar);
+    } catch (e) {
+      alert("修改失敗：" + e.message);
+    }
+  };
+
   return (
     <div style={{ maxWidth: 420, margin: "60px auto", padding: 20 }}>
       <h2 style={{ textAlign: "center", marginBottom: 10 }}>聽風的歌聊天室</h2>
@@ -137,7 +155,7 @@ export default function Login() {
 
       {/* 模式切換 */}
       <div style={{ display: "flex", gap: 8, margin: "20px 0" }}>
-        {["guest", "login", "register"].map((m) => (
+        {["guest", "login", "register", "edit"].map((m) => (
           <button
             key={m}
             onClick={() => setMode(m)}
@@ -151,12 +169,19 @@ export default function Login() {
               cursor: "pointer",
             }}
           >
-            {m === "guest" ? "訪客" : m === "login" ? "登入" : "註冊"}
+            {m === "guest"
+              ? "訪客"
+              : m === "login"
+                ? "登入"
+                : m === "register"
+                  ? "註冊"
+                  : "修改資料"}
           </button>
         ))}
       </div>
-
+      
       {/* 性別選擇 */}
+      {(mode === "guest" || mode === "login" || mode === "register") && (
       <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
         {[{ v: "女", label: "♀ 女生" }, { v: "男", label: "♂ 男生" }].map((g) => (
           <label
@@ -181,21 +206,21 @@ export default function Login() {
             {g.label}
           </label>
         ))}
-      </div>
+      </div>)}
 
-      {/* 帳號登入/註冊表單 */}
+      {/* 帳號登入/註冊/修改表單 */}
       {(mode === "login" || mode === "register") && (
         <>
           <input
             style={inputStyle}
-            placeholder="帳號"
+            placeholder="暱稱"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
           <input
             style={inputStyle}
             type="password"
-            placeholder="密碼"
+            placeholder={mode === "edit" ? "密碼（不改可留空）" : "密碼"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -216,29 +241,31 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-
-          {/* 頭像選擇 */}
-          <div style={{ margin: "10px 0" }}>
-            <div style={{ marginBottom: 6, color: "#aaa" }}>選擇頭像：</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {Object.entries(aiAvatars).map(([name, url]) => (
-                <img
-                  key={name}
-                  src={url}
-                  alt={name}
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: "50%",
-                    border: avatar === url ? "2px solid #ff66aa" : "2px solid transparent",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setAvatar(url)}
-                />
-              ))}
-            </div>
-          </div>
         </>
+      )}
+
+      {/* 頭像選擇 */}
+      {(mode === "register") && (
+        <div style={{ margin: "10px 0" }}>
+          <div style={{ marginBottom: 6, color: "#aaa" }}>選擇頭像：</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {Object.entries(aiAvatars).map(([name, url]) => (
+              <img
+                key={name}
+                src={url}
+                alt={name}
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: "50%",
+                  border: avatar === url ? "2px solid #ff66aa" : "2px solid transparent",
+                  cursor: "pointer",
+                }}
+                onClick={() => setAvatar(url)}
+              />
+            ))}
+          </div>
+        </div>
       )}
 
       {/* 送出按鈕 */}
@@ -256,17 +283,135 @@ export default function Login() {
         </>
       )}
 
-      {mode === "login" && (
-        <button style={buttonStyle} onClick={accountLogin}>
-          登入聊天室
-        </button>
+      {mode === "login" && <button style={buttonStyle} onClick={accountLogin}>登入聊天室</button>}
+      {mode === "register" && <button style={buttonStyle} onClick={registerAccount}>建立帳號</button>}
+      {mode === "edit" && (
+        <>
+          {!editLoggedIn ? (
+            // 尚未登入，顯示帳號登入表單
+            <>
+              <h3>請先登入帳號以修改資料</h3>
+              <input
+                style={inputStyle}
+                placeholder="帳號"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <input
+                style={inputStyle}
+                type="password"
+                placeholder="密碼"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                style={buttonStyle}
+                onClick={async () => {
+                  if (!username || !password) return alert("請輸入帳號與密碼");
+                  try {
+                    const res = await fetch(`${BACKEND}/auth/login`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ username, password, gender }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "登入失敗");
+
+                    // 帳號登入成功
+                    sessionStorage.setItem("token", data.token);
+                    sessionStorage.setItem("name", data.name);
+                    sessionStorage.setItem("gender", data.gender);
+                    sessionStorage.setItem("avatar", data.avatar || "");
+                    sessionStorage.setItem("type", "account");
+
+                    setUsername(data.name);
+                    setGender(data.gender);
+                    setAvatar(data.avatar || "");
+
+                    setEditLoggedIn(true); // 開放修改資料表單
+                  } catch (e) {
+                    alert("登入失敗：" + e.message);
+                  }
+                }}
+              >
+                登入
+              </button>
+            </>
+          ) : (
+            // 已登入，顯示修改表單
+            <>
+              <h3>修改資料</h3>
+              <input
+                style={inputStyle}
+                placeholder="暱稱"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <input
+                style={inputStyle}
+                type="password"
+                placeholder="密碼（不改可留空）"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              {/* 性別選擇 */}
+              <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                {["女", "男"].map((g) => (
+                  <label
+                    key={g}
+                    style={{
+                      flex: 1,
+                      textAlign: "center",
+                      padding: 8,
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      background: gender === g ? "#333" : "#1e1e1e",
+                      border: "1px solid #333",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      value={g}
+                      checked={gender === g}
+                      onChange={() => setGender(g)}
+                      style={{ display: "none" }}
+                    />
+                    {g}
+                  </label>
+                ))}
+              </div>
+
+              {/* 頭像選擇 */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ marginBottom: 6 }}>選擇頭像：</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {Object.entries(aiAvatars).map(([name, url]) => (
+                    <img
+                      key={name}
+                      src={url}
+                      alt={name}
+                      style={{
+                        width: 50,
+                        height: 50,
+                        borderRadius: "50%",
+                        border: avatar === url ? "2px solid #ff66aa" : "2px solid transparent",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setAvatar(url)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <button style={buttonStyle} onClick={updateProfile}>
+                儲存修改
+              </button>
+            </>
+          )}
+        </>
       )}
 
-      {mode === "register" && (
-        <button style={buttonStyle} onClick={registerAccount}>
-          建立帳號
-        </button>
-      )}
     </div>
   );
 }
