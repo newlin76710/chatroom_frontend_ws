@@ -93,7 +93,7 @@ export default function ChatApp() {
 
     return () => clearInterval(heartbeatInterval);
   }, [socket]);
-  
+
   // --- updateUsers 處理 ---
   useEffect(() => {
     const handleUpdateUsers = (list = []) => {
@@ -395,6 +395,10 @@ export default function ChatApp() {
     };
   }, [socket, navigate]);
 
+  const clearAllMessages = () => {
+    setMessages([]);
+  };
+
   return (
     <div className="chat-layout">
       {/* 左側聊天區 */}
@@ -431,6 +435,22 @@ export default function ChatApp() {
             <MessageList messages={messages} name={name} typing={typing} messagesEndRef={messagesEndRef} />
 
             <div className="chat-input">
+              <button
+                onClick={clearAllMessages}
+                style={{
+                  fontSize: "0.7rem",
+                  padding: "4px 6px",
+                  marginRight: "6px",
+                  borderRadius: "6px",
+                  border: "1px solid #444",
+                  background: "#1a1a1a",
+                  color: "#aaa",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                🧹清空畫面
+              </button>
               {/* 🛡 管理按鈕（小） */}
               <AdminToolPanel
                 myName={name}
