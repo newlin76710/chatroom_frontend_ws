@@ -10,6 +10,7 @@ import Listener from "./Listener";
 import UserList from "./UserList";
 import AdminToolPanel from "./AdminToolPanel";
 import QuickPhrasePanel from "./QuickPhrasePanel";
+import AnnouncementPanel from "./AnnouncementPanel";
 import { aiAvatars } from "./aiConfig";
 import "./ChatApp.css";
 
@@ -66,6 +67,7 @@ export default function ChatApp() {
   const [chatColor, setChatColor] = useState(
     sessionStorage.getItem("chatColor") || "#ffffff"
   );
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
 
   // --- 初始化 sessionStorage ---
   useEffect(() => {
@@ -405,7 +407,25 @@ export default function ChatApp() {
     <div className="chat-layout">
       {/* 左側聊天區 */}
       <div className="chat-left">
-        <div className="chat-title">尋夢園聽風的歌聊天室</div>
+        <div className="chat-title-bar">
+          <div className="chat-title">
+            尋夢園聽風的歌聊天室
+            <button
+              className="announce-btn"
+              title="聊天室公告"
+              onClick={() => setShowAnnouncement(true)}
+            >
+              📢公告
+            </button>
+          </div>
+
+        </div>
+        <AnnouncementPanel
+          open={showAnnouncement}
+          onClose={() => setShowAnnouncement(false)}
+          myLevel={level}
+          token={token}
+        />
         {!joined ? (
           <button onClick={loginGuest}>訪客登入</button>
         ) : (
@@ -526,6 +546,7 @@ export default function ChatApp() {
           myName={name}
         />
       </div>
+
     </div>
   );
 }

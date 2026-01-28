@@ -9,6 +9,26 @@ body {
   box-sizing: border-box;
 }
 
+.chat-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 6px;
+}
+
+.announce-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #3399ff;        /* 藍色文字 */
+  transition: color 0.2s;
+}
+
+.announce-btn:hover {
+  color: #66b2ff;        /* 滑鼠懸停更亮藍色 */
+}
+
 /* ===== 聊天整個 layout ===== */
 .chat-layout {
   width: 100%;
