@@ -13,30 +13,49 @@ export default function QuickPhrasePanel({ token, onSelect }) {
     Authorization: `Bearer ${token}`,
   };
 
+  // 讀取列表
   const load = async () => {
-    const res = await fetch(`${BACKEND}/api/quick-phrases`, { headers });
-    if (res.ok) setPhrases(await res.json());
+    try {
+      const res = await fetch(`${BACKEND}/api/quick-phrases`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setPhrases(data.phrases || data); // 後端可能回 { phrases: [...] }
+      }
+    } catch (err) {
+      console.error("載入常用語失敗:", err);
+    }
   };
 
   useEffect(() => {
     if (open) load();
   }, [open]);
 
+  // 新增或更新
   const save = async () => {
     if (!value.trim()) return;
 
-    if (editingId) {
-      await fetch(`${BACKEND}/api/quick-phrases/${editingId}`, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify({ content: value }),
-      });
-    } else {
-      await fetch(`${BACKEND}/api/quick-phrases`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ content: value }),
-      });
+    try {
+      if (editingId && editingId !== "new") {
+        // 更新
+        const res = await fetch(`${BACKEND}/api/quick-phrases/update`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ id: editingId, content: value }),
+        });
+        const data = await res.json();
+        if (!data.phrase) alert(data.error || "更新失敗");
+      } else {
+        // 新增
+        const res = await fetch(`${BACKEND}/api/quick-phrases/new`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ content: value }),
+        });
+        const data = await res.json();
+        if (!data.phrase) alert(data.error || "新增失敗");
+      }
+    } catch (err) {
+      console.error("保存失敗:", err);
     }
 
     setValue("");
@@ -44,12 +63,20 @@ export default function QuickPhrasePanel({ token, onSelect }) {
     load();
   };
 
+  // 刪除
   const del = async (id) => {
     if (!confirm("刪除這個常用語？")) return;
-    await fetch(`${BACKEND}/api/quick-phrases/${id}`, {
-      method: "DELETE",
-      headers,
-    });
+    try {
+      const res = await fetch(`${BACKEND}/api/quick-phrases/delete`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!data.success) alert(data.error || "刪除失敗");
+    } catch (err) {
+      console.error("刪除失敗:", err);
+    }
     load();
   };
 
