@@ -8,6 +8,7 @@ import SongRoom from "./SongRoom";
 import Listener from "./Listener";
 import UserList from "./UserList";
 import AdminToolPanel from "./AdminToolPanel";
+import QuickPhrasePanel from "./QuickPhrasePanel";
 import { aiAvatars } from "./aiConfig";
 import "./ChatApp.css";
 
@@ -485,6 +486,12 @@ export default function ChatApp() {
                   border: "1px solid #ccc", // 可選邊框
                   borderRadius: "4px",      // 圓角
                   verticalAlign: "middle"   // 對齊輸入框
+                }}
+              />
+              <QuickPhrasePanel
+                token={token}
+                onSelect={(content) => {
+                  setText((prev) => (prev ? prev + " " : "") + content);
                 }}
               />
               <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
