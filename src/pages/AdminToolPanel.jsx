@@ -2,11 +2,12 @@ import { useState } from "react";
 import AdminLoginLogPanel from "./AdminLoginLogPanel";
 import MessageLogPanel from "./MessageLogPanel";
 import AdminLevelPanel from "./AdminLevelPanel"; // ⭐ 新增
+import AdminIPPanel from "./AdminIPPanel";   // ⭐ 新增
 import "./AdminToolPanel.css";
 
 export default function AdminToolPanel({ myLevel, minLevel, token }) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState("login"); // login | message | level
+  const [tab, setTab] = useState("login"); // login | message | level | ip
 
   if (myLevel < minLevel) return null;
 
@@ -38,6 +39,12 @@ export default function AdminToolPanel({ myLevel, minLevel, token }) {
             >
               等級管理
             </button>
+            <button
+              className={tab === "ip" ? "active" : ""}
+              onClick={() => setTab("ip")}
+            >
+              IP 管制
+            </button>
           </div>
 
           {/* Content */}
@@ -45,6 +52,7 @@ export default function AdminToolPanel({ myLevel, minLevel, token }) {
             {tab === "login" && <AdminLoginLogPanel token={token} />}
             {tab === "message" && <MessageLogPanel token={token} />}
             {tab === "level" && <AdminLevelPanel token={token} myLevel={myLevel} />}
+            {tab === "ip" && <AdminIPPanel token={token} />}
           </div>
         </div>
       )}
