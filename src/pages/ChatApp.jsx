@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import MessageList from "./MessageList";
 import VideoPlayer from "./VideoPlayer";
+import VideoSafeBoundary from "./VideoSafeBoundary";
 import SongRoom from "./SongRoom";
 import Listener from "./Listener";
 import UserList from "./UserList";
@@ -505,7 +506,13 @@ export default function ChatApp() {
       {/* 右側使用者列表 & 影片 */}
       <div className="chat-right">
         <div className="youtube-container">
-          <VideoPlayer video={currentVideo} extractVideoID={extractVideoID} onClose={() => setCurrentVideo(null)} />
+          <VideoSafeBoundary>
+            <VideoPlayer
+              video={currentVideo}
+              extractVideoID={extractVideoID}
+              onClose={() => setCurrentVideo(null)}
+            />
+          </VideoSafeBoundary>
         </div>
         <UserList
           userList={userList}

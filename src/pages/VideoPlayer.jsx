@@ -4,6 +4,8 @@ import "./VideoPlayer.css";
 
 export default function VideoPlayer({ video, extractVideoID, onClose }) {
   const playerRef = useRef(null);
+  const lastVideoIdRef = useRef(null);
+
   const videoId = video ? extractVideoID(video.url) : null;
 
   /* ===== Player Ready ===== */
@@ -19,8 +21,6 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
       event.target.unMute();
       event.target.setVolume(100);
     }
-
-    // ❌ 不要在這裡 play（避免新人進來重播）
   };
 
   /* ===== 行動裝置：首次觸控解除靜音 ===== */
@@ -31,10 +31,12 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
     if (!isTouchDevice) return;
 
     const handleTouch = () => {
-      if (playerRef.current) {
-        playerRef.current.unMute();
-        playerRef.current.setVolume(100);
-      }
+      try {
+        if (playerRef.current) {
+          playerRef.current.unMute();
+          playerRef.current.setVolume(100);
+        }
+      } catch {}
       window.removeEventListener("touchstart", handleTouch);
     };
 
@@ -43,29 +45,41 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
   }, []);
 
   /* ===== 只有「影片真的換了」才播放 ===== */
-  const lastVideoIdRef = useRef(null);
-
   useEffect(() => {
     if (!playerRef.current || !videoId) return;
 
     if (lastVideoIdRef.current !== videoId) {
-      playerRef.current.playVideo(); // ✅ 換歌才播
-      lastVideoIdRef.current = videoId;
+      try {
+        playerRef.current.playVideo();
+        lastVideoIdRef.current = videoId;
+      } catch (err) {
+        console.warn("playVideo 失敗（已忽略）", err);
+      }
     }
   }, [videoId]);
+
+  /* ===== 關閉影片（安全釋放） ===== */
+  const handleClose = () => {
+    try {
+      playerRef.current?.stopVideo();
+      playerRef.current?.destroy();
+    } catch {}
+    onClose();
+  };
 
   return (
     <div className="video-player-float">
       {videoId ? (
         <>
           <YouTube
+            key={videoId} // ⭐ 防止 iframe 重建炸 React
             videoId={videoId}
             onReady={onPlayerReady}
             opts={{
               width: "100%",
               height: "100%",
               playerVars: {
-                autoplay: 0, // ❌ 關掉自動播放
+                autoplay: 0,
                 playsinline: 1,
                 controls: 1,
                 rel: 0,
@@ -76,7 +90,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
 
           <div className="video-info">
             🎧 正在播放（由 {video.user?.name || "未知"} 點播）
-            <button className="close-btn" onClick={onClose}>
+            <button className="close-btn" onClick={handleClose}>
               ✖
             </button>
           </div>
