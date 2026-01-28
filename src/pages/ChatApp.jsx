@@ -457,7 +457,7 @@ export default function ChatApp() {
               <AdminToolPanel
                 myName={name}
                 myLevel={level}
-                minLevel={99}
+                minLevel={91}
                 token={token}
               />
               <label><input type="radio" checked={chatMode === "public"} onChange={() => { setChatMode("public"); setTarget(""); }} /> 公開</label>
