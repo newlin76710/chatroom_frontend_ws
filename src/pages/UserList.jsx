@@ -44,7 +44,7 @@ export default function UserList({
               {u.name} [Lv.{formatLv(u.level)}] ({u.gender})
 
               {/* 如果自己是 99 等，才顯示踢人按鈕 */}
-              {myLevel === 99 && u.name !== myName && u.type !== "AI" && kickUser && (
+              {myLevel >= 91 && u.name !== myName && u.type !== "AI" && kickUser && (
                 <button
                   className="kick-btn"
                   onClick={(e) => {
