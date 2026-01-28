@@ -9,9 +9,9 @@ export default function UserList({
   setChatMode,
   userListCollapsed,
   setUserListCollapsed,
-  kickUser, // 新增 kickUser prop
-  myLevel, // 新增自己等級
-  myName   // 新增自己名字
+  kickUser,
+  myLevel,
+  myName
 }) {
   const formatLv = (lv) => String(lv).padStart(2, "0");
 
@@ -25,40 +25,50 @@ export default function UserList({
       </div>
 
       {!userListCollapsed &&
-        userList.filter(u => u.type !== "AI") // ✅ AI 不顯示
+        userList
+          .filter(u => u.type !== "AI") // 不顯示 AI
           .map((u, idx) => {
-          const avatarUrl = u.avatar || aiAvatars[u.name];
-          //console.log(userList)
-          return (
-            <div
-              key={`${u.name}-${idx}`} // 修正 key 問題
-              className={`user-item ${u.name === target ? "selected" : ""}`}
-              onClick={() => {
-                setChatMode("private");
-                setTarget(u.name);
-              }}
-            >
-              {avatarUrl && (
-                <img src={avatarUrl} alt={u.name} className="user-avatar" />
-              )}
-              {u.name} [Lv.{formatLv(u.level)}] ({u.gender})
+            const avatarUrl = u.avatar || aiAvatars[u.name];
 
-              {/* 如果自己是 99 等，才顯示踢人按鈕 */}
-              {myLevel >= 91 && u.name !== myName && u.type !== "AI" && kickUser && (
-                <button
-                  className="kick-btn"
-                  onClick={(e) => {
-                    e.stopPropagation(); // 防止觸發選擇私聊
-                    console.log("kickUser clicked:", u.name);
-                    kickUser(u.name);
-                  }}
-                >
-                  踢出
-                </button>
-              )}
-            </div>
-          );
-        })}
+            const canKick =
+              myLevel >= 91 &&          // 自己 91 等以上
+              u.level < myLevel &&      // 只能踢比自己低等
+              u.name !== myName &&      // 不能踢自己
+              kickUser;
+
+            return (
+              <div
+                key={`${u.name}-${idx}`}
+                className={`user-item ${u.name === target ? "selected" : ""}`}
+                onClick={() => {
+                  setChatMode("private");
+                  setTarget(u.name);
+                }}
+              >
+                {avatarUrl && (
+                  <img
+                    src={avatarUrl}
+                    alt={u.name}
+                    className="user-avatar"
+                  />
+                )}
+
+                {u.name} [Lv.{formatLv(u.level)}] ({u.gender})
+
+                {canKick && (
+                  <button
+                    className="kick-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      kickUser(u.name);
+                    }}
+                  >
+                    踢出
+                  </button>
+                )}
+              </div>
+            );
+          })}
     </div>
   );
 }
