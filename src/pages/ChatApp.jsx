@@ -72,6 +72,7 @@ export default function ChatApp() {
   );
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]); // 過濾用戶名
+  const inputRef = useRef(null);
 
   // --- 初始化 sessionStorage ---
   useEffect(() => {
@@ -324,6 +325,16 @@ export default function ChatApp() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [socket, room, name]);
 
+
+  useEffect(() => {
+    if (!cooldown) {
+      // 等瀏覽器完成 re-render 再 focus（保險）
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [cooldown]);
+
   // --- 發訊息 ---
   const send = () => {
     if (cooldown || !text.trim() || (chatMode !== "public" && !target)) return;
@@ -524,7 +535,7 @@ export default function ChatApp() {
                   setText((prev) => (prev ? prev + " " : "") + content);
                 }}
               />
-              <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
+              <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>
 
