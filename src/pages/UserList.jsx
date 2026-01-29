@@ -11,9 +11,20 @@ export default function UserList({
   setUserListCollapsed,
   kickUser,
   myLevel,
-  myName
+  myName,
+  filteredUsers,       // 新增：被過濾的用戶名列表
+  setFilteredUsers     // 新增：更新過濾用戶
 }) {
   const formatLv = (lv) => String(lv).padStart(2, "0");
+
+  // 切換過濾 / 解除過濾
+  const toggleFilter = (userName) => {
+    if (filteredUsers.includes(userName)) {
+      setFilteredUsers(filteredUsers.filter(u => u !== userName));
+    } else {
+      setFilteredUsers([...filteredUsers, userName]);
+    }
+  };
 
   return (
     <div className={`user-list ${userListCollapsed ? "collapsed" : ""}`}>
@@ -35,6 +46,8 @@ export default function UserList({
               u.level < myLevel &&      // 只能踢比自己低等
               u.name !== myName &&      // 不能踢自己
               kickUser;
+
+            const isFiltered = filteredUsers.includes(u.name);
 
             return (
               <div
@@ -66,6 +79,18 @@ export default function UserList({
                     踢出
                   </button>
                 )}
+
+                {/* 過濾按鈕 */}
+                <button
+                  className="filter-btn"
+                  style={{ marginLeft: "4px", fontSize: "0.7rem" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFilter(u.name);
+                  }}
+                >
+                  {isFiltered ? "解除" : "過濾"}
+                </button>
               </div>
             );
           })}

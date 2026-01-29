@@ -68,6 +68,7 @@ export default function ChatApp() {
     sessionStorage.getItem("chatColor") || "#ffffff"
   );
   const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [filteredUsers, setFilteredUsers] = useState([]); // 過濾用戶名
 
   // --- 初始化 sessionStorage ---
   useEffect(() => {
@@ -454,7 +455,12 @@ export default function ChatApp() {
               <Listener room={room} name={name} socket={socket} />
             </div>
 
-            <MessageList messages={messages} name={name} typing={typing} messagesEndRef={messagesEndRef} />
+            <MessageList
+              messages={messages.filter(msg => !filteredUsers.includes(msg.user?.name))}
+              name={name}
+              typing={typing}
+              messagesEndRef={messagesEndRef}
+            />
 
             <div className="chat-input">
               <button
@@ -544,6 +550,8 @@ export default function ChatApp() {
           kickUser={(targetName) => socket.emit("kickUser", { room, targetName })}
           myLevel={level}
           myName={name}
+          filteredUsers={filteredUsers}       // 新增
+          setFilteredUsers={setFilteredUsers} // 新增
         />
       </div>
 
