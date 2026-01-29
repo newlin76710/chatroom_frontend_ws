@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { aiAvatars } from "./aiConfig";
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+const CN = import.meta.env.VITE_CHATROOM_NAME || "聽風的歌";
 
 const inputStyle = {
   width: "100%",
@@ -148,7 +149,7 @@ export default function Login() {
 
   return (
     <div style={{ maxWidth: 420, margin: "60px auto", padding: 20 }}>
-      <h2 style={{ textAlign: "center", marginBottom: 10 }}>聽風的歌聊天室</h2>
+      <h2 style={{ textAlign: "center", marginBottom: 10 }}>{CN}聊天室</h2>
       <div style={{ textAlign: "center", color: "#aaa", fontSize: 14 }}>
         聊天越多，等級越高（最高 Lv.90）
       </div>

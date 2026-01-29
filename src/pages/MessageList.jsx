@@ -81,7 +81,7 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
                 </span>
                 <span style={{ marginLeft: "4px" }}>
                   {messageText}
-                  {/* ⭐ Lv.99 或 monitored 顯示 IP */}
+                  {/* 管理員顯示 IP */}
                   {m.monitored && m.ip && (
                     <span style={{ color: "#ff5555", marginLeft: "4px" }}>
                       (IP: {m.ip})

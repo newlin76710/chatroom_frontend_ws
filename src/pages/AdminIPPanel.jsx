@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./AdminLoginLogPanel.css"; // 直接沿用樣式
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
 const PAGE_SIZE = 20;
 
 export default function AdminIPPanel({ myLevel, token }) {
@@ -13,7 +14,7 @@ export default function AdminIPPanel({ myLevel, token }) {
   const [reason, setReason] = useState("");
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  if (myLevel < 99) return null;
+  if (myLevel < AML) return null;
 
   const headers = {
     "Content-Type": "application/json",

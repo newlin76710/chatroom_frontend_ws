@@ -16,6 +16,9 @@ import "./ChatApp.css";
 
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
+const RN = import.meta.env.VITE_ROOM_NAME || "windsong";
+const CN = import.meta.env.VITE_CHATROOM_NAME || "聽風的歌";
+const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
 
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
@@ -42,7 +45,7 @@ if (!globalSocket) {
 
 export default function ChatApp() {
   const navigate = useNavigate();
-  const [room] = useState("public");
+  const [room] = useState(RN);
   const [name, setName] = useState("");
   const [level, setLevel] = useState(1);
   const [exp, setExp] = useState(0);
@@ -246,7 +249,7 @@ export default function ChatApp() {
   const loginGuest = async () => {
     try {
       sessionStorage.clear();
-      const guestName = `訪客${Date.now()}${Math.floor(Math.random() * 999)}`;
+      const guestName = `訪客${Date.now()}${Math.floor(Math.random() * 9999)}`;
 
       const res = await fetch(`${BACKEND}/auth/guest`, { method: "POST" });
       const data = await res.json();
@@ -410,7 +413,7 @@ export default function ChatApp() {
       <div className="chat-left">
         <div className="chat-title-bar">
           <div className="chat-title">
-            尋夢園聽風的歌聊天室
+            尋夢園{CN}聊天室
             <button
               className="announce-btn"
               title="聊天室公告"
@@ -483,7 +486,7 @@ export default function ChatApp() {
               <AdminToolPanel
                 myName={name}
                 myLevel={level}
-                minLevel={99}
+                minLevel={AML}
                 token={token}
               />
               <label><input type="radio" checked={chatMode === "public"} onChange={() => { setChatMode("public"); setTarget(""); }} /> 公開</label>

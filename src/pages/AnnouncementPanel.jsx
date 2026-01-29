@@ -2,11 +2,12 @@ import { useEffect, useState, useRef } from "react";
 import "./AnnouncementPanel.css";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL;
+const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
 
 export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
-  const isAdmin = myLevel >= 99;
+  const isAdmin = myLevel >= AML;
   const panelRef = useRef(null);
 
   const pos = useRef({ x: 20, y: 80, offsetX: 0, offsetY: 0, dragging: false });

@@ -16,6 +16,7 @@ export default function UserList({
   setFilteredUsers     // 新增：更新過濾用戶
 }) {
   const formatLv = (lv) => String(lv).padStart(2, "0");
+  const AML = import.meta.env.VITE_ADMIN_MIN_LEVEL || 99;
 
   // 切換過濾 / 解除過濾
   const toggleFilter = (userName) => {
@@ -42,7 +43,7 @@ export default function UserList({
             const avatarUrl = u.avatar || aiAvatars[u.name];
 
             const canKick =
-              myLevel >= 91 &&          // 自己 91 等以上
+              myLevel >= AML &&          // 自己 91 等以上
               u.level < myLevel &&      // 只能踢比自己低等
               u.name !== myName &&      // 不能踢自己
               kickUser;
