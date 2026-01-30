@@ -35,8 +35,10 @@ export default function Login() {
   const [gender, setGender] = useState("女");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [avatar, setAvatar] = useState(""); // 頭像
+  const [avatar, setAvatar] = useState("/avatars/g01.gif"); // 頭像
   const [editLoggedIn, setEditLoggedIn] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const defaultAvatar = Object.values(aiAvatars)[0];
 
   // 讀取已登入的使用者資料
   useEffect(() => {
@@ -50,6 +52,11 @@ export default function Login() {
       setAvatar(a);
     }
   }, []);
+  useEffect(() => {
+    if (mode === "register") {
+      setAvatar(Object.values(aiAvatars)[0]);
+    }
+  }, [mode]);
 
   const guestLogin = async () => {
     if (!username) return alert("請輸入暱稱");
@@ -104,7 +111,8 @@ export default function Login() {
   };
 
   const registerAccount = async () => {
-    if (!username || !password) return alert("請填寫帳號與密碼");
+    if (!username || !password || !confirmPassword) return alert("請填寫帳號與密碼");
+    if (password !== confirmPassword) return alert("兩次密碼輸入不一致");
     try {
       const res = await fetch(`${BACKEND}/auth/register`, {
         method: "POST",
@@ -125,7 +133,9 @@ export default function Login() {
     try {
       const token = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken");
       if (!token) return alert("請先登入");
-
+      if (password && password !== confirmPassword) {
+        return alert("兩次密碼輸入不一致");
+      }
       const res = await fetch(`${BACKEND}/auth/updateProfile`, {
         method: "POST",
         headers: {
@@ -180,34 +190,48 @@ export default function Login() {
           </button>
         ))}
       </div>
-      
+
       {/* 性別選擇 */}
-      {(mode === "guest" || mode === "login" || mode === "register") && (
-      <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-        {[{ v: "女", label: "♀ 女生" }, { v: "男", label: "♂ 男生" }].map((g) => (
-          <label
-            key={g.v}
-            style={{
-              flex: 1,
-              textAlign: "center",
-              padding: "8px 0",
-              borderRadius: 6,
-              cursor: "pointer",
-              background: gender === g.v ? "#333" : "#1e1e1e",
-              border: "1px solid #333",
-            }}
-          >
-            <input
-              type="radio"
-              value={g.v}
-              checked={gender === g.v}
-              onChange={() => setGender(g.v)}
-              style={{ display: "none" }}
-            />
-            {g.label}
-          </label>
-        ))}
-      </div>)}
+      {(mode === "guest" || mode === "register") && (
+        <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+          {[
+            { v: "女", label: "♀ 女生", color: "#ff4d6d" },
+            { v: "男", label: "♂ 男生", color: "#4da6ff" },
+          ].map((g) => {
+            const active = gender === g.v;
+
+            return (
+              <label
+                key={g.v}
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  padding: "10px 0",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  color: active ? "#000" : "#aaa",
+                  background: active ? g.color : "#1e1e1e",
+                  border: `1px solid ${active ? g.color : "#333"}`,
+                  transition: "all .2s ease",
+                }}
+              >
+                <input
+                  type="radio"
+                  value={g.v}
+                  checked={gender === g.v}
+                  onChange={() => setGender(g.v)}
+                  style={{ display: "none" }}
+                />
+                <span style={{ fontSize: 18, marginRight: 6 }}>
+                  {g.v === "女" ? "♀" : "♂"}
+                </span>
+                {g.v === "女" ? "女生" : "男生"}
+              </label>
+            );
+          })}
+        </div>
+      )}
 
       {/* 帳號登入/註冊/修改表單 */}
       {(mode === "login" || mode === "register") && (
@@ -224,6 +248,17 @@ export default function Login() {
             placeholder={mode === "edit" ? "密碼（不改可留空）" : "密碼"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+          />
+        </>
+      )}
+      {(mode === "register") && (
+        <>
+          <input
+            style={inputStyle}
+            type="password"
+            placeholder="再次輸入密碼"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </>
       )}
@@ -342,6 +377,44 @@ export default function Login() {
             // 已登入，顯示修改表單
             <>
               <h3>修改資料</h3>
+              {/* 性別選擇 */}
+              <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                {[
+                  { v: "女", label: "♀ 女生", color: "#ff4d6d" },
+                  { v: "男", label: "♂ 男生", color: "#4da6ff" },
+                ].map((g) => {
+                  const active = gender === g.v;
+                  return (
+                    <label
+                      key={g.v}
+                      style={{
+                        flex: 1,
+                        textAlign: "center",
+                        padding: "10px 0",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                        color: active ? "#000" : "#aaa",
+                        background: active ? g.color : "#1e1e1e",
+                        border: `1px solid ${active ? g.color : "#333"}`,
+                        transition: "all .2s ease",
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        value={g.v}
+                        checked={gender === g.v}
+                        onChange={() => setGender(g.v)}
+                        style={{ display: "none" }}
+                      />
+                      <span style={{ fontSize: 18, marginRight: 6 }}>
+                        {g.v === "女" ? "♀" : "♂"}
+                      </span>
+                      {g.v === "女" ? "女生" : "男生"}
+                    </label>
+                  );
+                })}
+              </div>
               <input
                 style={inputStyle}
                 placeholder="暱稱"
@@ -355,33 +428,13 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-
-              {/* 性別選擇 */}
-              <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-                {["女", "男"].map((g) => (
-                  <label
-                    key={g}
-                    style={{
-                      flex: 1,
-                      textAlign: "center",
-                      padding: 8,
-                      borderRadius: 6,
-                      cursor: "pointer",
-                      background: gender === g ? "#333" : "#1e1e1e",
-                      border: "1px solid #333",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      value={g}
-                      checked={gender === g}
-                      onChange={() => setGender(g)}
-                      style={{ display: "none" }}
-                    />
-                    {g}
-                  </label>
-                ))}
-              </div>
+              <input
+                style={inputStyle}
+                type="password"
+                placeholder="再次輸入新密碼"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
 
               {/* 頭像選擇 */}
               <div style={{ marginBottom: 12 }}>
