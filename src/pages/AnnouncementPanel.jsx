@@ -5,11 +5,10 @@ const BACKEND = import.meta.env.VITE_BACKEND_URL;
 const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
 
 export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
-  const [announcements, setAnnouncements] = useState([]); // 存所有公告
-  const [currentIndex, setCurrentIndex] = useState(0);    // 顯示第幾則
+  const [announcements, setAnnouncements] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const panelRef = useRef(null);
-
   const isAdmin = myLevel >= AML;
 
   const pos = useRef({ x: 20, y: 80, offsetX: 0, offsetY: 0, dragging: false });
@@ -35,74 +34,67 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
 
     setLoading(true);
     const current = announcements[currentIndex];
-
     const url = current.id
       ? `${BACKEND}/api/announcement/update`
       : `${BACKEND}/api/announcement/create`;
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        id: current.id,
-        title: current.title || "",
-        content: current.content || "",
-      }),
-    });
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: current.id,
+          title: current.title || "",
+          content: current.content || "",
+        }),
+      });
 
-    setLoading(false);
+      if (!res.ok) throw new Error("儲存失敗");
 
-    if (!res.ok) {
-      alert("儲存失敗");
-      return;
+      const saved = await res.json();
+      setAnnouncements(prev => {
+        const newArr = [...prev];
+        if (current.id) newArr[currentIndex] = saved; // 更新
+        else {
+          newArr.push(saved); // 新增
+          setCurrentIndex(newArr.length - 1);
+        }
+        return newArr;
+      });
+      alert("公告已更新");
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "儲存失敗");
+    } finally {
+      setLoading(false);
     }
-
-    const saved = await res.json(); // 後端回傳的最新公告
-
-    // 更新本地 state，確保 index 指向最新公告
-    setAnnouncements(prev => {
-      const newArr = [...prev];
-      if (current.id) {
-        // 更新現有公告
-        newArr[currentIndex] = saved;
-      } else {
-        // 新增公告
-        newArr.push(saved);
-        setCurrentIndex(newArr.length - 1); // 跳到新增公告
-      }
-      return newArr;
-    });
-    onClose();
-    alert("儲存成功");
   };
 
   /* ===== 新增公告 ===== */
   const addAnnouncement = () => {
-    if (!isAdmin) return;
-    if (announcements.length >= 10) return; // 最多 10 則
+    if (!isAdmin || announcements.length >= 10) return;
     const newAnn = { title: "新公告", content: "", updated_by: myLevel, updated_at: new Date() };
     setAnnouncements([...announcements, newAnn]);
-    setCurrentIndex(announcements.length); // 跳到新增的公告
+    setCurrentIndex(announcements.length);
   };
 
   /* ===== 刪除公告 ===== */
   const deleteAnnouncement = async () => {
-    if (!isAdmin) return;
-    if (announcements.length <= 1) return; // 最後一筆不能刪
-
+    if (!isAdmin || announcements.length <= 1) return;
     const current = announcements[currentIndex];
+
     if (!current.id) {
-      // 如果是還沒儲存的公告，直接從 state 移除
-      const newAnnouncements = announcements.filter((_, idx) => idx !== currentIndex);
-      setAnnouncements(newAnnouncements);
+      // 未儲存公告直接從 state 刪除
+      const newArr = announcements.filter((_, idx) => idx !== currentIndex);
+      setAnnouncements(newArr);
       setCurrentIndex(i => Math.max(i - 1, 0));
       return;
     }
 
-    if (!confirm("確定要刪除這則公告嗎？")) return;
+    if (!confirm("確定刪除這則公告嗎？")) return;
 
     try {
       const res = await fetch(`${BACKEND}/api/announcement/delete`, {
@@ -114,33 +106,27 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
         body: JSON.stringify({ id: current.id }),
       });
 
-      if (!res.ok) {
-        alert("刪除失敗");
-        return;
-      }
+      if (!res.ok) throw new Error("刪除失敗");
 
-      // 後端刪除成功，前端更新 state
-      const newAnnouncements = announcements.filter((_, idx) => idx !== currentIndex);
-      setAnnouncements(newAnnouncements);
+      const newArr = announcements.filter((_, idx) => idx !== currentIndex);
+      setAnnouncements(newArr);
       setCurrentIndex(i => Math.max(i - 1, 0));
       alert("公告已刪除");
     } catch (err) {
       console.error(err);
-      alert("刪除失敗");
+      alert(err.message || "刪除失敗");
     }
   };
 
-
-  /* ===== 拖動事件 ===== */
-  const onMouseDown = (e) => {
+  /* ===== 拖動 ===== */
+  const onMouseDown = e => {
     pos.current.dragging = true;
     pos.current.offsetX = e.clientX - pos.current.x;
     pos.current.offsetY = e.clientY - pos.current.y;
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
   };
-
-  const onMouseMove = (e) => {
+  const onMouseMove = e => {
     if (!pos.current.dragging) return;
     pos.current.x = e.clientX - pos.current.offsetX;
     pos.current.y = e.clientY - pos.current.offsetY;
@@ -149,7 +135,6 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
       panelRef.current.style.top = pos.current.y + "px";
     }
   };
-
   const onMouseUp = () => {
     pos.current.dragging = false;
     document.removeEventListener("mousemove", onMouseMove);
@@ -157,7 +142,6 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
   };
 
   if (!open) return null;
-
   const currentAnnouncement = announcements[currentIndex];
 
   return (
@@ -182,18 +166,17 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
       </div>
 
       <div className="announcement-floating-content">
-        {isAdmin ? (
+        {announcements.length === 0 ? (
+          <pre>目前沒有公告</pre>
+        ) : isAdmin ? (
           <>
             <input
               type="text"
               value={currentAnnouncement?.title || ""}
               onChange={(e) => {
-                const newAnnouncements = [...announcements];
-                newAnnouncements[currentIndex] = {
-                  ...newAnnouncements[currentIndex],
-                  title: e.target.value,
-                };
-                setAnnouncements(newAnnouncements);
+                const newArr = [...announcements];
+                newArr[currentIndex] = { ...newArr[currentIndex], title: e.target.value };
+                setAnnouncements(newArr);
               }}
               placeholder="標題"
               style={{
@@ -211,12 +194,9 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
             <textarea
               value={currentAnnouncement?.content || ""}
               onChange={(e) => {
-                const newAnnouncements = [...announcements];
-                newAnnouncements[currentIndex] = {
-                  ...newAnnouncements[currentIndex],
-                  content: e.target.value,
-                };
-                setAnnouncements(newAnnouncements);
+                const newArr = [...announcements];
+                newArr[currentIndex] = { ...newArr[currentIndex], content: e.target.value };
+                setAnnouncements(newArr);
               }}
               rows={8}
               placeholder="公告內容"
@@ -227,8 +207,8 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
           </>
         ) : (
           <>
-            <strong>{currentAnnouncement?.title || "暫無公告"}</strong>
-            <pre>{currentAnnouncement?.content || "目前沒有公告"}</pre>
+            <strong>{currentAnnouncement?.title}</strong>
+            <pre>{currentAnnouncement?.content}</pre>
           </>
         )}
       </div>
