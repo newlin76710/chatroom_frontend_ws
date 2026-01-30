@@ -19,6 +19,7 @@ const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 const RN = import.meta.env.VITE_ROOM_NAME || "windsong";
 const CN = import.meta.env.VITE_CHATROOM_NAME || "聽風的歌";
 const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
+const ANL = import.meta.env.VITE_ADMIN_MIN_LEVEL || 91;
 
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
@@ -465,7 +466,7 @@ export default function ChatApp() {
             <div className="chat-toolbar">
               <span>
                 Hi [Lv.{formatLv(level)}] {name} ({gender})
-                {sessionStorage.getItem("type") !== "guest" && ` EXP:${exp}`}
+                {sessionStorage.getItem("type") !== "guest" && level < ANL-1 ?` EXP:${exp}`:""}
                 <span className="exp-tip-inline">
                   {expTips.map((tip) => <span key={tip.id} className="exp-tip">{tip.value}</span>)}
                 </span>
