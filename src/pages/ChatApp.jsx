@@ -73,6 +73,8 @@ export default function ChatApp() {
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]); // 過濾用戶名
   const inputRef = useRef(null);
+  const userType = sessionStorage.getItem("type") || "guest";
+  const isMember = userType === "account";
 
   // --- 初始化 sessionStorage ---
   useEffect(() => {
@@ -460,12 +462,22 @@ export default function ChatApp() {
                 <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube 連結" />
                 <button onClick={playVideo}>🎵 點播</button>
               </div>
-              <button onClick={() => setShowSongPanel(!showSongPanel)}>🎤 唱歌</button>
-              {/* 🎤 歌手 / 麥克風面板 */}
-              {showSongPanel && (
-                <SongRoom room={room} name={name} socket={socket} />
+              {isMember ? (
+                <>
+                  <button onClick={() => setShowSongPanel(!showSongPanel)}>🎤 唱歌</button>
+                  {showSongPanel && (
+                    <SongRoom room={room} name={name} socket={socket} />
+                  )}
+                </>
+              ) : (
+                <button
+                  disabled
+                  title="登入會員即可使用唱歌功能"
+                  style={{ opacity: 0.5, cursor: "not-allowed" }}
+                >
+                  🎤 唱歌（限會員）
+                </button>
               )}
-              {/* 👂 聽眾面板 */}
               <Listener room={room} name={name} socket={socket} />
             </div>
 
