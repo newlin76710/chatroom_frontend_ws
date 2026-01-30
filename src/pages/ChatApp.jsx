@@ -464,7 +464,8 @@ export default function ChatApp() {
           <>
             <div className="chat-toolbar">
               <span>
-                Hi [Lv.{formatLv(level)}] {name} ({gender}) EXP:{exp}
+                Hi [Lv.{formatLv(level)}] {name} ({gender})
+                {sessionStorage.getItem("type") !== "guest" && ` EXP:${exp}`}
                 <span className="exp-tip-inline">
                   {expTips.map((tip) => <span key={tip.id} className="exp-tip">{tip.value}</span>)}
                 </span>
