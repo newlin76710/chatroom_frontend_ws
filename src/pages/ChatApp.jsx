@@ -134,6 +134,18 @@ export default function ChatApp() {
           (u.type || "guest") === (sessionStorage.getItem("type") || "guest")
       );
       if (!me) return;
+      const myType = sessionStorage.getItem("type") || "guest";
+
+      // 🔒 訪客等級固定 1
+      if (myType === "guest") {
+        if (level !== 1) {
+          setLevel(1);
+          setExp(0);
+          sessionStorage.setItem("level", 1);
+          sessionStorage.setItem("exp", 0);
+        }
+        return; // ❗訪客直接不吃後面的升級邏輯
+      }
 
       // 等級變化
       if (me.level !== level) {
@@ -331,9 +343,7 @@ export default function ChatApp() {
   useEffect(() => {
     if (!cooldown) {
       // 等瀏覽器完成 re-render 再 focus（保險）
-      requestAnimationFrame(() => {
-        inputRef.current?.focus();
-      });
+      focusInput?.();
     }
   }, [cooldown]);
 
@@ -418,6 +428,11 @@ export default function ChatApp() {
 
   const clearAllMessages = () => {
     setMessages([]);
+  };
+  const focusInput = () => {
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
   };
 
   return (
@@ -516,13 +531,25 @@ export default function ChatApp() {
               <label><input type="radio" checked={chatMode === "publicTarget"} onChange={() => setChatMode("publicTarget")} /> 公開對象</label>
               <label><input type="radio" checked={chatMode === "private"} onChange={() => setChatMode("private")} /> 私聊</label>
               {chatMode !== "public" && (
-                <select value={target} onChange={(e) => setTarget(e.target.value)}>
+                <select
+                  value={target}
+                  onChange={(e) => {
+                    setTarget(e.target.value);
+                    focusInput?.();
+                  }}
+                >
                   <option value="">選擇對象</option>
-                  {userList.filter(u => u.type !== "AI").filter((u) => u.name !== name).map((u) => (
-                    <option key={u.id} value={u.name}>{u.name}</option>
-                  ))}
+                  {userList
+                    .filter(u => u.type !== "AI")
+                    .filter(u => u.name !== name)
+                    .map((u) => (
+                      <option key={u.id} value={u.name}>
+                        {u.name}
+                      </option>
+                    ))}
                 </select>
               )}
+
               <input
                 type="color"
                 value={chatColor}
@@ -576,8 +603,9 @@ export default function ChatApp() {
           kickUser={(targetName) => socket.emit("kickUser", { room, targetName })}
           myLevel={level}
           myName={name}
-          filteredUsers={filteredUsers}       // 新增
-          setFilteredUsers={setFilteredUsers} // 新增
+          filteredUsers={filteredUsers}   
+          setFilteredUsers={setFilteredUsers}
+          focusInput={focusInput} 
         />
       </div>
 

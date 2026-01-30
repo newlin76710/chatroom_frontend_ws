@@ -13,7 +13,8 @@ export default function UserList({
   myLevel,
   myName,
   filteredUsers,       // 新增：被過濾的用戶名列表
-  setFilteredUsers     // 新增：更新過濾用戶
+  setFilteredUsers,    // 新增：更新過濾用戶
+  focusInput       
 }) {
   const formatLv = (lv) => String(lv).padStart(2, "0");
   const AML = import.meta.env.VITE_ADMIN_MIN_LEVEL || 99;
@@ -57,6 +58,7 @@ export default function UserList({
                 onClick={() => {
                   setChatMode("private");
                   setTarget(u.name);
+                  focusInput?.();
                 }}
               >
                 {avatarUrl && (
@@ -67,7 +69,7 @@ export default function UserList({
                   />
                 )}
 
-                {u.name} [Lv.{formatLv(u.level)}] ({u.gender})
+                {u.name} [Lv.{formatLv(u.type === "guest" ? 1 : u.level)}] ({u.gender})
 
                 {canKick && (
                   <button
