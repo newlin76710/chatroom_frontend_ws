@@ -29,14 +29,13 @@ export default function MessageList({
     }
   };
 
-  // 根據 userList 的 gender 決定顏色
+  // 根據 userList 的 gender 決定顏色，包括自己
   const getUserColor = (userName) => {
     if (!userName) return "#00aa00"; // 未定
-    if (userName === name) return "#fff"; // 自己白
     const user = userList.find((u) => u.name === userName);
     if (!user) return "#00aa00"; // 未定
-    if (user.gender === "男") return "#3399ff";
-    if (user.gender === "女") return "#ff66aa";
+    if (user.gender === "男") return "#3399ff"; // 男生青藍
+    if (user.gender === "女") return "#ff66aa"; // 女生粉紅
     return "#00aa00"; // 未定
   };
 
