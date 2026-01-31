@@ -18,11 +18,14 @@ const safeText = (v) => {
 export default function MessageList({
   messages = [],
   name = "",
+  level = 1,
   typing = "",
   messagesEndRef,
   onSelectTarget,
   userList = {}, // 這裡接 userList
 }) {
+  const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
+
   const handleSelectUser = (selectedName) => {
     if (onSelectTarget && selectedName && selectedName !== name) {
       onSelectTarget(selectedName);
@@ -181,11 +184,12 @@ export default function MessageList({
                 )}
 
                 {/* 管理員 IP */}
-                {m.monitored && m.ip && (
+                {Number(level) === Number(AML) && m.ip && (
                   <span style={{ color: "#ff5555", marginLeft: "4px" }}>
                     (IP: {m.ip})
                   </span>
                 )}
+
 
                 {/* 時間 */}
                 <span

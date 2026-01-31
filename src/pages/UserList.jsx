@@ -17,7 +17,7 @@ export default function UserList({
   focusInput       
 }) {
   const formatLv = (lv) => String(lv).padStart(2, "0");
-  const AML = import.meta.env.VITE_ADMIN_MIN_LEVEL || 99;
+  const AML = import.meta.env.VITE_ADMIN_MIN_LEVEL || 91;
 
   // 切換過濾 / 解除過濾
   const toggleFilter = (userName) => {

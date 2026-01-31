@@ -501,6 +501,7 @@ export default function ChatApp() {
             <MessageList
               messages={messages.filter(msg => !filteredUsers.includes(msg.user?.name))}
               name={name}
+              level={level}
               typing={typing}
               messagesEndRef={messagesEndRef}
               onSelectTarget={(targetName) => {
