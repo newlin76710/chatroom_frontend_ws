@@ -466,7 +466,7 @@ export default function ChatApp() {
             <div className="chat-toolbar">
               <span>
                 Hi [Lv.{formatLv(level)}] {name} ({gender})
-                {sessionStorage.getItem("type") !== "guest" && level < ANL-1 ?` EXP:${exp}`:""}
+                {sessionStorage.getItem("type") !== "guest" && level < ANL - 1 ? ` EXP:${exp}` : ""}
                 <span className="exp-tip-inline">
                   {expTips.map((tip) => <span key={tip.id} className="exp-tip">{tip.value}</span>)}
                 </span>
@@ -503,6 +503,13 @@ export default function ChatApp() {
               name={name}
               typing={typing}
               messagesEndRef={messagesEndRef}
+              onSelectTarget={(targetName) => {
+                if (!targetName) return;
+                setTarget(targetName);
+                // 自動切換到私聊模式，如果之前是 public
+                if (chatMode === "public") setChatMode("private");
+                focusInput();
+              }}
             />
 
             <div className="chat-input">
@@ -605,9 +612,9 @@ export default function ChatApp() {
           kickUser={(targetName) => socket.emit("kickUser", { room, targetName })}
           myLevel={level}
           myName={name}
-          filteredUsers={filteredUsers}   
+          filteredUsers={filteredUsers}
           setFilteredUsers={setFilteredUsers}
-          focusInput={focusInput} 
+          focusInput={focusInput}
         />
       </div>
 

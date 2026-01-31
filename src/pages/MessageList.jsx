@@ -15,11 +15,32 @@ const safeText = (v) => {
   return String(v);
 };
 
-export default function MessageList({ messages = [], name = "", typing = "", messagesEndRef }) {
+/**
+ * props:
+ * - messages: 訊息陣列
+ * - name: 目前使用者名稱
+ * - typing: 正在輸入訊息的文字
+ * - messagesEndRef: 用於滾動到底部
+ * - onSelectTarget: 點擊使用者或目標名稱的 callback (name: string) => void
+ */
+export default function MessageList({
+  messages = [],
+  name = "",
+  typing = "",
+  messagesEndRef,
+  onSelectTarget,
+}) {
   return (
     <div className="message-list">
       {messages
-        .filter(m => m && (m.mode !== "private" || m.user?.name === name || m.target === name || m.monitored))
+        .filter(
+          (m) =>
+            m &&
+            (m.mode !== "private" ||
+              m.user?.name === name ||
+              m.target === name ||
+              m.monitored)
+        )
         .map((m, i) => {
           const userName = safeText(m.user?.name);
           const targetName = safeText(m.target);
@@ -28,9 +49,10 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
           const isSelf = userName === name;
           const isSystem = userName === "系統";
           const profile = aiProfiles[userName];
+
           // 訊息顏色
           let color = "#eee"; // 預設
-          if (m.color) color = m.color;           // ✅ 使用訊息的顏色
+          if (m.color) color = m.color;
           else if (isSystem && messageText?.includes("進入聊天室")) color = "#ff9900";
           else if (isSystem) color = "#BBECE2";
           else if (isSelf) color = "#fff";
@@ -38,7 +60,19 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
           else if (profile?.gender === "女") color = "#ff66aa";
 
           // 標籤
-          const tag = (m.mode === "private" ? "(私聊)" : m.mode === "publicTarget" ? "(公開對象)" : "");
+          const tag =
+            m.mode === "private"
+              ? "(私聊)"
+              : m.mode === "publicTarget"
+              ? "(公開對象)"
+              : "";
+
+          // 點擊 handler
+          const handleSelectUser = (selectedName) => {
+            if (onSelectTarget && selectedName && selectedName !== name) {
+              onSelectTarget(selectedName);
+            }
+          };
 
           return (
             <div
@@ -54,7 +88,11 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
               {/* Avatar */}
               {!isSelf && !isSystem && (
                 <img
-                  src={m.user?.avatar && m.user?.avatar !== "" ? m.user?.avatar : aiAvatars[userName] || "/avatars/g01.gif"}
+                  src={
+                    m.user?.avatar && m.user?.avatar !== ""
+                      ? m.user?.avatar
+                      : aiAvatars[userName] || "/avatars/g01.gif"
+                  }
                   alt={userName}
                   className="message-avatar"
                 />
@@ -72,15 +110,37 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
                 }}
               >
                 {tag && (
-                  <span style={{ fontSize: "0.7rem", color: "#ffd36a", marginRight: "4px" }}>
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      color: "#ffd36a",
+                      marginRight: "4px",
+                    }}
+                  >
                     {tag}
                   </span>
                 )}
-                <span style={{ fontWeight: "bold" }}>
-                  {userName}{targetName ? ` → ${targetName}` : ""}：
+                <span
+                  style={{ fontWeight: "bold", cursor: "pointer" }}
+                  onClick={() => handleSelectUser(userName)}
+                  title="點擊選擇此使用者為對象"
+                >
+                  {userName}
                 </span>
+                {targetName && (
+                  <>
+                    <span> → </span>
+                    <span
+                      style={{ fontWeight: "bold", cursor: "pointer" }}
+                      onClick={() => handleSelectUser(targetName)}
+                      title="點擊選擇此使用者為對象"
+                    >
+                      {targetName}
+                    </span>
+                  </>
+                )}
                 <span style={{ marginLeft: "4px" }}>
-                  {messageText}
+                  ：{messageText}
                   {/* 管理員顯示 IP */}
                   {m.monitored && m.ip && (
                     <span style={{ color: "#ff5555", marginLeft: "4px" }}>
