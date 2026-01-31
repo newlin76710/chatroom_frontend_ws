@@ -510,6 +510,7 @@ export default function ChatApp() {
                 if (chatMode === "public") setChatMode("private");
                 focusInput();
               }}
+              userList={userList}
             />
 
             <div className="chat-input">

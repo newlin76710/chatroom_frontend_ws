@@ -1,5 +1,5 @@
 // MessageList.jsx
-import { aiProfiles, aiAvatars } from "./aiConfig";
+import { aiAvatars } from "./aiConfig";
 import "./MessageList.css";
 
 const safeText = (v) => {
@@ -15,21 +15,31 @@ const safeText = (v) => {
   return String(v);
 };
 
-/**
- * props:
- * - messages: 訊息陣列
- * - name: 目前使用者名稱
- * - typing: 正在輸入訊息的文字
- * - messagesEndRef: 用於滾動到底部
- * - onSelectTarget: 點擊使用者或目標名稱的 callback (name: string) => void
- */
 export default function MessageList({
   messages = [],
   name = "",
   typing = "",
   messagesEndRef,
   onSelectTarget,
+  userList = {}, // 這裡接 userList
 }) {
+  const handleSelectUser = (selectedName) => {
+    if (onSelectTarget && selectedName && selectedName !== name) {
+      onSelectTarget(selectedName);
+    }
+  };
+
+  // 根據 userList 的 gender 決定顏色
+  const getUserColor = (userName) => {
+    if (!userName) return "#00aa00"; // 未定
+    if (userName === name) return "#fff"; // 自己白
+    const user = userList.find((u) => u.name === userName);
+    if (!user) return "#00aa00"; // 未定
+    if (user.gender === "男") return "#3399ff";
+    if (user.gender === "女") return "#ff66aa";
+    return "#00aa00"; // 未定
+  };
+
   return (
     <div className="message-list">
       {messages
@@ -48,31 +58,27 @@ export default function MessageList({
           const timestamp = m.timestamp || new Date().toLocaleTimeString();
           const isSelf = userName === name;
           const isSystem = userName === "系統";
-          const profile = aiProfiles[userName];
 
           // 訊息顏色
-          let color = "#eee"; // 預設
+          let color = "#eee";
           if (m.color) color = m.color;
           else if (isSystem && messageText?.includes("進入聊天室")) color = "#ff9900";
           else if (isSystem) color = "#BBECE2";
           else if (isSelf) color = "#fff";
-          else if (profile?.gender === "男") color = "#006633";
-          else if (profile?.gender === "女") color = "#ff66aa";
 
           // 標籤
           const tag =
             m.mode === "private"
               ? "(私聊)"
               : m.mode === "publicTarget"
-              ? "(公開對象)"
-              : "";
+                ? "(公開對象)"
+                : "";
 
-          // 點擊 handler
-          const handleSelectUser = (selectedName) => {
-            if (onSelectTarget && selectedName && selectedName !== name) {
-              onSelectTarget(selectedName);
-            }
-          };
+          // 系統訊息中的使用者名稱
+          const enteringUserMatch = isSystem
+            ? messageText.match(/^(.+) 進入聊天室$/)
+            : null;
+          const enteringUser = enteringUserMatch ? enteringUserMatch[1] : null;
 
           return (
             <div
@@ -98,7 +104,7 @@ export default function MessageList({
                 />
               )}
 
-              {/* 訊息文字（含時間） */}
+              {/* 訊息文字 */}
               <div
                 style={{
                   maxWidth: "75%",
@@ -109,45 +115,80 @@ export default function MessageList({
                   lineHeight: "1.4",
                 }}
               >
+                {/* 標籤 */}
                 {tag && (
                   <span
                     style={{
                       fontSize: "0.7rem",
-                      color: "#ffd36a",
+                      color: tag === "(私聊)" ? "red" : "#ffd36a",
                       marginRight: "4px",
                     }}
                   >
                     {tag}
                   </span>
                 )}
+
+                {/* 發言者名稱 */}
                 <span
-                  style={{ fontWeight: "bold", cursor: "pointer" }}
-                  onClick={() => handleSelectUser(userName)}
-                  title="點擊選擇此使用者為對象"
+                  style={{
+                    fontWeight: "bold",
+                    cursor: isSystem ? "default" : "pointer",
+                    color: isSystem ? color : getUserColor(userName),
+                  }}
+                  onClick={() => !isSystem && handleSelectUser(userName)}
+                  title={!isSystem ? "點擊與此使用者私聊" : ""}
                 >
                   {userName}
                 </span>
-                {targetName && (
+
+                {/* 系統訊息進入聊天室 */}
+                {enteringUser ? (
                   <>
-                    <span> → </span>
+                    ：
                     <span
-                      style={{ fontWeight: "bold", cursor: "pointer" }}
-                      onClick={() => handleSelectUser(targetName)}
-                      title="點擊選擇此使用者為對象"
+                      style={{
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        color: color, // 系統訊息顏色
+                      }}
+                      onClick={() => handleSelectUser(enteringUser)}
+                      title="點擊與此使用者私聊"
                     >
-                      {targetName}
+                      {enteringUser}
                     </span>
+                    <span> 進入聊天室</span>
+                  </>
+                ) : (
+                  <>
+                    {/* 發言對象 */}
+                    {targetName && (
+                      <>
+                        <span> → </span>
+                        <span
+                          style={{
+                            fontWeight: "bold",
+                            cursor: "pointer",
+                            color: getUserColor(targetName),
+                          }}
+                          onClick={() => handleSelectUser(targetName)}
+                          title="點擊選擇此使用者為對象"
+                        >
+                          {targetName}
+                        </span>
+                      </>
+                    )}
+                    <span>：{messageText}</span>
                   </>
                 )}
-                <span style={{ marginLeft: "4px" }}>
-                  ：{messageText}
-                  {/* 管理員顯示 IP */}
-                  {m.monitored && m.ip && (
-                    <span style={{ color: "#ff5555", marginLeft: "4px" }}>
-                      (IP: {m.ip})
-                    </span>
-                  )}
-                </span>
+
+                {/* 管理員 IP */}
+                {m.monitored && m.ip && (
+                  <span style={{ color: "#ff5555", marginLeft: "4px" }}>
+                    (IP: {m.ip})
+                  </span>
+                )}
+
+                {/* 時間 */}
                 <span
                   style={{
                     fontSize: "0.7rem",
