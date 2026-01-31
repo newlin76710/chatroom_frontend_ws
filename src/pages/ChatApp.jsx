@@ -494,7 +494,7 @@ export default function ChatApp() {
                     🎤 唱歌
                   </button>
                   {showSongPanel && (
-                    <SongRoom room={room} name={name} socket={socket} />
+                    <SongRoom room={room} name={name} socket={socket} currentSinger={currentSinger}/>
                   )}
                 </>
               ) : (
