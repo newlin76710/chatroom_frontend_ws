@@ -28,7 +28,6 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
           const isSelf = userName === name;
           const isSystem = userName === "系統";
           const profile = aiProfiles[userName];
-          console.log(messageText)
           // 訊息顏色
           let color = "#eee"; // 預設
           if (m.color) color = m.color;           // ✅ 使用訊息的顏色
