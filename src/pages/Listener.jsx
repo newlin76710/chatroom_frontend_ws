@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Room } from "livekit-client";
 import "./Listener.css";
 
-export default function Listener({ room, name, socket }) {
+export default function Listener({ room, name, socket, onSingerChange }) {
   const [lkRoom, setLkRoom] = useState(null);
   const [listening, setListening] = useState(false);
   const [currentSinger, setCurrentSinger] = useState(null);
@@ -19,6 +19,7 @@ export default function Listener({ room, name, socket }) {
     const handler = (data) => {
       console.log("[Listener] micStateUpdate:", data);
       setCurrentSinger(data.currentSinger || null);
+      onSingerChange?.(data.currentSinger || null); 
     };
 
     socket.on("micStateUpdate", handler);

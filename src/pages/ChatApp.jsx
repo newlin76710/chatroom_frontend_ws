@@ -76,6 +76,7 @@ export default function ChatApp() {
   const inputRef = useRef(null);
   const userType = sessionStorage.getItem("type") || "guest";
   const isMember = userType === "account";
+  const [currentSinger, setCurrentSinger] = useState(null);
 
   // --- 初始化 sessionStorage ---
   useEffect(() => {
@@ -481,7 +482,17 @@ export default function ChatApp() {
               </div>
               {isMember ? (
                 <>
-                  <button onClick={() => setShowSongPanel(!showSongPanel)}>🎤 唱歌</button>
+                  <button
+                    onClick={() => setShowSongPanel(!showSongPanel)}
+                    disabled={currentSinger && currentSinger !== name}
+                    title={currentSinger && currentSinger !== name ? "請等歌手下 Mic" : ""}
+                    style={{
+                      opacity: currentSinger && currentSinger !== name ? 0.5 : 1,
+                      cursor: currentSinger && currentSinger !== name ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    🎤 唱歌
+                  </button>
                   {showSongPanel && (
                     <SongRoom room={room} name={name} socket={socket} />
                   )}
@@ -495,7 +506,7 @@ export default function ChatApp() {
                   🎤 唱歌（限會員）
                 </button>
               )}
-              <Listener room={room} name={name} socket={socket} />
+              <Listener room={room} name={name} socket={socket} onSingerChange={(singer) => setCurrentSinger(singer)} />
             </div>
 
             <MessageList
