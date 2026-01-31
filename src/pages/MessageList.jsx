@@ -28,11 +28,12 @@ export default function MessageList({ messages = [], name = "", typing = "", mes
           const isSelf = userName === name;
           const isSystem = userName === "系統";
           const profile = aiProfiles[userName];
-
+          console.log(messageText)
           // 訊息顏色
           let color = "#eee"; // 預設
           if (m.color) color = m.color;           // ✅ 使用訊息的顏色
-          else if (isSystem) color = "#ff9900";
+          else if (isSystem && messageText?.includes("進入聊天室")) color = "#ff9900";
+          else if (isSystem) color = "#BBECE2";
           else if (isSelf) color = "#fff";
           else if (profile?.gender === "男") color = "#006633";
           else if (profile?.gender === "女") color = "#ff66aa";
