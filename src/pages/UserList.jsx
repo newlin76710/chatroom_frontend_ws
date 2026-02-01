@@ -14,7 +14,7 @@ export default function UserList({
   myName,
   filteredUsers,       // 新增：被過濾的用戶名列表
   setFilteredUsers,    // 新增：更新過濾用戶
-  focusInput       
+  focusInput
 }) {
   const formatLv = (lv) => String(lv).padStart(2, "0");
   const AML = import.meta.env.VITE_ADMIN_MIN_LEVEL || 91;
@@ -26,6 +26,15 @@ export default function UserList({
     } else {
       setFilteredUsers([...filteredUsers, userName]);
     }
+  };
+
+  const getUserColor = (userName) => {
+    if (!userName) return "#00aa00";
+    const user = userList.find((u) => u.name === userName);
+    if (!user) return "#00aa00";
+    if (user.gender === "男") return "#A7C7E7";
+    if (user.gender === "女") return "#F8C8DC";
+    return "#00aa00";
   };
 
   return (
@@ -69,7 +78,14 @@ export default function UserList({
                   />
                 )}
 
-                {u.name} [Lv.{formatLv(u.type === "guest" ? 1 : u.level)}] ({u.gender})
+                <span
+                  className="user-name"
+                  style={{ color: getUserColor(u.name) }}
+                >
+                  {u.name}
+                </span>
+                &nbsp;
+                [Lv.{formatLv(u.type === "guest" ? 1 : u.level)}] ({u.gender})
 
                 {canKick && (
                   <button
