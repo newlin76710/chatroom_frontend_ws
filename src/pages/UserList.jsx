@@ -82,7 +82,7 @@ export default function UserList({
                   {u.name}
                 </span>
                 &nbsp;
-                [Lv.{formatLv(u.type === "guest" ? 1 : u.level)}] ({u.gender})
+                [Lv.{formatLv(u.type === "guest" ? 1 : u.level)}]
 
                 {canKick && (
                   <button
