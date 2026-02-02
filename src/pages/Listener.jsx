@@ -18,32 +18,34 @@ export default function Listener({ room, name, socket, onSingerChange }) {
 
     const handler = (data) => {
       console.log("[Listener] micStateUpdate:", data);
-      setCurrentSinger(data.currentSinger || null);
-      onSingerChange?.(data.currentSinger || null); 
+      const singer = data.currentSinger || null;
+      setCurrentSinger(singer);
+      onSingerChange?.(singer);
     };
 
     socket.on("micStateUpdate", handler);
     return () => socket.off("micStateUpdate", handler);
   }, [socket]);
 
-  /* ===== 嘗試播放目前演唱者 ===== */
+  /* ===== 清掉所有 audio element（核心工具） ===== */
+  const clearAllAudio = () => {
+    Object.values(audioElementsRef.current).forEach((el) => {
+      el.pause?.();
+      el.remove();
+    });
+    audioElementsRef.current = {};
+  };
+
+  /* ===== 嘗試 attach 目前演唱者 ===== */
   const tryAttachSingerTrack = (identity) => {
     if (!currentSinger) return;
     if (identity !== currentSinger) return;
 
-    // 停掉其他人
-    Object.entries(audioElementsRef.current).forEach(([id, el]) => {
-      if (id !== currentSinger) {
-        el.pause?.();
-        el.remove();
-        delete audioElementsRef.current[id];
-      }
-    });
-
-    if (audioElementsRef.current[identity]) return;
-
     const track = audioTracksRef.current[identity];
     if (!track) return;
+
+    // ⭐ 保證只剩一條 audio
+    clearAllAudio();
 
     const audioEl = track.attach();
     audioEl.autoplay = true;
@@ -57,27 +59,24 @@ export default function Listener({ room, name, socket, onSingerChange }) {
     console.log("[Listener] now listening:", identity);
   };
 
-  /* ===== singer 換人時自動切 ===== */
+  /* ===== singer 換人時，一定重新 attach ===== */
   useEffect(() => {
     if (!lkRoom || !currentSinger) return;
+
+    clearAllAudio();
     tryAttachSingerTrack(currentSinger);
-  }, [currentSinger]);
+  }, [currentSinger, lkRoom]);
 
   /* ===== 停止收聽 ===== */
   const stopListening = () => {
     console.log("[Listener] stopping");
 
     if (lkRoom) {
-      lkRoom.disconnect();
       lkRoom.removeAllListeners();
+      lkRoom.disconnect();
     }
 
-    Object.values(audioElementsRef.current).forEach((el) => {
-      el.pause?.();
-      el.remove();
-    });
-
-    audioElementsRef.current = {};
+    clearAllAudio();
     audioTracksRef.current = {};
 
     setLkRoom(null);
