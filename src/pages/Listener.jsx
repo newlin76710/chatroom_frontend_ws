@@ -7,9 +7,8 @@ export default function Listener({ room, name, socket, onSingerChange }) {
   const [listening, setListening] = useState(false);
   const [currentSinger, setCurrentSinger] = useState(null);
 
-  // identity -> audio element
+  const togglingRef = useRef(false); // ⭐ 防止連續 toggle
   const audioElementsRef = useRef({});
-  // identity -> audio track
   const audioTracksRef = useRef({});
 
   /* ===== Socket：目前演唱者 ===== */
@@ -17,7 +16,6 @@ export default function Listener({ room, name, socket, onSingerChange }) {
     if (!socket) return;
 
     const handler = (data) => {
-      console.log("[Listener] micStateUpdate:", data);
       const singer = data.currentSinger || null;
       setCurrentSinger(singer);
       onSingerChange?.(singer);
@@ -27,7 +25,7 @@ export default function Listener({ room, name, socket, onSingerChange }) {
     return () => socket.off("micStateUpdate", handler);
   }, [socket]);
 
-  /* ===== 清掉所有 audio element（核心工具） ===== */
+  /* ===== 清 audio ===== */
   const clearAllAudio = () => {
     Object.values(audioElementsRef.current).forEach((el) => {
       el.pause?.();
@@ -36,102 +34,88 @@ export default function Listener({ room, name, socket, onSingerChange }) {
     audioElementsRef.current = {};
   };
 
-  /* ===== 嘗試 attach 目前演唱者 ===== */
-  const tryAttachSingerTrack = (identity) => {
-    if (!currentSinger) return;
-    if (identity !== currentSinger) return;
+  /* ===== 停止 ===== */
+  const stopListening = async () => {
+    if (!lkRoom) return;
 
-    const track = audioTracksRef.current[identity];
-    if (!track) return;
-
-    // ⭐ 保證只剩一條 audio
-    clearAllAudio();
-
-    const audioEl = track.attach();
-    audioEl.autoplay = true;
-    audioEl.volume = 1;
-
-    document.body.appendChild(audioEl);
-    audioEl.play?.().catch(() => {});
-
-    audioElementsRef.current[identity] = audioEl;
-
-    console.log("[Listener] now listening:", identity);
-  };
-
-  /* ===== singer 換人時，一定重新 attach ===== */
-  useEffect(() => {
-    if (!lkRoom || !currentSinger) return;
-
-    clearAllAudio();
-    tryAttachSingerTrack(currentSinger);
-  }, [currentSinger, lkRoom]);
-
-  /* ===== 停止收聽 ===== */
-  const stopListening = () => {
-    console.log("[Listener] stopping");
-
-    if (lkRoom) {
+    try {
       lkRoom.removeAllListeners();
       lkRoom.disconnect();
-    }
+    } catch {}
 
     clearAllAudio();
     audioTracksRef.current = {};
-
     setLkRoom(null);
     setListening(false);
+
+    // ⭐ 給 LiveKit 一點時間清乾淨（關鍵）
+    await new Promise((r) => setTimeout(r, 300));
   };
 
-  /* ===== 開始 / 停止 ===== */
-  const toggleListening = async () => {
-    if (!name) return;
+  /* ===== 開始 ===== */
+  const startListening = async () => {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/livekit-token?room=${room}&name=${name}`
+    );
+    const data = await res.json();
+    if (!data.token) return;
 
-    if (listening) {
-      stopListening();
-      return;
-    }
+    const lk = new Room();
+
+    lk.on("trackSubscribed", (track, pub, participant) => {
+      if (track.kind !== "audio") return;
+
+      audioTracksRef.current[participant.identity] = track;
+
+      if (participant.identity === currentSinger) {
+        clearAllAudio();
+        const el = track.attach();
+        el.autoplay = true;
+        document.body.appendChild(el);
+        audioElementsRef.current[participant.identity] = el;
+      }
+    });
+
+    lk.on("trackUnsubscribed", (track, pub, participant) => {
+      delete audioTracksRef.current[participant.identity];
+    });
+
+    await lk.connect(import.meta.env.VITE_LIVEKIT_URL, data.token, {
+      autoSubscribe: true,
+    });
+
+    setLkRoom(lk);
+    setListening(true);
+  };
+
+  /* ===== 手動 toggle ===== */
+  const toggleListening = async () => {
+    if (togglingRef.current) return;
+    togglingRef.current = true;
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/livekit-token?room=${room}&name=${name}`
-      );
-      const data = await res.json();
-      if (!data.token) return;
-
-      const lk = new Room();
-
-      lk.on("trackSubscribed", (track, publication, participant) => {
-        if (track.kind !== "audio") return;
-
-        audioTracksRef.current[participant.identity] = track;
-        tryAttachSingerTrack(participant.identity);
-      });
-
-      lk.on("trackUnsubscribed", (track, publication, participant) => {
-        delete audioTracksRef.current[participant.identity];
-
-        const el = audioElementsRef.current[participant.identity];
-        if (el) {
-          el.pause?.();
-          el.remove();
-          delete audioElementsRef.current[participant.identity];
-        }
-      });
-
-      await lk.connect(import.meta.env.VITE_LIVEKIT_URL, data.token, {
-        autoSubscribe: true,
-      });
-
-      setLkRoom(lk);
-      setListening(true);
-
-      console.log("[Listener] listening started");
-    } catch (err) {
-      console.error("[Listener] failed:", err);
-      stopListening();
+      if (listening) {
+        await stopListening();
+      } else {
+        await startListening();
+      }
+    } finally {
+      togglingRef.current = false;
     }
   };
+
+  /* ===== ⭐ singer 換人 → 自動 toggle 兩次 ===== */
+  useEffect(() => {
+    if (!listening || !currentSinger) return;
+    if (togglingRef.current) return;
+
+    (async () => {
+      togglingRef.current = true;
+      await stopListening();
+      await startListening();
+      togglingRef.current = false;
+    })();
+  }, [currentSinger]);
 
   return (
     <div className="listener-bar">
