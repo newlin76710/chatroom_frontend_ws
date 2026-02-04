@@ -184,7 +184,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
                                             <td>{u.username}</td>
                                             <td>{u.level}</td>
                                             <td>{new Date(u.created_at).toLocaleString()}</td>
-                                            <td>{u.last_login ? new Date(u.last_login).toLocaleString() : "-"}</td>
+                                            <td>{u.last_login_at ? new Date(u.last_login_at).toLocaleString() : "-"}</td>
                                             <td>
                                                 <input
                                                     type="number"
