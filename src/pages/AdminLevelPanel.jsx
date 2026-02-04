@@ -1,5 +1,5 @@
 // AdminUserLevelPanel.jsx
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./AdminLevelPanel.css";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
@@ -87,9 +87,9 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
         }
     };
 
-    /* ================= 刪除使用者（🔥 新增） ================= */
+    /* ================= 刪除使用者 ================= */
     const handleDeleteUser = async (username) => {
-        if (!window.confirm(`⚠️ 確定要永久刪除使用者「${username}」嗎？\n此動作無法復原！`))
+        if (!window.confirm(`⚠️ 確定要永久刪除使用者「${username}」嗎？此操作無法復原！`))
             return;
 
         try {
@@ -117,6 +117,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
         }
     };
 
+    /* ================= 分頁按鈕 ================= */
     const renderPageButtons = () => {
         const maxButtons = 10;
         let start = Math.max(1, page - Math.floor(maxButtons / 2));
@@ -130,6 +131,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
                 <button
                     key={p}
                     className="admin-btn"
+                    style={{ backgroundColor: p === page ? "#1565c0" : "#1976d2" }}
                     disabled={p === page}
                     onClick={() => loadUsers(p)}
                 >
@@ -159,18 +161,21 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
                                 placeholder="搜尋使用者"
                                 value={keyword}
                                 onChange={(e) => setKeyword(e.target.value)}
+                                style={{ marginRight: "6px", padding: "4px" }}
                             />
                             <button className="admin-btn" onClick={() => loadUsers(1, keyword)}>
                                 搜尋
                             </button>
                         </div>
 
+                        {/* 使用者表格 */}
                         <table className="admin-table">
                             <thead>
                                 <tr>
                                     <th>帳號</th>
                                     <th>等級</th>
                                     <th>建立時間</th>
+                                    <th>最近登入</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
@@ -180,6 +185,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
                                         <td>{u.username}</td>
                                         <td>{u.level}</td>
                                         <td>{new Date(u.created_at).toLocaleString()}</td>
+                                        <td>{u.last_login_at ? new Date(u.last_login_at).toLocaleString() : "-"}</td>
                                         <td>
                                             <input
                                                 type="number"
@@ -196,11 +202,15 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
                                                         )
                                                     )
                                                 }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter")
+                                                        handleLevelChange(u.username, u.editLevel);
+                                                }}
                                             />
                                             <button
                                                 className="admin-btn"
-                                                onClick={() => handleLevelChange(u.username, u.editLevel)}
                                                 style={{ marginRight: "6px" }}
+                                                onClick={() => handleLevelChange(u.username, u.editLevel)}
                                             >
                                                 修改
                                             </button>
@@ -215,7 +225,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan="4" style={{ textAlign: "center" }}>
+                                        <td colSpan="5" style={{ textAlign: "center" }}>
                                             無資料
                                         </td>
                                     </tr>
@@ -223,12 +233,21 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
                             </tbody>
                         </table>
 
+                        {/* 分頁 */}
                         <div className="admin-pagination">
-                            <button className="admin-btn" disabled={page <= 1} onClick={() => loadUsers(page - 1)}>
+                            <button
+                                className="admin-btn"
+                                disabled={page <= 1}
+                                onClick={() => loadUsers(page - 1)}
+                            >
                                 上一頁
                             </button>
                             {renderPageButtons()}
-                            <button className="admin-btn" disabled={page >= totalPages} onClick={() => loadUsers(page + 1)}>
+                            <button
+                                className="admin-btn"
+                                disabled={page >= totalPages}
+                                onClick={() => loadUsers(page + 1)}
+                            >
                                 下一頁
                             </button>
                         </div>
