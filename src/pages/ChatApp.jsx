@@ -515,16 +515,9 @@ export default function ChatApp() {
               📢公告
             </button>
             <button
+              className="announce-btn"
               onClick={() => setShowMessageBoard(true)}
-              style={{
-                backgroundColor: "#FFD700", // 黃色
-                color: "#000",
-                border: "none",
-                padding: "4px 8px",
-                borderRadius: "4px",
-                cursor: "pointer",
-                marginLeft: "6px",
-              }}
+              title="聊天室留言板"
             >
               💬 留言板
             </button>
