@@ -498,11 +498,6 @@ export default function ChatApp() {
   return (
     <div className="chat-layout">
       {/* 左側聊天區 */}
-      {offline && (
-        <div className="offline-banner">
-          ⚠️ 網路不穩，重新連線中...
-        </div>
-      )}
       <div className="chat-left">
         <div className="chat-title-bar">
           <div className="chat-title">
@@ -521,8 +516,12 @@ export default function ChatApp() {
             >
               💬 留言板
             </button>
+            {offline && (
+              <div className="offline-banner">
+                ⚠️ 網路不穩，重新連線中...
+              </div>
+            )}
           </div>
-
         </div>
         <AnnouncementPanel
           open={showAnnouncement}
