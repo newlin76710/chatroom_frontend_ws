@@ -25,7 +25,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
         event.target.unMute();
         event.target.setVolume(100);
       }
-    } catch {}
+    } catch { }
   };
 
   /* ===== 手機首次觸控解除靜音 ===== */
@@ -39,7 +39,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
       try {
         playerRef.current?.unMute();
         playerRef.current?.setVolume(100);
-      } catch {}
+      } catch { }
 
       window.removeEventListener("touchstart", handleTouch);
     };
@@ -56,7 +56,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
       try {
         playerRef.current.playVideo();
         lastVideoIdRef.current = videoId;
-      } catch {}
+      } catch { }
     }
   }, [videoId]);
 
@@ -70,7 +70,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
         playerRef.current.destroy();
         playerRef.current = null;
       }
-    } catch {}
+    } catch { }
 
     lastVideoIdRef.current = null;
 
@@ -88,7 +88,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
           playerRef.current.destroy();
           playerRef.current = null;
         }
-      } catch {}
+      } catch { }
     };
   }, []);
 
@@ -124,7 +124,7 @@ export default function VideoPlayer({ video, extractVideoID, onClose }) {
         </>
       ) : (
         <div className="video-placeholder">
-          <div>
+          <div className="placeholder-text">
             🎧 音樂點播中...
             <br />
             歡樂聊天盡在尋夢園
