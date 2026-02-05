@@ -57,6 +57,26 @@ body {
   height: 100%;
 }
 
+/* 訊息列表 */
+.message-list {
+  flex: 1 1 auto;
+  min-height: 200px;
+  max-height: 70vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background-color: #1a1a1a;
+
+  /* 文字換行 */
+  word-break: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
 /* 標題 */
 .chat-title {
   font-size: 1.2rem;
