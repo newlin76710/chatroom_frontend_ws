@@ -86,7 +86,7 @@ export default function ChatApp() {
   const userType = sessionStorage.getItem("type") || "guest";
   const isMember = userType === "account";
   const [currentSinger, setCurrentSinger] = useState(null);
-  // 依照 OPENAI 過濾 AI
+  const pendingLeaves = useRef(new Map());
 
   // --- 初始化 sessionStorage ---
   useEffect(() => {
@@ -274,6 +274,50 @@ export default function ChatApp() {
     };
 
     const handleSystemMessage = (m) => {
+      if (!m) return;
+
+      // ===== 判斷離開 =====
+      if (m.includes("離開聊天室")) {
+        const user = m.replace(" 離開聊天室", "");
+
+        const timer = setTimeout(() => {
+          setMessages((s) => [
+            ...s,
+            {
+              user: {
+                name: "系統",
+                avatar: "/avatars/system.png",
+                type: "system",
+              },
+              message: m,
+              timestamp: new Date().toLocaleTimeString(),
+            },
+          ]);
+
+          pendingLeaves.current.delete(user);
+        }, 3000); // ⭐ 可改 3~6 秒
+
+        pendingLeaves.current.set(user, timer);
+        return;
+      }
+
+      // ===== 判斷重新加入 =====
+      if (m.includes("進入聊天室")) {
+        const user = m.replace(" 進入聊天室", "");
+
+        const timer = pendingLeaves.current.get(user);
+
+        if (timer) {
+          // ⭐⭐⭐ reconnect！
+          clearTimeout(timer);
+          pendingLeaves.current.delete(user);
+
+          // 👉 不顯示 join
+          return;
+        }
+      }
+
+      // 正常顯示
       setMessages((s) => [
         ...s,
         {
@@ -282,7 +326,7 @@ export default function ChatApp() {
             avatar: "/avatars/system.png",
             type: "system",
           },
-          message: safeText(m),
+          message: m,
           timestamp: new Date().toLocaleTimeString(),
         },
       ]);
