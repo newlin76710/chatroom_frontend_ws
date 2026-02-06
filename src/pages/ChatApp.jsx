@@ -73,6 +73,8 @@ export default function ChatApp() {
   const [cooldown, setCooldown] = useState(false);
   const [placeholder, setPlaceholder] = useState("輸入訊息...");
   const messagesEndRef = useRef(null);
+  const messageContainerRef = useRef(null);
+  const shouldAutoScrollRef = useRef(true);
   const socket = globalSocket;
   const [expTips, setExpTips] = useState([]);
   const [levelUpTips, setLevelUpTips] = useState([]);
@@ -242,11 +244,6 @@ export default function ChatApp() {
       return () => clearTimeout(timer);
     }
   }, [levelUpTips]);
-
-  // --- 自動捲動 ---
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   // --- Socket 事件 ---
   useEffect(() => {
