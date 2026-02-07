@@ -117,7 +117,7 @@ export default function MessageList({
             m.mode === "private"
               ? "(私聊)"
               : m.mode === "publicTarget"
-              ? "(公開對象)"
+              ? ""
               : "";
 
           const enteringUserMatch = isSystem

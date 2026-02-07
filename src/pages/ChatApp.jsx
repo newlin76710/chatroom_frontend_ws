@@ -594,7 +594,7 @@ export default function ChatApp() {
           <>
             <div className="chat-toolbar">
               <span>
-                Hi [Lv.{formatLv(level)}]
+                Hi {formatLv(level)}.
                 <span
                   className="chat-username"
                   style={{ color: getUserColorByGender(gender) }}
@@ -613,7 +613,7 @@ export default function ChatApp() {
               {isMember ? (
                 <>
                   <div className="video-request">
-                    <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube 連結" />
+                    <input style={{ width: 130 }} value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="貼上YouTube連結" />
                     <button onClick={playVideo}>🎵 點播</button>
                   </div>
                   <button
