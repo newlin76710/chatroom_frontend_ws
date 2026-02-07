@@ -181,7 +181,7 @@ export default function MessageList({
                   <span
                     style={{
                       fontSize: "0.7rem",
-                      color: tag === "(私聊)" ? "#B84A4A" : "#ffd36a",
+                      color: tag === "(私聊)" ? "#e60909" : "#ffd36a",
                       marginRight: "4px",
                     }}
                   >
