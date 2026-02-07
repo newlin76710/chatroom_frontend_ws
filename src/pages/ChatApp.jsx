@@ -594,7 +594,7 @@ export default function ChatApp() {
           <>
             <div className="chat-toolbar">
               <span>
-                Hi 等級{formatLv(level)}&nbsp;
+                Hi 等級:{formatLv(level)}&nbsp;
                 <span
                   className="chat-username"
                   style={{ color: getUserColorByGender(gender) }}
