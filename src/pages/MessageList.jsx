@@ -38,7 +38,7 @@ export default function MessageList({
     if (!el) return;
 
     const onScroll = () => {
-      const threshold = 80; // ⭐ 容錯距離
+      const threshold = 120; // ⭐ 容錯距離
 
       const isNearBottom =
         el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
@@ -55,12 +55,28 @@ export default function MessageList({
      新訊息來時 → 是否滾動
   =============================== */
   useEffect(() => {
+    if (!messages.length) return;
+
+    const lastMsg = messages[messages.length - 1];
+    const isSelf = lastMsg?.user?.name === name;
+
+    // ⭐ 自己 → 強制到底
+    if (isSelf) {
+      messagesEndRef?.current?.scrollIntoView({
+        behavior: "auto",
+      });
+      return;
+    }
+
+    // ⭐ 別人 → 只有接近底部才滾
     if (!shouldAutoScrollRef.current) return;
 
     messagesEndRef?.current?.scrollIntoView({
       behavior: "smooth",
     });
-  }, [messages]);
+
+  }, [messages, name]);
+
 
   const handleSelectUser = (selectedName) => {
     if (onSelectTarget && selectedName && selectedName !== name) {
@@ -117,8 +133,8 @@ export default function MessageList({
             m.mode === "private"
               ? "(私聊)"
               : m.mode === "publicTarget"
-              ? ""
-              : "";
+                ? ""
+                : "";
 
           const enteringUserMatch = isSystem
             ? messageText.match(/^(.+) 進入聊天室$/)
