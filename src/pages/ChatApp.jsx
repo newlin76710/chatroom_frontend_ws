@@ -594,13 +594,13 @@ export default function ChatApp() {
           <>
             <div className="chat-toolbar">
               <span>
-                Hi 等級:{formatLv(level)}&nbsp;
+                Hi &nbsp;
                 <span
                   className="chat-username"
                   style={{ color: getUserColorByGender(gender) }}
                 >
                   {name}
-                </span>
+                </span>&nbsp;等級:{formatLv(level)}
                 {sessionStorage.getItem("type") !== "guest" && level < ANL - 1 ? ` 積分:${exp}` : ""}
                 <span className="exp-tip-inline">
                   {expTips.map((tip) => <span key={tip.id} className="exp-tip">{tip.value}</span>)}
