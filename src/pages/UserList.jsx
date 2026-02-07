@@ -74,7 +74,6 @@ export default function UserList({
                 <img src={avatarUrl} alt={u.name} className="user-avatar" />
               )}
 
-              {formatLv(u.type === "guest" ? 1 : u.level)}.
               <span
                 className="user-name"
                 style={{ color: getUserColorByGender(u.gender) }}
@@ -82,7 +81,7 @@ export default function UserList({
                 {u.name}
               </span>
               &nbsp;
-              {u.type === "AI" && "(AI)"}
+              {u.type === "guest" ? 1 : u.level} {u.type === "AI" && "(AI)"}
 
               {canKick && (
                 <button
