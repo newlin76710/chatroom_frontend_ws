@@ -37,6 +37,11 @@
   z-index: 999;
 }
 
+/* 91~98 管理員專用寬度 */
+.admin-tool .admin-popup.small {
+  width: 150px;
+}
+
 /* 小浮窗 Tabs */
 .admin-tool .admin-tabs {
   display: flex;

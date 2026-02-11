@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLoginLogPanel from "./AdminLoginLogPanel";
 import MessageLogPanel from "./MessageLogPanel";
 import AdminLevelPanel from "./AdminLevelPanel"; // ⭐ 新增
@@ -6,12 +6,20 @@ import AdminIPPanel from "./AdminIPPanel";   // ⭐ 新增
 import AdminNicknamePanel from "./AdminNicknamePanel";
 import "./AdminToolPanel.css";
 
-export default function AdminToolPanel({ myLevel, minLevel, token }) {
+const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
+const ANL = import.meta.env.VITE_ADMIN_MIN_LEVEL || 91;
+export default function AdminToolPanel({ myLevel, token }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("login"); // login | message | level | ip | nickname
 
-  if (myLevel < minLevel) return null;
-
+  if (myLevel < ANL) return null;
+  // ⭐ 初始化 tab
+  useEffect(() => {
+    if (myLevel < AML) {
+      setTab("nickname"); // 91~98 的管理員只顯示暱稱管理
+    }
+  }, [myLevel]);
+  
   return (
     <div className="admin-tool">
       <button className="admin-btn" onClick={() => setOpen(o => !o)}>
@@ -19,40 +27,53 @@ export default function AdminToolPanel({ myLevel, minLevel, token }) {
       </button>
 
       {open && (
-        <div className="admin-popup">
+        <div className={`admin-popup ${myLevel < AML ? "small" : ""}`}>
           {/* Tabs */}
           <div className="admin-tabs">
-            <button
-              className={tab === "login" ? "active" : ""}
-              onClick={() => setTab("login")}
-            >
-              登入紀錄
-            </button>
-            <button
-              className={tab === "message" ? "active" : ""}
-              onClick={() => setTab("message")}
-            >
-              發言紀錄
-            </button>
-            <button
-              className={tab === "level" ? "active" : ""}
-              onClick={() => setTab("level")}
-            >
-              等級管理
-            </button>
-            <button
-              className={tab === "ip" ? "active" : ""}
-              onClick={() => setTab("ip")}
-            >
-              IP 管制
-            </button>
-            <button
-              className={tab === "nickname" ? "active" : ""}
-              onClick={() => setTab("nickname")}
-            >
-              暱稱管理
-            </button>
+
+            {myLevel >= AML && (
+              <>
+                <button
+                  className={tab === "login" ? "active" : ""}
+                  onClick={() => setTab("login")}
+                >
+                  登入紀錄
+                </button>
+
+                <button
+                  className={tab === "message" ? "active" : ""}
+                  onClick={() => setTab("message")}
+                >
+                  發言紀錄
+                </button>
+
+                <button
+                  className={tab === "level" ? "active" : ""}
+                  onClick={() => setTab("level")}
+                >
+                  等級管理
+                </button>
+
+                <button
+                  className={tab === "ip" ? "active" : ""}
+                  onClick={() => setTab("ip")}
+                >
+                  IP 管制
+                </button>
+              </>
+            )}
+
+            {/* ⭐ 91 即可 */}
+            {myLevel >= ANL && (
+              <button
+                className={tab === "nickname" ? "active" : ""}
+                onClick={() => setTab("nickname")}
+              >
+                暱稱管理
+              </button>
+            )}
           </div>
+
 
           {/* Content */}
           <div className="admin-content">

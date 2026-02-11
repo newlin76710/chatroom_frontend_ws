@@ -696,7 +696,6 @@ export default function ChatApp() {
               <AdminToolPanel
                 myName={name}
                 myLevel={level}
-                minLevel={AML}
                 token={token}
               />
               <label><input type="radio" checked={chatMode === "public"} onChange={() => { setChatMode("public"); setTarget(""); }} /> 公開</label>
