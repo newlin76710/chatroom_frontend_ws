@@ -3,11 +3,12 @@ import AdminLoginLogPanel from "./AdminLoginLogPanel";
 import MessageLogPanel from "./MessageLogPanel";
 import AdminLevelPanel from "./AdminLevelPanel"; // ⭐ 新增
 import AdminIPPanel from "./AdminIPPanel";   // ⭐ 新增
+import AdminNicknamePanel from "./AdminNicknamePanel";
 import "./AdminToolPanel.css";
 
 export default function AdminToolPanel({ myLevel, minLevel, token }) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState("login"); // login | message | level | ip
+  const [tab, setTab] = useState("login"); // login | message | level | ip | nickname
 
   if (myLevel < minLevel) return null;
 
@@ -45,6 +46,12 @@ export default function AdminToolPanel({ myLevel, minLevel, token }) {
             >
               IP 管制
             </button>
+            <button
+              className={tab === "nickname" ? "active" : ""}
+              onClick={() => setTab("nickname")}
+            >
+              暱稱管理
+            </button>
           </div>
 
           {/* Content */}
@@ -53,6 +60,7 @@ export default function AdminToolPanel({ myLevel, minLevel, token }) {
             {tab === "message" && <MessageLogPanel token={token} />}
             {tab === "level" && <AdminLevelPanel token={token} myLevel={myLevel} />}
             {tab === "ip" && <AdminIPPanel token={token} />}
+            {tab === "nickname" && <AdminNicknamePanel token={token} />}
           </div>
         </div>
       )}
