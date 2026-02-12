@@ -2,28 +2,26 @@ import { useState, useEffect, useRef } from "react";
 import { Room, LocalAudioTrack } from "livekit-client";
 
 export default function SongRoom({ room, name, socket, currentSinger }) {
-  const [lkRoom, setLkRoom] = useState(null);
+
   const [singing, setSinging] = useState(false);
   const [sharing, setSharing] = useState(false);
 
   const roomRef = useRef(null);
-
-  // 保存 MediaStream（關鍵）
   const micStreamRef = useRef(null);
   const displayStreamRef = useRef(null);
 
-  // 保存 LiveKit tracks
-  const micTrackRef = useRef(null);
-  const tabTrackRef = useRef(null);
+  // 防止重複點擊
+  const stoppingRef = useRef(false);
+  const startingRef = useRef(false);
 
-  /////////////////////////////////////////////
-  // 🔥 強制停止（給 server call）
-  /////////////////////////////////////////////
+  //////////////////////////////////////////////////////
+  // 🔥 強制停止（Server 可呼叫）
+  //////////////////////////////////////////////////////
 
   useEffect(() => {
     if (!socket) return;
 
-    const forceStop = () => stopSing();
+    const forceStop = () => stopSing(true);
 
     socket.on("forceStopSing", forceStop);
 
@@ -32,35 +30,37 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
     };
   }, [socket]);
 
-  /////////////////////////////////////////////
-  // 🔥 React unmount 防漏音（超重要）
-  /////////////////////////////////////////////
+  //////////////////////////////////////////////////////
+  // 🔥 React unmount 防漏音（超級重要）
+  //////////////////////////////////////////////////////
 
   useEffect(() => {
-    return () => {
-      stopSing(true);
-    };
+    return () => stopSing(true);
   }, []);
 
-  /////////////////////////////////////////////
+  //////////////////////////////////////////////////////
   // 🎤 上麥
-  /////////////////////////////////////////////
+  //////////////////////////////////////////////////////
 
-  const startSing = async (jwtToken) => {
+  const startSing = async (token) => {
+
+    if (startingRef.current) return;
+    startingRef.current = true;
+
     try {
+
       const lk = new Room();
 
-      await lk.connect(import.meta.env.VITE_LIVEKIT_URL, jwtToken);
+      await lk.connect(import.meta.env.VITE_LIVEKIT_URL, token);
 
       roomRef.current = lk;
-      setLkRoom(lk);
 
       //////////////////////////////////////
-      // LiveKit 防斷線殘音
+      // 防止斷線殘音
       //////////////////////////////////////
 
       lk.on("disconnected", () => {
-        console.log("[LiveKit] disconnected -> stopSing()");
+        console.log("LiveKit disconnected -> force cleanup");
         stopSing(true);
       });
 
@@ -78,42 +78,41 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
 
       micStreamRef.current = micStream;
 
-      const micTrack = new LocalAudioTrack(micStream.getAudioTracks()[0]);
-      micTrackRef.current = micTrack;
+      const track = new LocalAudioTrack(
+        micStream.getAudioTracks()[0]
+      );
 
-      await lk.localParticipant.publishTrack(micTrack);
+      await lk.localParticipant.publishTrack(track);
 
       setSinging(true);
 
-      console.log("[SongRoom] 已上麥 🎤");
+      console.log("🎤 上麥成功");
+
     } catch (err) {
-      console.error("[SongRoom] startSing failed:", err);
+      console.error("startSing error:", err);
+      stopSing(true);
     }
+
+    startingRef.current = false;
   };
 
-  /////////////////////////////////////////////
-  // 🛑 下麥（企業級寫法）
-  /////////////////////////////////////////////
+  //////////////////////////////////////////////////////
+  // 🛑 下麥（零卡死版本）
+  //////////////////////////////////////////////////////
 
-  const stopSing = async (silent = false) => {
+  const stopSing = (silent = false) => {
+
+    if (stoppingRef.current) return;
+    stoppingRef.current = true;
+
     try {
-      const lk = roomRef.current;
+
+      // ⭐⭐⭐⭐⭐ 先更新 UI（極重要）
+      setSinging(false);
+      setSharing(false);
 
       //////////////////////////////////////
-      // 1️⃣ 先 unpublish（最重要）
-      //////////////////////////////////////
-
-      if (lk) {
-        const tracks = lk.localParticipant.getTracks();
-
-        for (const pub of tracks) {
-          await lk.localParticipant.unpublishTrack(pub.track);
-          pub.track?.stop();
-        }
-      }
-
-      //////////////////////////////////////
-      // 2️⃣ stop MediaStream（真正關閉硬體）
+      // stop 所有硬體音源
       //////////////////////////////////////
 
       micStreamRef.current?.getTracks().forEach(t => t.stop());
@@ -123,104 +122,103 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
       displayStreamRef.current = null;
 
       //////////////////////////////////////
-      // 3️⃣ disconnect room
+      // ⭐ 暴力斷 LiveKit（不要 await）
       //////////////////////////////////////
 
-      await lk?.disconnect();
+      if (roomRef.current) {
+        try {
+          roomRef.current.disconnect(true); // true = stop tracks
+        } catch {}
+      }
 
       roomRef.current = null;
-      setLkRoom(null);
-
-      micTrackRef.current = null;
-      tabTrackRef.current = null;
-
-      setSinging(false);
-      setSharing(false);
 
       if (!silent) {
         socket.emit("stopSing", { room, singer: name });
       }
 
-      console.log("[SongRoom] ✅ 已完全下麥（無殘音）");
+      console.log("🛑 已完全下 mic（無殘音）");
 
     } catch (err) {
-      console.error("stopSing error:", err);
+      console.error(err);
     }
+
+    stoppingRef.current = false;
   };
 
-  /////////////////////////////////////////////
-  // 📢 分頁音（獨立 track，不混音）
-  /////////////////////////////////////////////
+  //////////////////////////////////////////////////////
+  // 📢 分享分頁音（獨立 track）
+  //////////////////////////////////////////////////////
 
   const shareTabAudio = async () => {
     if (!roomRef.current) return;
 
     try {
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+
+      const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
+        audio: true,
       });
 
-      const audioTrack = displayStream.getAudioTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0];
 
-      if (!audioTrack) {
-        console.log("沒有抓到分頁音");
-        return;
-      }
+      if (!audioTrack) return;
 
-      displayStreamRef.current = displayStream;
+      displayStreamRef.current = stream;
 
       const tabTrack = new LocalAudioTrack(audioTrack);
-      tabTrackRef.current = tabTrack;
 
       await roomRef.current.localParticipant.publishTrack(tabTrack);
 
       setSharing(true);
 
-      console.log("[SongRoom] 分頁音已加入 🎶");
-
-      //////////////////////////////////////
-      // 使用者按「停止分享」
-      //////////////////////////////////////
-
       audioTrack.onended = () => {
-        console.log("[SongRoom] 使用者停止分享");
+        console.log("使用者停止分享");
+
         tabTrack.stop();
-        roomRef.current?.localParticipant.unpublishTrack(tabTrack);
+
+        try {
+          roomRef.current?.localParticipant.unpublishTrack(tabTrack);
+        } catch {}
+
         setSharing(false);
       };
 
     } catch (err) {
-      console.error("[SongRoom] shareTabAudio failed:", err);
+      console.error(err);
     }
   };
 
-  /////////////////////////////////////////////
+  //////////////////////////////////////////////////////
+  // grab mic
+  //////////////////////////////////////////////////////
 
   const grabMic = () => {
+
+    if (startingRef.current) return;
+
     socket.emit("grabMic", { room, singer: name });
 
-    socket.once("livekit-token", ({ token }) => {
+    const handler = ({ token }) => {
       startSing(token);
-    });
+      socket.off("livekit-token", handler);
+    };
+
+    socket.on("livekit-token", handler);
   };
+
+  //////////////////////////////////////////////////////
 
   const otherSinger = currentSinger && currentSinger !== name;
   const grabDisabled = !singing && otherSinger;
-  const grabTitle = grabDisabled ? "請等歌手下 Mic" : "";
 
-  /////////////////////////////////////////////
+  //////////////////////////////////////////////////////
 
   return (
     <div style={{ padding: 12 }}>
       <button
         onClick={singing ? stopSing : grabMic}
         disabled={grabDisabled}
-        title={grabTitle}
         style={{
           opacity: grabDisabled ? 0.5 : 1,
           cursor: grabDisabled ? "not-allowed" : "pointer",
