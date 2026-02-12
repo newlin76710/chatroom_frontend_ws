@@ -100,7 +100,7 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
   // 🛑 下麥（零卡死版本）
   //////////////////////////////////////////////////////
 
-  const stopSing = (silent = false) => {
+  const stopSing = () => {
 
     if (stoppingRef.current) return;
     stoppingRef.current = true;
@@ -132,13 +132,8 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
       }
 
       roomRef.current = null;
-
-      if (!silent) {
-        socket.emit("stopSing", { room, singer: name });
-      }
-
+      socket.emit("stopSing", { room, singer: name });
       console.log("🛑 已完全下 mic（無殘音）");
-
     } catch (err) {
       console.error(err);
     }
