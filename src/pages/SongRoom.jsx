@@ -87,6 +87,7 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
     roomRef.current = null;
     setLkRoom(null);
 
+    await audioCtxRef.current?.suspend();
     await audioCtxRef.current?.close();
     audioCtxRef.current = null;
     destRef.current = null;
