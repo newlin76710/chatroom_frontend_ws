@@ -14,6 +14,7 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
   // 保存 track / source
   const micTrackRef = useRef(null);
   const micSourceRef = useRef(null);
+  const micStreamRef = useRef(null);
   const tabTrackRef = useRef(null);
   const tabSourceRef = useRef(null);
 
@@ -49,6 +50,7 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
       const micSource = audioCtx.createMediaStreamSource(micStream);
       micSource.connect(dest);
       micSourceRef.current = micSource;
+      micStreamRef.current = micStream;
 
       const micTrack = new LocalAudioTrack(dest.stream.getAudioTracks()[0]);
       micTrackRef.current = micTrack;
@@ -64,6 +66,7 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
 
   const stopSing = () => {
     // 停止 mic track
+    micTrackRef.current?.mediaStreamTrack?.stop(); // 🔥 真正關閉裝置
     if (micTrackRef.current) {
       micTrackRef.current.stop();
       micTrackRef.current = null;
@@ -80,6 +83,8 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
     micSourceRef.current = null;
     tabSourceRef.current?.disconnect();
     tabSourceRef.current = null;
+    micStreamRef.current?.getTracks().forEach(track => track.stop());
+    micStreamRef.current = null;
 
     // 取消發佈
     lkRoom?.localParticipant.unpublishTracks();
