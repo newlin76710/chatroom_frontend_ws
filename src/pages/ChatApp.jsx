@@ -176,7 +176,7 @@ export default function ChatApp() {
       // EXP 變化（⭐ 重點）
       if (me.exp !== exp) {
         const diff = me.exp - exp;
-        if (diff > 0) {
+        if (diff > 0 && me.level > 1 && me.level < ANL) {
           setExpTips(s => [...s, { id: Date.now(), value: `+${diff}` }]);
         }
         setExp(me.exp || 0);
