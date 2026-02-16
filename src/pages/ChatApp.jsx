@@ -602,7 +602,7 @@ export default function ChatApp() {
                     <input style={{ width: 130 }} value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="貼上YouTube連結" />
                     <button onClick={playVideo}>🎵 點播</button>
                   </div>
-                  <button
+                  {/* <button
                     onClick={() => setShowSongPanel(!showSongPanel)}
                     disabled={currentSinger && currentSinger !== name}
                     title={currentSinger && currentSinger !== name ? "請等歌手下 Mic" : ""}
@@ -610,6 +610,11 @@ export default function ChatApp() {
                       opacity: currentSinger && currentSinger !== name ? 0.5 : 1,
                       cursor: currentSinger && currentSinger !== name ? "not-allowed" : "pointer",
                     }}
+                  >
+                    🎤 唱歌
+                  </button> */}
+                  <button
+                    onClick={() => setShowSongPanel(!showSongPanel)}
                   >
                     🎤 唱歌
                   </button>
