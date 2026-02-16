@@ -5,6 +5,7 @@ import { Room, LocalAudioTrack } from "livekit-client";
 export default function SongRoom({ room, name, socket, currentSinger }) {
   const [lkRoom, setLkRoom] = useState(null);
   const [singing, setSinging] = useState(false);
+  const [queue, setQueue] = useState([]);
 
   const roomRef = useRef(null);
   const audioCtxRef = useRef(null);
@@ -26,6 +27,34 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
       socket.off("forceStopSing");
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("micStateUpdate", ({ queue, currentSinger }) => {
+      setQueue(queue);
+    });
+
+    return () => {
+      socket.off("micStateUpdate");
+    };
+  }, [socket]);
+  const myIndex = queue.findIndex(n => n === name);
+  const myPosition = myIndex >= 0 ? myIndex + 1 : null;
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("yourTurnToSing", ({ room: r, singer }) => {
+      if (r === room && singer === name) {
+        grabMic();
+      }
+    });
+
+    return () => {
+      socket.off("yourTurnToSing");
+    };
+  }, [socket, room, name]);
 
   const startSing = async (jwtToken) => {
     try {
@@ -111,7 +140,7 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
 
   return (
     <div style={{ padding: 12 }}>
-      <button
+      {/* <button
         onClick={singing ? stopSing : grabMic}
         disabled={grabDisabled}
         title={grabTitle}
@@ -122,7 +151,17 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
         }}
       >
         {singing ? "🛑 下麥" : "🎤 上麥"}
+      </button> */}
+      <button
+        onClick={singing ? stopSing : () => socket.emit("joinQueue", { room, name })}
+      >
+        {singing ? "🛑 下麥" : "🎤 排隊上麥"}
       </button>
+      {myPosition && (
+        <div style={{ marginTop: 8, fontSize: 14 }}>
+          🎵 目前排隊順位：第 {myPosition} 位
+        </div>
+      )}
     </div>
   );
 }
