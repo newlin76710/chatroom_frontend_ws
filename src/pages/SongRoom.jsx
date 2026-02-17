@@ -7,6 +7,9 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
   const [singing, setSinging] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [myPosition, setMyPosition] = useState(0);
+  const [queue, setQueue] = useState([]);
+  const [panelOpen, setPanelOpen] = useState(false);
+
   const roomRef = useRef(null);
   const audioCtxRef = useRef(null);
   const destRef = useRef(null);
@@ -30,6 +33,7 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
       grabMic();
     });
     socket.on("micStateUpdate", (data) => {
+      setQueue(data.queue);
       const index = data.queue.indexOf(name);
       setMyPosition(index + 1); // 排第幾個
     });
@@ -121,6 +125,10 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
     socket.emit("joinQueue", { room, name });
     setWaiting(true);
   };
+  const leaveQueue = () => {
+    socket.emit("leaveQueue", { room, name });
+    setWaiting(false);   // 前端狀態同步
+  };
 
   const otherSinger = currentSinger && currentSinger !== name;
   const grabDisabled = !singing && otherSinger;
@@ -129,7 +137,7 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
   return (
     <div style={{ padding: 12 }}>
       <button
-        onClick={singing ? stopSing : otherSinger ? joinQueue : grabMic}
+        onClick={singing ? stopSing : waiting? leaveQueue : otherSinger ? joinQueue : grabMic}
         disabled={waiting}
         style={{
           opacity: waiting ? 0.5 : 1,
@@ -140,11 +148,79 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
         {singing
           ? "🛑 下麥"
           : waiting
-            ? `⏳ 順位${myPosition}`
-            : currentSinger && currentSinger !== name
+            ? `⏳ 取消排隊`
+            : otherSinger
               ? "🎶 排麥"
               : "🎤 上麥"}
       </button>
+      {/* ===== 排麥小窗 ===== */}
+      <div
+        style={{
+          position: "fixed",
+          top: 20,
+          right: 330,
+          width: 200,
+          background: "#1e1e1e",
+          color: "white",
+          borderRadius: 12,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+          overflow: "hidden",
+          fontSize: 14,
+          zIndex: 999
+        }}
+      >
+        {/* Header */}
+        <div
+          onClick={() => setPanelOpen(!panelOpen)}
+          style={{
+            padding: "8px 12px",
+            background: "#333",
+            cursor: "pointer",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+          }}
+        >
+          <span>🎤 麥序列表</span>
+          <span>{panelOpen ? "−" : "+"}</span>
+        </div>
+
+        {/* Content */}
+        {panelOpen && (
+          <div style={{ padding: 10 }}>
+            <div style={{ marginBottom: 8 }}>
+              <strong>正在唱：</strong>
+              <div style={{ color: "#4ade80" }}>
+                {currentSinger || "無"}
+              </div>
+            </div>
+
+            <div>
+              <strong>排隊中：</strong>
+              {queue.length === 0 ? (
+                <div style={{ opacity: 0.6 }}>目前沒有人排麥</div>
+              ) : (
+                queue.map((q, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      padding: "4px 6px",
+                      borderRadius: 6,
+                      marginTop: 4,
+                      background:
+                        q === name ? "rgba(74,222,128,0.2)" : "transparent",
+                      fontWeight: q === name ? "bold" : "normal"
+                    }}
+                  >
+                    {index + 1}. {q}
+                    {q === name && " (我)"}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
