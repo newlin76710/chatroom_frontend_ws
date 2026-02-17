@@ -97,7 +97,7 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
 
       <div className="queue-panel">
         <div className="queue-panel-header" onClick={() => setPanelOpen(!panelOpen)}>
-          <span>🎤 麥序列表</span>
+          <span>🎤 排麥列表</span>
           <span>{panelOpen ? "−" : "+"}</span>
         </div>
         {panelOpen && (
