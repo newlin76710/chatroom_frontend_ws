@@ -2,7 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Room, LocalAudioTrack } from "livekit-client";
 
-export default function SongRoom({ room, name, socket, currentSinger }) {
+const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
+
+export default function SongRoom({ room, name, socket, currentSinger, myLevel }) {
   const [lkRoom, setLkRoom] = useState(null);
   const [singing, setSinging] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -129,13 +131,16 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
     socket.emit("leaveQueue", { room, name });
     setWaiting(false);   // 前端狀態同步
   };
+  const forceStopSinger = (singerName) => {
+    socket.emit("forceStopSinger", { room, singer: singerName });
+  };
 
   const otherSinger = currentSinger && currentSinger !== name;
 
   return (
     <div style={{ padding: 12 }}>
       <button
-        onClick={singing ? stopSing : waiting? leaveQueue : otherSinger ? joinQueue : grabMic}
+        onClick={singing ? stopSing : waiting ? leaveQueue : otherSinger ? joinQueue : grabMic}
         style={{
           opacity: 1,
           cursor: "pointer",
@@ -187,8 +192,32 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
           <div style={{ padding: 10 }}>
             <div style={{ marginBottom: 8 }}>
               <strong>正在唱：</strong>
-              <div style={{ color: "#4ade80" }}>
-                {currentSinger || "無"}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  color: "#4ade80",
+                  padding: "4px 0"
+                }}
+              >
+                <span>{currentSinger || "無"}</span>
+                {currentSinger && myLevel >= AML && (
+                  <button
+                    onClick={() => forceStopSinger(currentSinger)}
+                    style={{
+                      background: "#ef4444",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 4,
+                      padding: "2px 6px",
+                      fontSize: 12,
+                      cursor: "pointer"
+                    }}
+                  >
+                    踢下麥
+                  </button>
+                )}
               </div>
             </div>
 
@@ -204,13 +233,36 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
                       padding: "4px 6px",
                       borderRadius: 6,
                       marginTop: 4,
-                      background:
-                        q === name ? "rgba(74,222,128,0.2)" : "transparent",
-                      fontWeight: q === name ? "bold" : "normal"
+                      background: q === name ? "rgba(74,222,128,0.2)" : "transparent",
+                      fontWeight: q === name ? "bold" : "normal",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center"
                     }}
                   >
-                    {index + 1}. {q}
-                    {q === name && " (我)"}
+                    <span>
+                      {index + 1}. {q}
+                      {q === name && " (我)"}
+                    </span>
+
+                    {/* ⭐ 只有管理員可以踢 */}
+                    {myLevel >= AML && (
+                      <button
+                        onClick={() => forceStopSinger(q)}
+                        style={{
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          padding: "2px 6px",
+                          fontSize: 12,
+                          cursor: "pointer",
+                          marginLeft: 6
+                        }}
+                      >
+                        踢出排隊
+                      </button>
+                    )}
                   </div>
                 ))
               )}
