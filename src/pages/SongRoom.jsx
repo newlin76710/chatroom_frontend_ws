@@ -178,7 +178,7 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
             alignItems: "center"
           }}
         >
-          <span>🎤 麥序列表</span>
+          <span>🎤 排麥列表</span>
           <span>{panelOpen ? "−" : "+"}</span>
         </div>
 
