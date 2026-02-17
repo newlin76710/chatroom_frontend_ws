@@ -131,17 +131,14 @@ export default function SongRoom({ room, name, socket, currentSinger }) {
   };
 
   const otherSinger = currentSinger && currentSinger !== name;
-  const grabDisabled = !singing && otherSinger;
-  const grabTitle = grabDisabled ? "請等歌手下 Mic" : "";
 
   return (
     <div style={{ padding: 12 }}>
       <button
         onClick={singing ? stopSing : waiting? leaveQueue : otherSinger ? joinQueue : grabMic}
-        disabled={waiting}
         style={{
-          opacity: waiting ? 0.5 : 1,
-          cursor: waiting ? "not-allowed" : "pointer",
+          opacity: 1,
+          cursor: "pointer",
           marginRight: 8
         }}
       >
