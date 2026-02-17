@@ -1,6 +1,6 @@
-// SongRoom.jsx
 import { useState, useEffect, useRef } from "react";
 import { Room, LocalAudioTrack } from "livekit-client";
+import "./SongRoom.css";
 
 const AML = import.meta.env.VITE_ADMIN_MIN_LEVEL || 91;
 
@@ -15,8 +15,6 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
   const roomRef = useRef(null);
   const audioCtxRef = useRef(null);
   const destRef = useRef(null);
-
-  // 保存 track / source
   const micTrackRef = useRef(null);
   const micSourceRef = useRef(null);
   const micStreamRef = useRef(null);
@@ -24,21 +22,10 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("forceStopSing", () => {
-      stopSing();
-    });
+    socket.on("forceStopSing", () => stopSing());
+    socket.on("yourTurn", () => { setWaiting(false); grabMic(); });
+    socket.on("micStateUpdate", data => { setQueue(data.queue); setMyPosition(data.queue.indexOf(name) + 1); });
 
-    // ⭐ 後端通知輪到你
-    socket.on("yourTurn", () => {
-      console.log("[SongRoom] 輪到我上麥 🎯");
-      setWaiting(false);
-      grabMic();
-    });
-    socket.on("micStateUpdate", (data) => {
-      setQueue(data.queue);
-      const index = data.queue.indexOf(name);
-      setMyPosition(index + 1); // 排第幾個
-    });
     return () => {
       socket.off("forceStopSing");
       socket.off("yourTurn");
@@ -52,17 +39,12 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
       roomRef.current = lk;
       await lk.connect(import.meta.env.VITE_LIVEKIT_URL, jwtToken);
 
-      // 建立 AudioContext
       const audioCtx = new AudioContext();
       audioCtxRef.current = audioCtx;
       const dest = audioCtx.createMediaStreamDestination();
       destRef.current = dest;
 
-      // 麥克風
-      const micStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-      });
-
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
       const micSource = audioCtx.createMediaStreamSource(micStream);
       micSource.connect(dest);
       micSourceRef.current = micSource;
@@ -74,198 +56,73 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
 
       setLkRoom(lk);
       setSinging(true);
-      console.log("[SongRoom] 已上麥 🎤");
-    } catch (err) {
-      console.error("[SongRoom] startSing failed:", err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const stopSing = async () => {
-    // 停止 mic track
-    // ⭐⭐⭐ 先讓 LiveKit 停止送音
     const lk = roomRef.current;
     await lk?.localParticipant.setMicrophoneEnabled(false);
-
-    // 再 unpublish
-    if (micTrackRef.current) {
-      await lk?.localParticipant.unpublishTrack(micTrackRef.current);
-    }
-
-    // 再砍 pipeline
+    if (micTrackRef.current) await lk?.localParticipant.unpublishTrack(micTrackRef.current);
     micSourceRef.current?.disconnect();
     micSourceRef.current = null;
-    // 再停裝置
-    micStreamRef.current?.getTracks().forEach(track => track.stop());
+    micStreamRef.current?.getTracks().forEach(t => t.stop());
     micStreamRef.current = null;
-    micTrackRef.current?.mediaStreamTrack?.stop(); // 🔥 真正關閉裝置
+    micTrackRef.current?.mediaStreamTrack?.stop();
     micTrackRef.current?.stop();
     micTrackRef.current = null;
-
-    // 最後斷房
     await lk?.disconnect();
     roomRef.current = null;
     setLkRoom(null);
-
     await audioCtxRef.current?.suspend();
     await audioCtxRef.current?.close();
     audioCtxRef.current = null;
     destRef.current = null;
-
     setSinging(false);
-
     socket.emit("stopSing", { room, singer: name });
-    console.log("[SongRoom] 已下麥 🛑");
   };
 
-  const grabMic = () => {
-    socket.emit("grabMic", { room, singer: name });
-    socket.once("livekit-token", ({ token }) => {
-      startSing(token);
-    });
-  };
-  const joinQueue = () => {
-    socket.emit("joinQueue", { room, name });
-    setWaiting(true);
-  };
-  const leaveQueue = () => {
-    socket.emit("leaveQueue", { room, name });
-    setWaiting(false);   // 前端狀態同步
-  };
-  const forceStopSinger = (singerName) => {
-    socket.emit("forceStopSinger", { room, singer: singerName });
-  };
+  const grabMic = () => { socket.emit("grabMic", { room, singer: name }); socket.once("livekit-token", ({ token }) => startSing(token)); };
+  const joinQueue = () => { socket.emit("joinQueue", { room, name }); setWaiting(true); };
+  const leaveQueue = () => { socket.emit("leaveQueue", { room, name }); setWaiting(false); };
+  const forceStopSinger = (singerName) => { socket.emit("forceStopSinger", { room, singer: singerName }); };
 
   const otherSinger = currentSinger && currentSinger !== name;
 
   return (
-    <div style={{ padding: 12 }}>
-      <button
-        onClick={singing ? stopSing : waiting ? leaveQueue : otherSinger ? joinQueue : grabMic}
-        style={{
-          opacity: 1,
-          cursor: "pointer",
-          marginRight: 8
-        }}
-      >
-        {singing
-          ? "🛑 下麥"
-          : waiting
-            ? `⏳ 取消排隊`
-            : otherSinger
-              ? "🎶 排麥"
-              : "🎤 上麥"}
+    <div className="songroom-container">
+      <button className="songroom-button"
+        onClick={singing ? stopSing : waiting ? leaveQueue : otherSinger ? joinQueue : grabMic}>
+        {singing ? "🛑 下麥" : waiting ? `⏳ 取消排隊` : otherSinger ? "🎶 排麥" : "🎤 上麥"}
       </button>
-      {/* ===== 排麥小窗 ===== */}
-      <div
-        style={{
-          position: "fixed",
-          top: 20,
-          right: 330,
-          width: 200,
-          background: "#1e1e1e",
-          color: "white",
-          borderRadius: 12,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-          overflow: "hidden",
-          fontSize: 14,
-          zIndex: 999
-        }}
-      >
-        {/* Header */}
-        <div
-          onClick={() => setPanelOpen(!panelOpen)}
-          style={{
-            padding: "8px 12px",
-            background: "#333",
-            cursor: "pointer",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center"
-          }}
-        >
-          <span>🎤 排麥列表</span>
+
+      <div className="queue-panel">
+        <div className="queue-panel-header" onClick={() => setPanelOpen(!panelOpen)}>
+          <span>🎤 麥序列表</span>
           <span>{panelOpen ? "−" : "+"}</span>
         </div>
-
-        {/* Content */}
         {panelOpen && (
-          <div style={{ padding: 10 }}>
+          <div className="queue-panel-content">
             <div style={{ marginBottom: 8 }}>
               <strong>正在唱：</strong>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  color: "#4ade80",
-                  padding: "4px 0"
-                }}
-              >
-                <span>{currentSinger || "無"}</span>
-                {currentSinger && myLevel >= AML && (
-                  <button
-                    onClick={() => forceStopSinger(currentSinger)}
-                    style={{
-                      background: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 4,
-                      padding: "2px 6px",
-                      fontSize: 12,
-                      cursor: "pointer"
-                    }}
-                  >
-                    踢下麥
-                  </button>
-                )}
-              </div>
+              {currentSinger && (
+                <div className="queue-item">
+                  <span>{currentSinger}</span>
+                  {myLevel >= AML && <button className="kick-button" onClick={() => forceStopSinger(currentSinger)}>踢下麥</button>}
+                </div>
+              )}
+              {!currentSinger && <div className="queue-item">無</div>}
             </div>
 
             <div>
               <strong>排隊中：</strong>
-              {queue.length === 0 ? (
-                <div style={{ opacity: 0.6 }}>目前沒有人排麥</div>
-              ) : (
-                queue.map((q, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      padding: "4px 6px",
-                      borderRadius: 6,
-                      marginTop: 4,
-                      background: q === name ? "rgba(74,222,128,0.2)" : "transparent",
-                      fontWeight: q === name ? "bold" : "normal",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center"
-                    }}
-                  >
-                    <span>
-                      {index + 1}. {q}
-                      {q === name && " (我)"}
-                    </span>
-
-                    {/* ⭐ 只有管理員可以踢 */}
-                    {myLevel >= AML && (
-                      <button
-                        onClick={() => forceStopSinger(q)}
-                        style={{
-                          background: "#ef4444",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 4,
-                          padding: "2px 6px",
-                          fontSize: 12,
-                          cursor: "pointer",
-                          marginLeft: 6
-                        }}
-                      >
-                        踢出排隊
-                      </button>
-                    )}
+              {queue.length === 0 ? <div style={{ opacity: 0.6 }}>目前沒有人排麥</div> :
+                queue.map((q, i) => (
+                  <div key={i} className={`queue-item ${q === name ? "me" : ""}`}>
+                    <span>{i + 1}. {q}{q === name && " (我)"}</span>
+                    {myLevel >= AML && <button className="kick-button" onClick={() => forceStopSinger(q)}>踢出排隊</button>}
                   </div>
                 ))
-              )}
+              }
             </div>
           </div>
         )}
