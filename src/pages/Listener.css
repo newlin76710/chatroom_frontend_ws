@@ -15,6 +15,11 @@
   white-space: nowrap;
 }
 
+.next-singer {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
 .listen-btn {
   flex-shrink: 0;
   padding: 6px 12px;

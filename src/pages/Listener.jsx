@@ -6,6 +6,7 @@ export default function Listener({ room, name, socket, onSingerChange }) {
   const [lkRoom, setLkRoom] = useState(null);
   const [listening, setListening] = useState(false);
   const [currentSinger, setCurrentSinger] = useState(null);
+  const [nextSinger, setNextSinger] = useState(null);
   const [score, setScore] = useState(0);
   const [ratedSinger, setRatedSinger] = useState(null);
   const [averageScore, setAverageScore] = useState(null);
@@ -26,6 +27,8 @@ export default function Listener({ room, name, socket, onSingerChange }) {
 
     const handler = (data) => {
       const singer = data.currentSinger || null;
+      const queue = data.queue || [];
+      setNextSinger(queue.length > 0 ? queue[0] : null);
       setCurrentSinger(singer);
       onSingerChange?.(singer);
     };
@@ -156,9 +159,11 @@ export default function Listener({ room, name, socket, onSingerChange }) {
   return (
     <div className="listener-bar">
       <span className="current-singer">
-        🎤 {currentSinger || "無人"} 正在唱
+        🎤 演唱者：{currentSinger || "無"} 
       </span>
-
+      <span className="next-singer">
+        ⏭ 下一位：{nextSinger || "無"}
+      </span>
       <button className="listen-btn" onClick={toggleListening}>
         {listening ? "🛑 停止聽" : "🎧 開始聽"}
       </button>
