@@ -163,7 +163,7 @@ export default function Listener({ room, name, socket, onSingerChange }) {
         {listening ? "🛑 停止聽" : "🎧 開始聽"}
       </button>
 
-      {currentSinger && (
+      {/* {currentSinger && (
         <div className="rating-panel">
           <span>評分：</span>
           {[1, 2, 3, 4, 5].map((s) => (
@@ -182,7 +182,7 @@ export default function Listener({ room, name, socket, onSingerChange }) {
         <div className="score-display">
           🎵 平均：{averageScore}分/{scoreCount}人
         </div>
-      )}
+      )} */}
 
     </div>
   );
