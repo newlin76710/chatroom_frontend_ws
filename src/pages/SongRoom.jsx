@@ -119,7 +119,46 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
                 queue.map((q, i) => (
                   <div key={i} className={`queue-item ${q === name ? "me" : ""}`}>
                     <span>{i + 1}. {q}{q === name && " (我)"}</span>
-                    {myLevel >= AML && <button className="kick-button" onClick={() => forceStopSinger(q)}>踢出排隊</button>}
+                    {myLevel >= AML && <div className="admin-controls">
+                      {i > 0 && (
+                        <button
+                          onClick={() =>
+                            socket.emit("adminMoveQueue", {
+                              room,
+                              fromIndex: i,
+                              toIndex: i - 1
+                            })
+                          }>
+                          ⬆
+                        </button>
+                      )}
+
+                      {i < queue.length - 1 && (
+                        <button
+                          onClick={() =>
+                            socket.emit("adminMoveQueue", {
+                              room,
+                              fromIndex: i,
+                              toIndex: i + 1
+                            })
+                          }>
+                          ⬇
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() =>
+                          socket.emit("adminPriorityQueue", { room, name: q })
+                        }>
+                        👑
+                      </button>
+
+                      <button
+                        className="kick-button"
+                        onClick={() => forceStopSinger(q)}>
+                        ❌
+                      </button>
+                    </div>}
                   </div>
                 ))
               }
