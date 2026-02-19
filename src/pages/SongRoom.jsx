@@ -92,7 +92,7 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
     <div className="songroom-container">
       <button className="songroom-button"
         onClick={singing ? stopSing : waiting ? leaveQueue : otherSinger ? joinQueue : grabMic}>
-        {singing ? "🛑 下麥" : waiting ? `⏳ 取消排隊` : otherSinger ? "🎶 排麥" : "🎤 上麥"}
+        {singing ? "🛑 下麥" : waiting ? `⏳ 取消排麥` : otherSinger ? "🎶 排麥" : "🎤 上麥"}
       </button>
 
       <div className="queue-panel">

@@ -22,3 +22,19 @@
   border: none;
   cursor: pointer;
 }
+
+.rating-panel {
+  margin-top: 0px;
+}
+
+.star {
+  cursor: pointer;
+  font-size: 16px;
+  color: #888;
+  margin: 0 3px;
+  transition: 0.2s;
+}
+
+.star.active {
+  color: gold;
+}
