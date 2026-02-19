@@ -147,13 +147,6 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
                       )}
 
                       <button
-                        onClick={() =>
-                          socket.emit("adminPriorityQueue", { room, name: q })
-                        }>
-                        👑
-                      </button>
-
-                      <button
                         className="kick-button"
                         onClick={() => forceStopSinger(q)}>
                         ❌
