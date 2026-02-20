@@ -2,12 +2,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 1px;
 
-  padding: 8px 12px;
+  padding: 1px 1px;
   background: rgba(0, 0, 0, 0.6);
   color: white;
-  border-radius: 8px;
+  border-radius: 1px;
 }
 
 .current-singer {
