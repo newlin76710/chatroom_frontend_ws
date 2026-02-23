@@ -192,10 +192,7 @@ export default function MyMessageLogPanel({ token }) {
                                                 </td>
 
                                                 <td>
-                                                    {new Date(l.created_at).toLocaleString(
-                                                        "zh-TW",
-                                                        { hour12: false }
-                                                    )}
+                                                    {new Date(l.created_at).toISOString().replace('T', ' ').replace(/\.\d+Z$/, '')}
                                                 </td>
                                             </tr>
                                         ))

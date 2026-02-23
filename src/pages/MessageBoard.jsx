@@ -173,7 +173,7 @@ export default function MessageBoard({ token, myName, myLevel, open, onClose }) 
 
                                     <div className="message-meta">
                                         <span className="username">{m.author_name}</span>
-                                        <span className="timestamp">{new Date(m.created_at).toLocaleString()}</span>
+                                        <span className="timestamp">{new Date(m.created_at).toISOString().replace('T', ' ').replace(/\.\d+Z$/, '')}</span>
                                         {canDelete && (
                                             <button className="delete-btn" onClick={() => deleteMessage(m.id)}>
                                                 刪除
