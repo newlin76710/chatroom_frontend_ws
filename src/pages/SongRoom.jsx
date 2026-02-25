@@ -91,7 +91,7 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
     setIsProcessing(true);
 
     socket.emit("grabMic", { room, singer: name });
-
+    socket.off("livekit-token");
     socket.once("livekit-token", async ({ token }) => {
       await startSing(token);
       setIsProcessing(false);

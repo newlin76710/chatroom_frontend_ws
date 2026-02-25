@@ -11,10 +11,48 @@ export default function Listener({ room, name, socket, onSingerChange }) {
   const [ratedSinger, setRatedSinger] = useState(null);
   const [averageScore, setAverageScore] = useState(null);
   const [scoreCount, setScoreCount] = useState(0);
-
   const togglingRef = useRef(false); // ⭐ 防止連續 toggle
   const audioElementsRef = useRef({});
   const audioTracksRef = useRef({});
+  const wasListeningBeforeSingRef = useRef(false);
+  const prevSingerRef = useRef(null);
+
+  useEffect(() => {
+    const prevSinger = prevSingerRef.current;
+    prevSingerRef.current = currentSinger;
+
+    if (!currentSinger) return;
+    if (togglingRef.current) return;
+
+    // ===== 1️⃣ 輪到自己 =====
+    if (currentSinger === name) {
+      wasListeningBeforeSingRef.current = listening;
+      if (listening) {
+        stopListening();
+      }
+      return;
+    }
+
+    // ===== 2️⃣ 自己剛下麥 =====
+    if (prevSinger === name && currentSinger !== name) {
+      if (wasListeningBeforeSingRef.current) {
+        wasListeningBeforeSingRef.current = false;
+        startListening();
+      }
+      return;
+    }
+
+    // ===== 3️⃣ 其他人換人（保持原本 toggle 兩次邏輯）=====
+    if (listening) {
+      (async () => {
+        togglingRef.current = true;
+        await stopListening();
+        await startListening();
+        togglingRef.current = false;
+      })();
+    }
+
+  }, [currentSinger]);
 
   useEffect(() => {
     setScore(0);
@@ -142,19 +180,6 @@ export default function Listener({ room, name, socket, onSingerChange }) {
       togglingRef.current = false;
     }
   };
-
-  /* ===== ⭐ singer 換人 → 自動 toggle 兩次 ===== */
-  useEffect(() => {
-    if (!listening || !currentSinger) return;
-    if (togglingRef.current) return;
-
-    (async () => {
-      togglingRef.current = true;
-      await stopListening();
-      await startListening();
-      togglingRef.current = false;
-    })();
-  }, [currentSinger]);
 
   return (
     <div className="listener-bar">
