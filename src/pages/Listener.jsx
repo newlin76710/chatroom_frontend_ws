@@ -34,7 +34,7 @@ export default function Listener({ room, name, socket, onSingerChange }) {
   }, [isSinging]);
 
   useEffect(() => {
-    if (!currentSinger) return;
+    if (!currentSinger) { setIsSinging(false); return; }
     if (togglingRef.current) return;
 
     // ===== 1️⃣ 輪到自己 =====
