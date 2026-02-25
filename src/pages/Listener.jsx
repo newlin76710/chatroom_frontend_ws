@@ -15,31 +15,37 @@ export default function Listener({ room, name, socket, onSingerChange }) {
   const audioElementsRef = useRef({});
   const audioTracksRef = useRef({});
   const wasListeningBeforeSingRef = useRef(false);
-  const prevSingerRef = useRef(null);
+  const [isSinging, setIsSinging] = useState(false);
 
   useEffect(() => {
-    const prevSinger = prevSingerRef.current;
-    prevSingerRef.current = currentSinger;
+    if (isSinging) {
+      console.log("🎤 I start singing");
+      wasListeningBeforeSingRef.current = listening;
+      if (listening) {
+        stopListening();
+      }
+    } else {
+      console.log("🛑 I stop singing");
+      if (wasListeningBeforeSingRef.current) {
+        startListening();
+        wasListeningBeforeSingRef.current = false;
+      }
+    }
+  }, [isSinging]);
 
+  useEffect(() => {
     if (!currentSinger) return;
     if (togglingRef.current) return;
 
     // ===== 1️⃣ 輪到自己 =====
     if (currentSinger === name) {
-      wasListeningBeforeSingRef.current = listening;
-      if (listening) {
-        stopListening();
-      }
+      setIsSinging(true)
       return;
     }
 
     // ===== 2️⃣ 自己剛下麥 =====
-    if (prevSinger === name && currentSinger !== name) {
-      if (wasListeningBeforeSingRef.current) {
-        wasListeningBeforeSingRef.current = false;
-        startListening();
-      }
-      return;
+    if (currentSinger !== name) {
+      setIsSinging(false)
     }
 
     // ===== 3️⃣ 其他人換人（保持原本 toggle 兩次邏輯）=====
@@ -189,7 +195,7 @@ export default function Listener({ room, name, socket, onSingerChange }) {
       <span className="next-singer">
         ⏭ 下一位：{nextSinger || "無"} &nbsp;
       </span>
-      <button className="listen-btn" onClick={toggleListening}>
+      <button className="listen-btn" disabled={isSinging} onClick={toggleListening}>
         {listening ? "🛑 停止聽" : "🎧 開始聽"}
       </button>
 
