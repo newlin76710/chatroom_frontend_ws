@@ -106,7 +106,7 @@ export default function MessageList({
           // 預設顏色
           let color = "#eee";
           if (m.color) color = m.color;
-          else if (isSystem && enteringUser) color = "#ff9900"; // 暫時黑色，暱稱會覆蓋
+          else if (isSystem && enteringUser) color = "#ff9900";
           else if (isSystem) color = "#BBECE2"; // 其他系統訊息
           else if (isSelf) color = "#fff";
 
