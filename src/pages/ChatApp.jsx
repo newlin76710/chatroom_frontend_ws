@@ -95,29 +95,59 @@ export default function ChatApp() {
   const [token, setToken] = useState("");
 
   useEffect(() => {
-    // 讀取 sessionStorage
-    const storedName = sessionStorage.getItem("name");
-    const storedLevel = parseInt(sessionStorage.getItem("level")) || 1;
-    const storedExp = parseInt(sessionStorage.getItem("exp")) || 0;
-    const storedGender = sessionStorage.getItem("gender") || "女";
-    const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
-    const type = sessionStorage.getItem("type") || "guest";
+    const initUser = () => {
+      const storedName = sessionStorage.getItem("name");
+      const storedLevel = parseInt(sessionStorage.getItem("level")) || 1;
+      const storedExp = parseInt(sessionStorage.getItem("exp")) || 0;
+      const storedGender = sessionStorage.getItem("gender") || "女";
+      const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
 
-    // 沒有 token 或非會員/訪客狀態不對 → 直接回 login
-    if (!storedToken) {
-      sessionStorage.clear();
-      socket.disconnect();
-      window.location.href = "/login";
-      return; // 停止執行下面初始化
-    }
+      if (!storedToken) {
+        sessionStorage.clear();
+        socket.disconnect();
+        window.location.href = "/login";
+        return null;
+      }
 
-    // 初始化 state
-    if (storedName) setName(safeText(storedName));
-    setLevel(storedLevel);
-    setExp(storedExp);
-    setGender(storedGender);
-    setToken(storedToken);
-  }, []); // 只跑一次
+      // 先把 sessionStorage 資料初始化到 state
+      if (storedName) setName(safeText(storedName));
+      setLevel(storedLevel);
+      setExp(storedExp);
+      setGender(storedGender);
+
+      return storedToken;
+    };
+
+    const fetchUserData = async (token) => {
+      try {
+        const res = await fetch(`${BACKEND}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) throw new Error("無法取得使用者資料");
+
+        const data = await res.json();
+
+        setName(safeText(data.username)); // 注意 auth/me 回傳是 username
+        setLevel(data.level || 1);
+        setExp(data.exp || 0);
+        setGender(data.gender || "女");
+
+        // 更新 sessionStorage
+        sessionStorage.setItem("name", data.username);
+        sessionStorage.setItem("level", data.level);
+        sessionStorage.setItem("exp", data.exp);
+        sessionStorage.setItem("gender", data.gender);
+      } catch (err) {
+        console.error(err);
+        sessionStorage.clear();
+        window.location.href = "/login";
+      }
+    };
+
+    const token = initUser();
+    if (token) fetchUserData(token);
+  }, []);
 
   useEffect(() => {
     // 心跳 10 秒一次
