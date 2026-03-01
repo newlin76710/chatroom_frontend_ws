@@ -96,12 +96,7 @@ export default function ChatApp() {
 
   useEffect(() => {
     const initUser = () => {
-      const storedName = sessionStorage.getItem("name");
-      const storedLevel = parseInt(sessionStorage.getItem("level")) || 1;
-      const storedExp = parseInt(sessionStorage.getItem("exp")) || 0;
-      const storedGender = sessionStorage.getItem("gender") || "女";
       const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
-
       if (!storedToken) {
         sessionStorage.clear();
         socket.disconnect();
@@ -109,7 +104,12 @@ export default function ChatApp() {
         return null;
       }
 
-      // 先把 sessionStorage 資料初始化到 state
+      // 先把 sessionStorage 的資料初始化到 state
+      const storedName = sessionStorage.getItem("name");
+      const storedLevel = parseInt(sessionStorage.getItem("level")) || 1;
+      const storedExp = parseInt(sessionStorage.getItem("exp")) || 0;
+      const storedGender = sessionStorage.getItem("gender") || "女";
+
       if (storedName) setName(safeText(storedName));
       setLevel(storedLevel);
       setExp(storedExp);
@@ -128,7 +128,8 @@ export default function ChatApp() {
 
         const data = await res.json();
 
-        setName(safeText(data.username)); // 注意 auth/me 回傳是 username
+        // data.username / level / exp / gender
+        setName(safeText(data.username));
         setLevel(data.level || 1);
         setExp(data.exp || 0);
         setGender(data.gender || "女");
@@ -138,9 +139,17 @@ export default function ChatApp() {
         sessionStorage.setItem("level", data.level);
         sessionStorage.setItem("exp", data.exp);
         sessionStorage.setItem("gender", data.gender);
+
+        // 如果是正式帳號 token，記錄 token
+        if (data.account_type === "account") {
+          sessionStorage.setItem("token", token);
+        } else {
+          sessionStorage.setItem("guestToken", token);
+        }
       } catch (err) {
         console.error(err);
         sessionStorage.clear();
+        socket.disconnect();
         window.location.href = "/login";
       }
     };
