@@ -361,6 +361,10 @@ export default function ChatApp() {
   useEffect(() => {
     const handleJoinFail = ({ reason }) => {
       alert(`⚠️ 加入房間失敗: ${reason}`);
+      // 清掉 session 並導回登入頁
+      sessionStorage.clear();
+      socket.disconnect();
+      window.location.href = "/login";
     };
 
     socket.on("joinFailed", handleJoinFail);
