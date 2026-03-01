@@ -358,6 +358,17 @@ export default function ChatApp() {
     };
   }, [socket, userList]); // ⚠ 一定要有 userList
 
+  useEffect(() => {
+    const handleJoinFail = ({ reason }) => {
+      alert(`⚠️ 加入房間失敗: ${reason}`);
+    };
+
+    socket.on("joinFailed", handleJoinFail);
+
+    return () => {
+      socket.off("joinFailed", handleJoinFail);
+    };
+  }, [socket]);
 
   // --- 自動 joinRoom 帶 token ---
   useEffect(() => {
@@ -603,7 +614,7 @@ export default function ChatApp() {
                     <input style={{ width: 130 }} value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="貼上YouTube連結" />
                     <button onClick={playVideo}>🎵 點播</button>
                   </div>
-                  <SongRoom room={room} name={name} socket={socket} currentSinger={currentSinger} myLevel={level}/>
+                  <SongRoom room={room} name={name} socket={socket} currentSinger={currentSinger} myLevel={level} />
                 </>
               ) : (
                 <>
