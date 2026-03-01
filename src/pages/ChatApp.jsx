@@ -92,6 +92,7 @@ export default function ChatApp() {
   const [currentSinger, setCurrentSinger] = useState(null);
   const pendingLeaves = useRef(new Map());
   const initializedRef = useRef(false);
+  const [token, setToken] = useState("");
 
   // --- 初始化 sessionStorage ---
   useEffect(() => {
@@ -106,7 +107,14 @@ export default function ChatApp() {
     setGender(storedGender);
   }, []);
 
-  const [token, setToken] = useState("");
+  useEffect(() => {
+    if (!joined) {
+      sessionStorage.clear();
+      socket.disconnect();
+      window.location.href = "/login";
+    }
+  }, [joined]);
+
   // 初始化 token
   useEffect(() => {
     const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
@@ -384,39 +392,6 @@ export default function ChatApp() {
     setJoined(true);
   }, [room, socket, joined, name]);
 
-  // --- 訪客登入 ---
-  const loginGuest = async () => {
-    try {
-      sessionStorage.clear();
-      const guestName = `訪客${Math.floor(Math.random() * 9999)}`;
-
-      const res = await fetch(`${BACKEND}/auth/guest`, { method: "POST" });
-      const data = await res.json();
-      const safeName = safeText(data.name || guestName);
-
-      sessionStorage.setItem("guestToken", data.guestToken);
-      sessionStorage.setItem("token", data.guestToken);
-      sessionStorage.setItem("name", safeName);
-      sessionStorage.setItem("type", "guest");
-      sessionStorage.setItem("level", data.level || 1);
-      sessionStorage.setItem("exp", data.exp || 0);
-      sessionStorage.setItem("gender", data.gender || "女");
-
-      setName(safeName);
-      setLevel(data.level || 1);
-      setExp(data.exp || 0);
-      setGender(data.gender || "女");
-
-      socket.emit("joinRoom", {
-        room,
-        user: { name: safeName, type: "guest", token: data.guestToken },
-      });
-      setJoined(true);
-    } catch (err) {
-      alert("訪客登入失敗：" + err.message);
-    }
-  };
-
   // --- 離開房間 / 斷線 ---
   const leaveRoom = async () => {
     try {
@@ -590,9 +565,7 @@ export default function ChatApp() {
           open={showMessageBoard}
           onClose={() => setShowMessageBoard(false)}
         />
-        {!joined ? (
-          <button onClick={loginGuest}>訪客登入</button>
-        ) : (
+        {joined && (
           <>
             <div className="chat-toolbar">
               <span>
