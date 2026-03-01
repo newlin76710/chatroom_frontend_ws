@@ -94,24 +94,30 @@ export default function ChatApp() {
   const initializedRef = useRef(false);
   const [token, setToken] = useState("");
 
-  // --- 初始化 sessionStorage ---
   useEffect(() => {
+    // 讀取 sessionStorage
     const storedName = sessionStorage.getItem("name");
     const storedLevel = parseInt(sessionStorage.getItem("level")) || 1;
     const storedExp = parseInt(sessionStorage.getItem("exp")) || 0;
     const storedGender = sessionStorage.getItem("gender") || "女";
+    const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
+    const type = sessionStorage.getItem("type") || "guest";
 
+    // 沒有 token 或非會員/訪客狀態不對 → 直接回 login
+    if (!storedToken) {
+      sessionStorage.clear();
+      socket.disconnect();
+      window.location.href = "/login";
+      return; // 停止執行下面初始化
+    }
+
+    // 初始化 state
     if (storedName) setName(safeText(storedName));
     setLevel(storedLevel);
     setExp(storedExp);
     setGender(storedGender);
-  }, []);
-
-  // 初始化 token
-  useEffect(() => {
-    const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
-    if (storedToken) setToken(storedToken);
-  }, []);
+    setToken(storedToken);
+  }, []); // 只跑一次
 
   useEffect(() => {
     // 心跳 10 秒一次
