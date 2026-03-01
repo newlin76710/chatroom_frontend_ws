@@ -107,14 +107,6 @@ export default function ChatApp() {
     setGender(storedGender);
   }, []);
 
-  useEffect(() => {
-    if (!joined) {
-      sessionStorage.clear();
-      socket.disconnect();
-      window.location.href = "/login";
-    }
-  }, [joined]);
-
   // 初始化 token
   useEffect(() => {
     const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
