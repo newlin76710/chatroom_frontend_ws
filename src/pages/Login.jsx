@@ -332,13 +332,13 @@ export default function Login() {
               style={{ ...buttonStyle, background: "#555", marginTop: 8 }}
               onClick={() => {
                 async () => {
-                  const token = sessionStorage.getItem("token");
+                  const token = sessionStorage.getItem("token");                  
                   try {
                     if (token) {
                       await fetch(`${BACKEND}/auth/logout`, {
                         method: "POST",
                         headers: { "Authorization": `Bearer ${token}` },
-                        body: JSON.stringify({ username: sessionStorage.getItem("name") })
+                        body: JSON.stringify({ username })
                       });
                     }
                   } catch (e) {
