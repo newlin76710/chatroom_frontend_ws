@@ -330,35 +330,33 @@ export default function Login() {
           {mode === "edit" && editLoggedIn && (
             <button
               style={{ ...buttonStyle, background: "#555", marginTop: 8 }}
-              onClick={() => {
-                async () => {
-                  const token = sessionStorage.getItem("token");                  
-                  try {
-                    if (token) {
-                      await fetch(`${BACKEND}/auth/logout`, {
-                        method: "POST",
-                        headers: { "Authorization": `Bearer ${token}` },
-                        body: JSON.stringify({ username })
-                      });
-                    }
-                  } catch (e) {
-                    console.warn("登出失敗，但仍清掉前端狀態", e);
+              onClick={async () => {
+                const token = sessionStorage.getItem("token");
+                try {
+                  if (token) {
+                    await fetch(`${BACKEND}/auth/logout`, {
+                      method: "POST",
+                      headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                      },
+                      body: JSON.stringify({ username: sessionStorage.getItem("name") })
+                    });
                   }
+                } catch (e) {
+                  console.warn("登出失敗，但仍清掉前端狀態", e);
+                } finally {
+                  // 清掉前端登入狀態
+                  sessionStorage.clear();
+                  setEditLoggedIn(false);
+                  setUsername("");
+                  setPassword("");
+                  setConfirmPassword("");
+                  setPhone("");
+                  setEmail("");
+                  setGender("女");
+                  setAvatar("/avatars/g01.gif");
                 }
-                // 清掉登入狀態
-                sessionStorage.removeItem("token");
-                sessionStorage.removeItem("name");
-                sessionStorage.removeItem("gender");
-                sessionStorage.removeItem("avatar");
-                sessionStorage.removeItem("type");
-                setEditLoggedIn(false);
-                setUsername("");
-                setPassword("");
-                setConfirmPassword("");
-                setPhone("");
-                setEmail("");
-                setGender("女");
-                setAvatar("/avatars/g01.gif");
               }}
             >
               登出 / 切換帳號
