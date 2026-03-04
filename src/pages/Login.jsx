@@ -331,6 +331,20 @@ export default function Login() {
             <button
               style={{ ...buttonStyle, background: "#555", marginTop: 8 }}
               onClick={() => {
+                async () => {
+                  const token = sessionStorage.getItem("token");
+                  try {
+                    if (token) {
+                      await fetch(`${BACKEND}/auth/logout`, {
+                        method: "POST",
+                        headers: { "Authorization": `Bearer ${token}` },
+                        body: JSON.stringify({ username: sessionStorage.getItem("name") })
+                      });
+                    }
+                  } catch (e) {
+                    console.warn("登出失敗，但仍清掉前端狀態", e);
+                  }
+                }
                 // 清掉登入狀態
                 sessionStorage.removeItem("token");
                 sessionStorage.removeItem("name");
