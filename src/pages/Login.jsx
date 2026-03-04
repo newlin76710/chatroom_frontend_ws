@@ -327,6 +327,29 @@ export default function Login() {
           {mode === "register" && <button style={buttonStyle} onClick={registerAccount}>建立帳號</button>}
           {mode === "edit" && editLoggedIn && <button style={buttonStyle} onClick={updateProfile}>儲存修改</button>}
           {mode === "forgot" && <button style={buttonStyle} onClick={forgotPassword}>重置密碼</button>}
+          {mode === "edit" && editLoggedIn && (
+            <button
+              style={{ ...buttonStyle, background: "#555", marginTop: 8 }}
+              onClick={() => {
+                // 清掉登入狀態
+                sessionStorage.removeItem("token");
+                sessionStorage.removeItem("name");
+                sessionStorage.removeItem("gender");
+                sessionStorage.removeItem("avatar");
+                sessionStorage.removeItem("type");
+                setEditLoggedIn(false);
+                setUsername("");
+                setPassword("");
+                setConfirmPassword("");
+                setPhone("");
+                setEmail("");
+                setGender("女");
+                setAvatar("/avatars/g01.gif");
+              }}
+            >
+              登出 / 切換帳號
+            </button>
+          )}
         </>
       )}
     </div>
