@@ -292,8 +292,8 @@ export default function Login() {
           )}
           {(mode === "register" || (mode === "edit" && editLoggedIn) || mode === "forgot") && (
             <>
-              <input style={inputStyle} placeholder="手機" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <input style={inputStyle} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <input style={inputStyle} placeholder="手機(選填，僅用於忘記密碼)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <input style={inputStyle} placeholder="Email(選填，僅用於忘記密碼)" value={email} onChange={(e) => setEmail(e.target.value)} />
             </>
           )}
 
