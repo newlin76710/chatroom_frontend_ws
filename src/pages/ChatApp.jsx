@@ -15,7 +15,7 @@ import AnnouncementPanel from "./AnnouncementPanel";
 import MessageBoard from "./MessageBoard";
 import MyMessageLogPanel from "./MyMessageLogPanel";
 import { aiAvatars } from "./aiConfig";
-
+import * as OpenCC from "opencc-js";
 
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
@@ -36,6 +36,12 @@ const safeText = (v) => {
     return JSON.stringify(v);
   }
   return String(v);
+};
+const converter = OpenCC.Converter({ from: "cn", to: "tw" });
+
+const toTraditional = (text) => {
+  if (!text) return "";
+  return converter(text);
 };
 
 const formatLv = (lv) => String(lv).padStart(2, "0");
@@ -91,7 +97,7 @@ export default function ChatApp() {
   const pendingLeaves = useRef(new Map());
   const initializedRef = useRef(false);
   const [token, setToken] = useState("");
-
+  const [convertTC, setConvertTC] = useState(true);
   useEffect(() => {
     const initUser = () => {
       const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
@@ -494,7 +500,7 @@ export default function ChatApp() {
 
     socket.emit("message", {
       room,
-      message: text,
+      message: convertTC ? toTraditional(text) : text,
       color: chatColor,     // ⭐ 關鍵
       user: { name },
       target: target || "",
@@ -739,6 +745,20 @@ export default function ChatApp() {
                   setText((prev) => (prev ? prev + " " : "") + content);
                 }}
               />
+              <label
+                style={{
+                  marginLeft: "3px",
+                  fontSize: "0.75rem",
+                  whiteSpace: "nowrap"
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={convertTC}
+                  onChange={(e) => setConvertTC(e.target.checked)}
+                />
+                簡轉繁
+              </label>
               <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>
