@@ -94,7 +94,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
         if (!window.confirm(`確定將 ${username} 的金蘋果設為 ${newGold} 顆嗎？`)) return;
 
         try {
-            const res = await fetch(`${BACKEND}/set-gold-apples`, {
+            const res = await fetch(`${BACKEND}/api/set-gold-apples`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
