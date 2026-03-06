@@ -866,7 +866,7 @@ export default function ChatApp() {
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || "送出失敗");
                     setAppleAmount(1); // 重置
-                    await fetchUserData(token);
+
                   } catch (err) {
                     alert(err.message);
                   } finally {
