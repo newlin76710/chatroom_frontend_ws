@@ -42,7 +42,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
             setUsers((data.users || []).map(u => ({
                 ...u,
                 editLevel: u.level,
-                editGold: u.goldApples || 0,
+                editGold: u.gold_apples || 0,
             })));
             setPage(pageNum);
             setTotalCount(data.total || 0);
@@ -116,7 +116,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
             setUsers(prev =>
                 prev.map(u =>
                     u.username === username
-                        ? { ...u, goldApples: Number(newGold), editGold: Number(newGold) }
+                        ? { ...u, gold_apples: Number(newGold), editGold: Number(newGold) }
                         : u
                 )
             );

@@ -103,6 +103,44 @@ export default function ChatApp() {
   const [apples, setApples] = useState(
     parseInt(sessionStorage.getItem("apples")) || 0
   );
+
+  const fetchUserData = async (token) => {
+    try {
+      const res = await fetch(`${BACKEND}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("無法取得使用者資料");
+      const data = await res.json();
+      console.log(data)
+      // data.username / level / exp / gender
+      setName(safeText(data.username));
+      setLevel(data.level || 1);
+      setExp(data.exp || 0);
+      setApples(data.gold_apples || 0);
+      setGender(data.gender || "女");
+      // 更新 sessionStorage
+      sessionStorage.setItem("name", data.username);
+      sessionStorage.setItem("level", data.level);
+      sessionStorage.setItem("exp", data.exp);
+      sessionStorage.setItem("apples", data.gold_apples || 0);
+      sessionStorage.setItem("gender", data.gender);
+
+      // 如果是正式帳號 token，記錄 token
+      if (data.account_type === "account") {
+        sessionStorage.setItem("token", token);
+        setToken(token);
+      } else {
+        sessionStorage.setItem("guestToken", token);
+        setToken(token);
+      }
+    } catch (err) {
+      console.error(err);
+      sessionStorage.clear();
+      socket.disconnect();
+      window.location.href = "/login";
+    }
+  };
+
   useEffect(() => {
     const initUser = () => {
       const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
@@ -125,46 +163,6 @@ export default function ChatApp() {
       setGender(storedGender);
 
       return storedToken;
-    };
-
-    const fetchUserData = async (token) => {
-      try {
-        const res = await fetch(`${BACKEND}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) throw new Error("無法取得使用者資料");
-
-        const data = await res.json();
-
-        // data.username / level / exp / gender
-        setName(safeText(data.username));
-        setLevel(data.level || 1);
-        setExp(data.exp || 0);
-        setApples(data.goldApples || 0);
-        setGender(data.gender || "女");
-
-        // 更新 sessionStorage
-        sessionStorage.setItem("name", data.username);
-        sessionStorage.setItem("level", data.level);
-        sessionStorage.setItem("exp", data.exp);
-        sessionStorage.setItem("apples", data.goldApples || 0);
-        sessionStorage.setItem("gender", data.gender);
-
-        // 如果是正式帳號 token，記錄 token
-        if (data.account_type === "account") {
-          sessionStorage.setItem("token", token);
-          setToken(token);
-        } else {
-          sessionStorage.setItem("guestToken", token);
-          setToken(token);
-        }
-      } catch (err) {
-        console.error(err);
-        sessionStorage.clear();
-        socket.disconnect();
-        window.location.href = "/login";
-      }
     };
 
     const token = initUser();
@@ -195,7 +193,6 @@ export default function ChatApp() {
             name: safeText(u?.name || u?.user),
             level: u?.level || 1,
             exp: u?.exp || 0,
-            goldApples: u?.goldApples || 0,
             gender: u?.gender || "女",
             type: u?.type || "guest",
             avatar: u?.avatar && u.avatar !== "" ? u.avatar : aiAvatars[u?.name] || "/avatars/g01.gif",
@@ -245,11 +242,6 @@ export default function ChatApp() {
         sessionStorage.setItem("exp", me.exp || 0);
       }
 
-        if (me.goldApples !== apples) {
-          setApples(me.goldApples || 0);
-          sessionStorage.setItem("apples", me.goldApples || 0);
-        }
-
       if (me.gender && me.gender !== gender) {
         setGender(me.gender);
         sessionStorage.setItem("gender", me.gender);
@@ -261,7 +253,7 @@ export default function ChatApp() {
 
     socket.on("updateUsers", handleUpdateUsers);
     return () => socket.off("updateUsers", handleUpdateUsers);
-  }, [socket, name, level, exp, gender, apples]);
+  }, [socket, name, level, exp, gender]);
 
   useEffect(() => {
     const onDisconnect = (reason) => {
@@ -802,7 +794,7 @@ export default function ChatApp() {
               <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>
-            <div className="trade-apple">
+            {isMember && ( <div className="trade-apple">
               <div
                 style={{
                   textAlign: "center",
@@ -823,7 +815,7 @@ export default function ChatApp() {
               >
                 <option value="">選擇對象</option>
                 {userList
-                  .filter((u) => u.name !== name)
+                  .filter((u) => u.name !== name && u.type === "account")
                   .map((u) => (
                     <option key={u.id} value={u.name}>
                       {u.name}
@@ -860,6 +852,7 @@ export default function ChatApp() {
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || "送出失敗");
                     setAppleAmount(1); // 重置
+                    await fetchUserData(token);
                   } catch (err) {
                     alert(err.message);
                   } finally {
@@ -870,7 +863,7 @@ export default function ChatApp() {
               >
                 送金蘋果 🍎
               </button>
-            </div>
+            </div>)}
           </>
         )}
       </div>
