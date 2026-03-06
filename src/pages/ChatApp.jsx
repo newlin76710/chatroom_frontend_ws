@@ -260,6 +260,23 @@ export default function ChatApp() {
   }, [socket, name, level, exp, gender, apples]);
 
   useEffect(() => {
+    const handleUpdateGold = ({ username, gold_apples }) => {
+      setUserList(prev =>
+        prev.map(u => u.name === username ? { ...u, gold_apples } : u)
+      );
+
+      // 如果是自己，也要更新金蘋果顯示
+      if (username === name) {
+        setApples(gold_apples);
+        sessionStorage.setItem("apples", gold_apples);
+      }
+    };
+
+    socket.on("updateGoldApples", handleUpdateGold);
+    return () => socket.off("updateGoldApples", handleUpdateGold);
+  }, [socket, name]);
+
+  useEffect(() => {
     const onDisconnect = (reason) => {
       console.log("🔴 socket disconnected:", reason);
       setOffline(true);
@@ -798,7 +815,7 @@ export default function ChatApp() {
               <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>
-            {isMember && ( <div className="trade-apple">
+            {isMember && (<div className="trade-apple">
               <div
                 style={{
                   textAlign: "center",
