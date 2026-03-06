@@ -191,6 +191,7 @@ export default function ChatApp() {
             name: safeText(u?.name || u?.user),
             level: u?.level || 1,
             exp: u?.exp || 0,
+            gold_apples: u.gold_apples || 0,
             gender: u?.gender || "女",
             type: u?.type || "guest",
             avatar: u?.avatar && u.avatar !== "" ? u.avatar : aiAvatars[u?.name] || "/avatars/g01.gif",
@@ -240,6 +241,11 @@ export default function ChatApp() {
         sessionStorage.setItem("exp", me.exp || 0);
       }
 
+      if (me.gold_apples !== apples) {
+        setApples(me.gold_apples || 0);
+        sessionStorage.setItem("apples", me.gold_apples || 0);
+      }
+
       if (me.gender && me.gender !== gender) {
         setGender(me.gender);
         sessionStorage.setItem("gender", me.gender);
@@ -251,7 +257,7 @@ export default function ChatApp() {
 
     socket.on("updateUsers", handleUpdateUsers);
     return () => socket.off("updateUsers", handleUpdateUsers);
-  }, [socket, name, level, exp, gender]);
+  }, [socket, name, level, exp, gender, apples]);
 
   useEffect(() => {
     const onDisconnect = (reason) => {
