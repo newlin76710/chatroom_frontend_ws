@@ -98,6 +98,11 @@ export default function ChatApp() {
   const initializedRef = useRef(false);
   const [token, setToken] = useState("");
   const [convertTC, setConvertTC] = useState(true);
+  const [appleAmount, setAppleAmount] = useState(1);
+  const [sendingApple, setSendingApple] = useState(false); // 防重複點擊
+  const [apples, setApples] = useState(
+    parseInt(sessionStorage.getItem("apples")) || 0
+  );
   useEffect(() => {
     const initUser = () => {
       const storedToken = sessionStorage.getItem("token") || sessionStorage.getItem("guestToken") || null;
@@ -136,12 +141,14 @@ export default function ChatApp() {
         setName(safeText(data.username));
         setLevel(data.level || 1);
         setExp(data.exp || 0);
+        setApples(data.goldApples || 0);
         setGender(data.gender || "女");
 
         // 更新 sessionStorage
         sessionStorage.setItem("name", data.username);
         sessionStorage.setItem("level", data.level);
         sessionStorage.setItem("exp", data.exp);
+        sessionStorage.setItem("apples", data.goldApples || 0);
         sessionStorage.setItem("gender", data.gender);
 
         // 如果是正式帳號 token，記錄 token
@@ -175,6 +182,7 @@ export default function ChatApp() {
 
   // --- updateUsers 處理 ---
   useEffect(() => {
+    console.log(userList)
     const handleUpdateUsers = (list = []) => {
       if (!Array.isArray(list)) return;
       const filtered = OPENAI
@@ -187,6 +195,7 @@ export default function ChatApp() {
             name: safeText(u?.name || u?.user),
             level: u?.level || 1,
             exp: u?.exp || 0,
+            goldApples: u?.goldApples || 0,
             gender: u?.gender || "女",
             type: u?.type || "guest",
             avatar: u?.avatar && u.avatar !== "" ? u.avatar : aiAvatars[u?.name] || "/avatars/g01.gif",
@@ -236,6 +245,11 @@ export default function ChatApp() {
         sessionStorage.setItem("exp", me.exp || 0);
       }
 
+        if (me.goldApples !== apples) {
+          setApples(me.goldApples || 0);
+          sessionStorage.setItem("apples", me.goldApples || 0);
+        }
+
       if (me.gender && me.gender !== gender) {
         setGender(me.gender);
         sessionStorage.setItem("gender", me.gender);
@@ -247,7 +261,7 @@ export default function ChatApp() {
 
     socket.on("updateUsers", handleUpdateUsers);
     return () => socket.off("updateUsers", handleUpdateUsers);
-  }, [socket, name, level, exp, gender]);
+  }, [socket, name, level, exp, gender, apples]);
 
   useEffect(() => {
     const onDisconnect = (reason) => {
@@ -397,15 +411,41 @@ export default function ChatApp() {
       setCurrentVideo(v);
     };
 
+    const handleTransferMessage = (msg) => {
+      if (!msg) return;
+
+      // 找完整用戶資料（avatar、level 等）
+      const senderUser = userList.find(u => u.name === msg.username) || {};
+      const targetUser = userList.find(u => u.name === msg.target) || {};
+
+      setMessages((s) => [
+        ...s,
+        {
+          user: {
+            name: msg.username,
+            avatar: senderUser.avatar || "/avatars/system.png",
+            type: "system",
+          },
+          target: msg.target,
+          message: `${msg.amount} ${msg.item || "金蘋果"} 以示獎勵`,
+          item: msg.item || "金蘋果",
+          timestamp: new Date(msg.created_at).toLocaleTimeString(),
+          mode: "reward",          // 可給特殊模式，前端可依此做樣式
+          type: "transaction",     // 表示交易訊息
+        },
+      ]);
+    };
 
     socket.on("message", handleMessage);
     socket.on("systemMessage", handleSystemMessage);
     socket.on("videoUpdate", handleVideoUpdate);
+    socket.on("transferMessage", handleTransferMessage);
 
     return () => {
       socket.off("message", handleMessage);
       socket.off("systemMessage", handleSystemMessage);
       socket.off("videoUpdate", handleVideoUpdate);
+      socket.off("transferMessage", handleTransferMessage);
     };
   }, [socket, userList]); // ⚠ 一定要有 userList
 
@@ -762,7 +802,75 @@ export default function ChatApp() {
               <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>
+            <div className="trade-apple">
+              <div
+                style={{
+                  textAlign: "center",
+                  fontSize: "0.9rem",
+                  color: "#ffd700",
+                  background: "#222",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  display: "inline-block",
+                }}
+              >
+                🍎 當前金蘋果數量：{apples}
+              </div>
 
+              <select
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+              >
+                <option value="">選擇對象</option>
+                {userList
+                  .filter((u) => u.name !== name)
+                  .map((u) => (
+                    <option key={u.id} value={u.name}>
+                      {u.name}
+                    </option>
+                  ))}
+              </select>
+
+              <input
+                type="number"
+                min={1}
+                value={appleAmount}
+                onChange={(e) => setAppleAmount(Math.max(1, Number(e.target.value)))}
+                className="apple-amount-input"
+              />
+
+              <button
+                disabled={sendingApple}
+                onClick={async () => {
+                  if (!target) return alert("請選擇對象");
+                  setSendingApple(true);
+                  try {
+                    const res = await fetch(`${BACKEND}/api/transfer-gold`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({
+                        targetUsername: target,
+                        amount: appleAmount,
+                      }),
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "送出失敗");
+                    setAppleAmount(1); // 重置
+                  } catch (err) {
+                    alert(err.message);
+                  } finally {
+                    setSendingApple(false);
+                  }
+                }}
+                className="apple-send-btn"
+              >
+                送金蘋果 🍎
+              </button>
+            </div>
           </>
         )}
       </div>
