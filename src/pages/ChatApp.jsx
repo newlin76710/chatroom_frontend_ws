@@ -261,20 +261,13 @@ export default function ChatApp() {
 
   useEffect(() => {
     const handleUpdateGold = ({ username, gold_apples }) => {
-      setUserList(prev =>
-        prev.map(u => u.name === username ? { ...u, gold_apples } : u)
-      );
-
-      // 如果是自己，也要更新金蘋果顯示
-      if (username === name) {
-        setApples(gold_apples);
-        sessionStorage.setItem("apples", gold_apples);
-      }
+      setUserList(prev => prev.map(u => u.name === username ? { ...u, gold_apples } : u));
+      // 確保 apples 更新
+      setApples(prev => username === name ? gold_apples : prev);
     };
-
     socket.on("updateGoldApples", handleUpdateGold);
     return () => socket.off("updateGoldApples", handleUpdateGold);
-  }, [socket, name]);
+  }, [socket]);
 
   useEffect(() => {
     const onDisconnect = (reason) => {
