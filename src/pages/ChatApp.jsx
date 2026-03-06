@@ -241,11 +241,6 @@ export default function ChatApp() {
         sessionStorage.setItem("exp", me.exp || 0);
       }
 
-      if (me.gold_apples !== apples) {
-        setApples(me.gold_apples || 0);
-        sessionStorage.setItem("apples", me.gold_apples || 0);
-      }
-
       if (me.gender && me.gender !== gender) {
         setGender(me.gender);
         sessionStorage.setItem("gender", me.gender);
@@ -257,14 +252,19 @@ export default function ChatApp() {
 
     socket.on("updateUsers", handleUpdateUsers);
     return () => socket.off("updateUsers", handleUpdateUsers);
-  }, [socket, name, level, exp, gender, apples]);
+  }, [socket, name, level, exp, gender]);
 
   useEffect(() => {
     const handleUpdateGold = ({ username, gold_apples }) => {
-      setUserList(prev => prev.map(u => u.name === username ? { ...u, gold_apples } : u));
-      // 確保 apples 更新
-      setApples(prev => username === name ? gold_apples : prev);
+
+      // 更新 apples，如果是自己，也更新 sessionStorage
+      const myName = sessionStorage.getItem("name");
+      if (username === myName) {
+        setApples(gold_apples);
+        sessionStorage.setItem("apples", gold_apples);
+      }
     };
+
     socket.on("updateGoldApples", handleUpdateGold);
     return () => socket.off("updateGoldApples", handleUpdateGold);
   }, [socket]);
