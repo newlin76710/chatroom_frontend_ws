@@ -111,7 +111,6 @@ export default function ChatApp() {
       });
       if (!res.ok) throw new Error("無法取得使用者資料");
       const data = await res.json();
-      console.log(data)
       // data.username / level / exp / gender
       setName(safeText(data.username));
       setLevel(data.level || 1);
@@ -180,7 +179,6 @@ export default function ChatApp() {
 
   // --- updateUsers 處理 ---
   useEffect(() => {
-    console.log(userList)
     const handleUpdateUsers = (list = []) => {
       if (!Array.isArray(list)) return;
       const filtered = OPENAI
