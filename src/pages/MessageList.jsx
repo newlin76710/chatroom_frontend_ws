@@ -127,7 +127,7 @@ export default function MessageList({
                 marginBottom: "6px",
               }}
             >
-              {!isSelf && !isSystem && (
+              {!isSelf && !isSystem && !isTransaction &&(
                 <img
                   src={
                     m.user?.avatar && m.user?.avatar !== ""
