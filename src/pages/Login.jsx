@@ -51,7 +51,12 @@ export default function Login() {
     }
   }, []);
 
-  const handleUsernameChange = (e) => setUsername(e.target.value);
+  const handleUsernameChange = (e) => {
+    setUsername(e.target.value);
+    if (mode === "register" || (mode === "edit" && editLoggedIn)) {
+      setAvatar("/avatars/g01.gif");
+    }
+  };
 
   // ----- API 行為 -----
   const guestLogin = async () => {
