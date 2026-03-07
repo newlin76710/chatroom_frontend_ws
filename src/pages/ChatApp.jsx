@@ -617,10 +617,8 @@ export default function ChatApp() {
               💬 留言板
             </button>
             {/* ⭐ 我的發言紀錄（會員限定） */}
-            {isMember && (
-              <MyMessageLogPanel token={token} />
-            )}
-            <Leaderboard room={room} token={token} />
+            {isMember && <MyMessageLogPanel token={token} />}
+            {NF && <Leaderboard room={room} token={token} />}
             {offline && (
               <div className="offline-banner">
                 ⚠️ 網路不穩，重新連線中...
