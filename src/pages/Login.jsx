@@ -99,7 +99,7 @@ export default function Login() {
       setAvatar(data.avatar || "");
 
       // ⭐ 首次登入獲得 1 顆金蘋果
-      if ( NF && data.reward_apple > 0) {
+      if (NF && data.reward_apple > 0) {
         alert(`🎉 本日首次登入獲得 ${data.reward_apple} 顆金蘋果！`);
       }
       navigate("/chat");
@@ -307,21 +307,27 @@ export default function Login() {
             <div style={{ margin: "10px 0" }}>
               <div style={{ marginBottom: 6, color: "#aaa" }}>選擇頭像：</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {Object.entries(aiAvatars).map(([name, url]) => (
-                  <img
-                    key={name}
-                    src={url}
-                    alt={name}
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: "50%",
-                      border: avatar === url ? "2px solid #ff66aa" : "2px solid transparent",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => setAvatar(url)}
-                  />
-                ))}
+                {(() => {
+                  const entries = Object.entries(aiAvatars);
+                  const currentAvatarEntry = entries.find(([name]) => name === username);
+                  const others = entries.filter(([name]) => name !== username).slice(0, 20);
+                  const finalList = currentAvatarEntry ? [currentAvatarEntry, ...others] : others;
+                  return finalList.map(([name, url]) => (
+                    <img
+                      key={name}
+                      src={url}
+                      alt={name}
+                      style={{
+                        width: 50,
+                        height: 50,
+                        borderRadius: "50%",
+                        border: avatar === url ? "2px solid #ff66aa" : "2px solid transparent",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setAvatar(url)}
+                    />
+                  ));
+                })()}
               </div>
             </div>
           )}
