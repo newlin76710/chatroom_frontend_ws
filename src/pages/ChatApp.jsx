@@ -24,6 +24,7 @@ const CN = import.meta.env.VITE_CHATROOM_NAME || "聽風的歌";
 const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
 const ANL = import.meta.env.VITE_ADMIN_MIN_LEVEL || 91;
 const OPENAI = import.meta.env.VITE_OPENAI === "true";
+const NF = import.meta.env.VITE_NEW_FUNCTION === "true";
 
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
@@ -241,6 +242,11 @@ export default function ChatApp() {
         sessionStorage.setItem("exp", me.exp || 0);
       }
 
+      if (me.gold_apples !== apples) {
+        setApples(me.gold_apples);
+        sessionStorage.setItem("apples", me.gold_apples);
+      }
+
       if (me.gender && me.gender !== gender) {
         setGender(me.gender);
         sessionStorage.setItem("gender", me.gender);
@@ -252,22 +258,7 @@ export default function ChatApp() {
 
     socket.on("updateUsers", handleUpdateUsers);
     return () => socket.off("updateUsers", handleUpdateUsers);
-  }, [socket, name, level, exp, gender]);
-
-  useEffect(() => {
-    const handleUpdateGold = ({ username, gold_apples }) => {
-
-      // 更新 apples，如果是自己，也更新 sessionStorage
-      const myName = sessionStorage.getItem("name");
-      if (username === myName) {
-        setApples(gold_apples);
-        sessionStorage.setItem("apples", gold_apples);
-      }
-    };
-
-    socket.on("updateGoldApples", handleUpdateGold);
-    return () => socket.off("updateGoldApples", handleUpdateGold);
-  }, [socket]);
+  }, [socket, name, level, exp, gender, apples]);
 
   useEffect(() => {
     const onDisconnect = (reason) => {
@@ -349,11 +340,9 @@ export default function ChatApp() {
 
     const handleSystemMessage = (m) => {
       if (!m) return;
-
       // ===== 判斷離開 =====
       if (m.includes("離開聊天室")) {
         const user = m.replace(" 離開聊天室", "");
-
         const timer = setTimeout(() => {
           setMessages((s) => [
             ...s,
@@ -367,7 +356,6 @@ export default function ChatApp() {
               timestamp: new Date().toLocaleTimeString(),
             },
           ]);
-
           pendingLeaves.current.delete(user);
         }, 3000); // ⭐ 可改 3~6 秒
 
@@ -378,14 +366,11 @@ export default function ChatApp() {
       // ===== 判斷重新加入 =====
       if (m.includes("進入聊天室")) {
         const user = m.replace(" 進入聊天室", "");
-
         const timer = pendingLeaves.current.get(user);
-
         if (timer) {
           // ⭐⭐⭐ reconnect！
           clearTimeout(timer);
           pendingLeaves.current.delete(user);
-
           // 👉 不顯示 join
           return;
         }
@@ -433,7 +418,7 @@ export default function ChatApp() {
             type: "system",
           },
           target: msg.target,
-          message: `${msg.amount} ${msg.item || "金蘋果"} 以示獎勵`,
+          message: `${msg.amount} 顆${msg.item || "金蘋果"} 以示獎勵`,
           item: msg.item || "金蘋果",
           timestamp: new Date(msg.created_at).toLocaleTimeString(),
           mode: "reward",          // 可給特殊模式，前端可依此做樣式
@@ -791,7 +776,7 @@ export default function ChatApp() {
                   setText((prev) => (prev ? prev + " " : "") + content);
                 }}
               />
-              <label
+              {NF && (<label
                 style={{
                   marginLeft: "3px",
                   fontSize: "0.75rem",
@@ -804,80 +789,87 @@ export default function ChatApp() {
                   onChange={(e) => setConvertTC(e.target.checked)}
                 />
                 簡轉繁
-              </label>
+              </label>)}
               <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={placeholder} disabled={cooldown} />
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>
-            {isMember && (<div className="trade-apple">
+            {NF && isMember && (
               <div
+                className="trade-apple"
                 style={{
-                  textAlign: "center",
-                  fontSize: "0.9rem",
-                  color: "#ffd700",
-                  background: "#222",
-                  padding: "4px 8px",
-                  borderRadius: "6px",
-                  display: "inline-block",
+                  display: "flex",
+                  justifyContent: "center", // 水平置中整個區塊
+                  alignItems: "center",     // 元素垂直置中
+                  gap: "8px",               // 元素間距
+                  margin: "1px 0",
                 }}
               >
-                🍎 當前金蘋果數量：{apples}
+                <div
+                  style={{
+                    color: "#ffd700",
+                    background: "#222",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    textAlign: "center",
+                  }}
+                >
+                  🍎 當前金蘋果數量：{apples}
+                </div>
+
+                <select
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  style={{ padding: "4px 6px", borderRadius: "6px" }}
+                >
+                  <option value="">選擇對象</option>
+                  {userList
+                    .filter((u) => u.name !== name && u.type === "account")
+                    .map((u) => (
+                      <option key={u.id} value={u.name}>
+                        {u.name}
+                      </option>
+                    ))}
+                </select>
+
+                <input
+                  type="number"
+                  min={1}
+                  value={appleAmount}
+                  onChange={(e) => setAppleAmount(Math.max(1, Number(e.target.value)))}
+                  className="apple-amount-input"
+                  style={{ width: "60px", padding: "4px 6px", borderRadius: "6px" }}
+                />
+
+                <button
+                  disabled={sendingApple}
+                  onClick={async () => {
+                    if (!target) return alert("請選擇對象");
+                    setSendingApple(true);
+                    try {
+                      const res = await fetch(`${BACKEND}/api/transfer-gold`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ targetUsername: target, amount: appleAmount }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || "送出失敗");
+                      setAppleAmount(1); // 重置
+                    } catch (err) {
+                      alert(err.message);
+                    } finally {
+                      setSendingApple(false);
+                    }
+                  }}
+                  className="apple-send-btn"
+                  style={{ padding: "6px 12px", borderRadius: "6px" }}
+                >
+                  送金蘋果 🍎
+                </button>
               </div>
-
-              <select
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
-              >
-                <option value="">選擇對象</option>
-                {userList
-                  .filter((u) => u.name !== name && u.type === "account")
-                  .map((u) => (
-                    <option key={u.id} value={u.name}>
-                      {u.name}
-                    </option>
-                  ))}
-              </select>
-
-              <input
-                type="number"
-                min={1}
-                value={appleAmount}
-                onChange={(e) => setAppleAmount(Math.max(1, Number(e.target.value)))}
-                className="apple-amount-input"
-              />
-
-              <button
-                disabled={sendingApple}
-                onClick={async () => {
-                  if (!target) return alert("請選擇對象");
-                  setSendingApple(true);
-                  try {
-                    const res = await fetch(`${BACKEND}/api/transfer-gold`, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                      },
-                      body: JSON.stringify({
-                        targetUsername: target,
-                        amount: appleAmount,
-                      }),
-                    });
-
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || "送出失敗");
-                    setAppleAmount(1); // 重置
-
-                  } catch (err) {
-                    alert(err.message);
-                  } finally {
-                    setSendingApple(false);
-                  }
-                }}
-                className="apple-send-btn"
-              >
-                送金蘋果 🍎
-              </button>
-            </div>)}
+            )}
           </>
         )}
       </div>
