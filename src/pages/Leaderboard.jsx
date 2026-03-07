@@ -16,7 +16,7 @@ export default function Leaderboard({ room, token }) {
       // GET 請求，帶 room query
       const url = new URL(`${BACKEND}/api/gold-apple-leaderboard`);
       url.searchParams.append("room", room);
-      url.searchParams.append("top", "30"); // 取前 30 名
+      url.searchParams.append("top", "10"); // 取前 10 名
       const res = await fetch(url.toString(), {
         headers: {
           Authorization: `Bearer ${token}`,
