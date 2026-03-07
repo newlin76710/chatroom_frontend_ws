@@ -14,6 +14,7 @@ import QuickPhrasePanel from "./QuickPhrasePanel";
 import AnnouncementPanel from "./AnnouncementPanel";
 import MessageBoard from "./MessageBoard";
 import MyMessageLogPanel from "./MyMessageLogPanel";
+import Leaderboard from "./Leaderboard";
 import { aiAvatars } from "./aiConfig";
 import * as OpenCC from "opencc-js";
 
@@ -619,6 +620,7 @@ export default function ChatApp() {
             {isMember && (
               <MyMessageLogPanel token={token} />
             )}
+            <Leaderboard room={room} token={token} />
             {offline && (
               <div className="offline-banner">
                 ⚠️ 網路不穩，重新連線中...
