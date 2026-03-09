@@ -649,7 +649,7 @@ export default function ChatApp() {
                 >
                   {name}
                 </span>&nbsp;等級:{formatLv(level)}
-                {sessionStorage.getItem("type") !== "guest" && initializedRef.current && level < ANL - 1 ? ` 積分:${exp}/${expForNextLevel(level)}` : ""}
+                {sessionStorage.getItem("type") !== "guest" && initializedRef.current && level < ANL - 1 ? ` 積分:${exp} / ${expForNextLevel(level)}` : ""}
                 <span className="exp-tip-inline">
                   {expTips.map((tip) => <span key={tip.id} className="exp-tip">{tip.value}</span>)}
                 </span>
