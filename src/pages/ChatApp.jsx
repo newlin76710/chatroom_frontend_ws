@@ -16,8 +16,8 @@ import MessageBoard from "./MessageBoard";
 import MyMessageLogPanel from "./MyMessageLogPanel";
 import Leaderboard from "./Leaderboard";
 import { aiAvatars } from "./aiConfig";
+import { expForNextLevel } from "./utils";
 import * as OpenCC from "opencc-js";
-
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 const RN = import.meta.env.VITE_ROOM_NAME || "windsong";
@@ -57,7 +57,6 @@ if (!globalSocket) {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
   });
-
 }
 
 export default function ChatApp() {
@@ -650,7 +649,7 @@ export default function ChatApp() {
                 >
                   {name}
                 </span>&nbsp;等級:{formatLv(level)}
-                {sessionStorage.getItem("type") !== "guest" && initializedRef.current && level < ANL - 1 ? ` 積分:${exp}` : ""}
+                {sessionStorage.getItem("type") !== "guest" && initializedRef.current && level < ANL - 1 ? ` 積分:${exp}/${expForNextLevel(level)}` : ""}
                 <span className="exp-tip-inline">
                   {expTips.map((tip) => <span key={tip.id} className="exp-tip">{tip.value}</span>)}
                 </span>
@@ -707,20 +706,7 @@ export default function ChatApp() {
             />
 
             <div className="chat-input">
-              <button
-                onClick={clearAllMessages}
-                style={{
-                  fontSize: "0.7rem",
-                  padding: "4px 6px",
-                  marginRight: "6px",
-                  borderRadius: "6px",
-                  border: "1px solid #444",
-                  background: "#1a1a1a",
-                  color: "#aaa",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
+              <button className="clear-btn" onClick={clearAllMessages}>
                 🧹清空畫面
               </button>
               {/* 🛡 管理按鈕（小） */}
@@ -760,15 +746,6 @@ export default function ChatApp() {
                   setChatColor(e.target.value);
                   sessionStorage.setItem("chatColor", e.target.value);
                 }}
-                style={{
-                  width: "24px",     // 調小寬度
-                  height: "24px",    // 調小高度
-                  padding: "0",      // 移除內邊距
-                  marginLeft: "6px", // 和文字間距
-                  border: "1px solid #ccc", // 可選邊框
-                  borderRadius: "4px",      // 圓角
-                  verticalAlign: "middle"   // 對齊輸入框
-                }}
               />
               <QuickPhrasePanel
                 token={token}
@@ -777,11 +754,6 @@ export default function ChatApp() {
                 }}
               />
               {NF && (<label
-                style={{
-                  marginLeft: "3px",
-                  fontSize: "0.75rem",
-                  whiteSpace: "nowrap"
-                }}
               >
                 <input
                   type="checkbox"
@@ -794,32 +766,14 @@ export default function ChatApp() {
               <button onClick={send} disabled={cooldown}>發送</button>
             </div>
             {NF && isMember && (
-              <div
-                className="trade-apple"
-                style={{
-                  display: "flex",
-                  justifyContent: "center", // 水平置中整個區塊
-                  alignItems: "center",     // 元素垂直置中
-                  gap: "8px",               // 元素間距
-                  margin: "1px 0",
-                }}
-              >
-                <div
-                  style={{
-                    color: "#ffd700",
-                    background: "#222",
-                    padding: "4px 8px",
-                    borderRadius: "6px",
-                    textAlign: "center",
-                  }}
-                >
+              <div className="trade-apple">
+                <div className="trade-apple-label">
                   <img src="/gifts/gold_apple.gif" alt="金蘋果" style={{ width: 20, height: 20, marginTop: -5 }} /> 當前金蘋果數量：{apples}
                 </div>
 
                 <select
                   value={target}
                   onChange={(e) => setTarget(e.target.value)}
-                  style={{ padding: "4px 6px", borderRadius: "6px" }}
                 >
                   <option value="">選擇對象</option>
                   {userList
@@ -837,7 +791,6 @@ export default function ChatApp() {
                   value={appleAmount}
                   onChange={(e) => setAppleAmount(Math.max(1, Number(e.target.value)))}
                   className="apple-amount-input"
-                  style={{ width: "60px", padding: "4px 6px", borderRadius: "6px" }}
                 />
 
                 <button
@@ -864,7 +817,6 @@ export default function ChatApp() {
                     }
                   }}
                   className="apple-send-btn"
-                  style={{ padding: "6px 12px", borderRadius: "6px" }}
                 >
                   送金蘋果 <img src="/gifts/gold_apple.gif" alt="金蘋果" style={{ width: 20, height: 20, marginTop: -5 }} />
                 </button>
