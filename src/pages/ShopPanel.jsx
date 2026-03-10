@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./ShopPanel.css";
+const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 export default function ShopPanel({ token, myName, myLevel, open, onClose }) {
   const [buying, setBuying] = useState(null);
 
@@ -18,7 +19,7 @@ export default function ShopPanel({ token, myName, myLevel, open, onClose }) {
     try {
       setBuying(item.id);
 
-      const res = await fetch("/api/shop/buy", {
+      const res = await fetch(`${BACKEND}/api/shop/buy`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
