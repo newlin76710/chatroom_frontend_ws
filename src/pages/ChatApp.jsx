@@ -625,7 +625,7 @@ export default function ChatApp() {
               title="商城"
               onClick={() => setShowShop(true)}
             >
-              🍏 商城
+              <img src="/gifts/gold_apple.gif" alt="金蘋果" style={{ width: 20, height: 20, marginTop: -5 }} /> 商城
             </button> }
             {offline && (
               <div className="offline-banner">
