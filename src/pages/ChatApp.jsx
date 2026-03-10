@@ -12,6 +12,7 @@ import UserList from "./UserList";
 import AdminToolPanel from "./AdminToolPanel";
 import QuickPhrasePanel from "./QuickPhrasePanel";
 import AnnouncementPanel from "./AnnouncementPanel";
+import ShopPanel from "./ShopPanel";
 import MessageBoard from "./MessageBoard";
 import MyMessageLogPanel from "./MyMessageLogPanel";
 import Leaderboard from "./Leaderboard";
@@ -90,6 +91,7 @@ export default function ChatApp() {
   );
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showMessageBoard, setShowMessageBoard] = useState(false);
+  const [showShop, setShowShop] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]); // 過濾用戶名
   const inputRef = useRef(null);
   const userType = sessionStorage.getItem("type") || "guest";
@@ -618,6 +620,13 @@ export default function ChatApp() {
             {/* ⭐ 我的發言紀錄（會員限定） */}
             {isMember && <MyMessageLogPanel token={token} />}
             {NF && <Leaderboard room={room} token={token} />}
+            {NF && isMember && <button
+              className="announce-btn"
+              title="商城"
+              onClick={() => setShowShop(true)}
+            >
+              🍏 商城
+            </button> }
             {offline && (
               <div className="offline-banner">
                 ⚠️ 網路不穩，重新連線中...
@@ -637,6 +646,13 @@ export default function ChatApp() {
           myLevel={level}
           open={showMessageBoard}
           onClose={() => setShowMessageBoard(false)}
+        />
+        <ShopPanel
+          token={token}
+          myName={name}
+          myLevel={level}
+          open={showShop}
+          onClose={() => setShowShop(false)}
         />
         {joined && (
           <>
