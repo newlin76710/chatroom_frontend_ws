@@ -62,11 +62,14 @@ export default function MessageList({
           if (isSystem && messageText) {
             const enterMatch = messageText.match(/^(.+) 進入聊天室$/);
             const levelUpMatch = messageText.match(/^(.+) 使用升級卡/);
-            if (enterMatch) relatedUser = enterMatch[1];
-            if (levelUpMatch) relatedUser = levelUpMatch[1];
-
-            // 去掉當前使用者名字
-            if (relatedUser === name) messageText = messageText.replace(new RegExp(`\\b${name}\\b`, "g"), "").trim();
+            if (enterMatch) {
+              relatedUser = enterMatch[1];
+              messageText = messageText.slice(relatedUser.length).trim();
+            }
+            if (levelUpMatch) {
+              relatedUser = levelUpMatch[1];
+              messageText = messageText.slice(relatedUser.length).trim();
+            } 
           }
 
           const isRelatedToMe =
