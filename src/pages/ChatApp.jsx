@@ -495,7 +495,6 @@ export default function ChatApp() {
     const handleBeforeUnload = async () => {
       try {
         socket.emit("stop-listening", { room, listenerId: name });
-        socket.emit("leaveRoom", { room, user: { name } });
 
         // 不論 guest 或 account 都登出
         await fetch(`${BACKEND}/auth/logout`, {
