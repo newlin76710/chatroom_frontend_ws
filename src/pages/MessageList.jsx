@@ -70,8 +70,11 @@ export default function MessageList({
               const match = messageText.match(p.regex);
               if (match) {
                 relatedUser = match[1];
-                // 移除使用者名稱 + 前綴文字
-                messageText = messageText.replace(match[0], '').trim();
+                // 只移除使用者名稱，不刪前面的文字
+                const startIndex = match.index;           // 匹配起始位置
+                const endIndex = startIndex + match[1].length; // 使用者名稱結束位置
+                messageText = messageText.slice(0, startIndex) + messageText.slice(endIndex);
+                messageText = messageText.trim();         // 去掉前後多餘空白
                 break; // 找到第一個就停
               }
             }
