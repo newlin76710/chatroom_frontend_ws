@@ -9,7 +9,7 @@ export default function ShopPanel({ token, myName, myLevel, targetName, open, on
   const items = [
     { id: "rose", name: "🌹 玫瑰(送禮)", price: 5 },
     { id: "firework", name: "🎆 放煙火(全場特效)", price: 15 },
-    { id: "crown", name: "👑 皇冠(+1000積分)", price: 30 },
+    { id: "ball", name: "🔮 積分球(+1000積分)", price: 30 },
     { id: "rename", name: "✏️ 升級卡(+1級)", price: 1000 },
   ];
 
