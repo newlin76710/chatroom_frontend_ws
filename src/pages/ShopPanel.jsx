@@ -10,7 +10,7 @@ export default function ShopPanel({ token, myName, myLevel, targetName, open, on
     { id: "rose", name: "🌹 玫瑰", price: 15 },
     // { id: "firework", name: "🎆 煙火", price: 50 },
     { id: "crown", name: "👑 皇冠(自用+1000積分)", price: 30 },
-    { id: "rename", name: "✏️ 升級卡(自用)", price: 1000 },
+    { id: "rename", name: "✏️ 升級卡(自用+1級)", price: 1000 },
   ];
 
   const buyItem = async (item) => {
