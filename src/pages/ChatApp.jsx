@@ -484,8 +484,8 @@ export default function ChatApp() {
     `;
       document.body.appendChild(container);
 
-      // 3秒後移除滿屏效果
-      setTimeout(() => container.remove(), 3000);
+      // 5秒後移除滿屏效果
+      setTimeout(() => container.remove(), 5000);
     });
     return () => {
       socket.off("joinFailed", handleJoinFail);
