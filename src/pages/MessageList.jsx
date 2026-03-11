@@ -60,15 +60,20 @@ export default function MessageList({
           // 處理系統訊息：進入 & 升級卡
           let relatedUser = null;
           if (isSystem && messageText) {
-            const enterMatch = messageText.match(/^(.+) 進入聊天室$/);
-            const levelUpMatch = messageText.match(/^(.+) 使用升級卡/);
-            if (enterMatch) {
-              relatedUser = enterMatch[1];
-              messageText = messageText.slice(relatedUser.length).trim();
-            }
-            if (levelUpMatch) {
-              relatedUser = levelUpMatch[1];
-              messageText = messageText.slice(relatedUser.length).trim();
+            const patterns = [
+              { regex: /^(.+?) 進入聊天室$/, type: "enter" },
+              { regex: /^(.+?) 使用升級卡/, type: "levelUp" },
+              { regex: /^(.+?) 使用皇冠/, type: "exp" }
+            ];
+
+            for (const p of patterns) {
+              const match = messageText.match(p.regex);
+              if (match) {
+                relatedUser = match[1];
+                // 移除使用者名稱 + 前綴文字
+                messageText = messageText.replace(match[0], '').trim();
+                break; // 找到第一個就停
+              }
             }
           }
 
@@ -113,7 +118,7 @@ export default function MessageList({
                     <span style={{ fontWeight: "bold", cursor: "pointer", color: getUserColor(targetName) }} onClick={() => handleSelectUser(targetName)}>
                       {targetName}
                     </span>
-                    
+
                     {isGift && <div className="gift-poem">{messageText}</div>}
                     {m.imageUrl && <div >
                       <img
