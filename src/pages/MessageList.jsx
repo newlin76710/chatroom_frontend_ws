@@ -63,7 +63,7 @@ export default function MessageList({
             const patterns = [
               { regex: /^(.+?) 進入聊天室$/, type: "enter" },
               { regex: /^(.+?) 使用升級卡/, type: "levelUp" },
-              { regex: /^(.+?) 使用皇冠/, type: "exp" },
+              { regex: /^(.+?) 使用積分球/, type: "exp" },
               { regex: /^(.+?) 施放煙花/, type: "firework" }
             ];
 
