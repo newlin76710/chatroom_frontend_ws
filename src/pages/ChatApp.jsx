@@ -475,9 +475,21 @@ export default function ChatApp() {
     };
 
     socket.on("joinFailed", handleJoinFail);
+    socket.on("fireworkShow", (data) => {
+      const container = document.createElement("div");
+      container.className = "firework-container";
+      container.innerHTML = `
+        <img src="${data.imageUrl}" class="firework-gif" />
+        <div class="firework-message">${data.message}</div>
+    `;
+      document.body.appendChild(container);
 
+      // 3秒後移除滿屏效果
+      setTimeout(() => container.remove(), 3000);
+    });
     return () => {
       socket.off("joinFailed", handleJoinFail);
+      socket.off("fireworkShow"); // 清掉滿屏煙花監聽
     };
   }, [socket]);
 
