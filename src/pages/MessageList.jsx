@@ -56,7 +56,7 @@ export default function MessageList({
           const isSelf = userName === name;
           const isSystem = userName === "系統";
           const isTransaction = m.type === "transaction";
-
+          const isGift = m.type === "gift";
           // 處理系統訊息：進入 & 升級卡
           let relatedUser = null;
           if (isSystem && messageText) {
@@ -69,7 +69,7 @@ export default function MessageList({
             if (levelUpMatch) {
               relatedUser = levelUpMatch[1];
               messageText = messageText.slice(relatedUser.length).trim();
-            } 
+            }
           }
 
           const isRelatedToMe =
@@ -77,13 +77,13 @@ export default function MessageList({
             (m.mode === "private" && (userName === name || targetName === name)) ||
             (m.mode === "publicTarget" && (userName === name || targetName === name)) ||
             (isSystem && relatedUser === name) ||
-            (isTransaction && (userName === name || targetName === name));
+            ((isTransaction || isGift) && (userName === name || targetName === name));
 
           // 顏色
           let color = "#eee";
           if (m.color) color = m.color;
-          else if (isSystem && (relatedUser)) color = "#ff9900";
-          else if (isTransaction) color = "#ff9900";
+          else if (isSystem && relatedUser) color = "#ff9900";
+          else if (isTransaction || isGift) color = "#ff9900";
           else if (isSystem) color = "#BBECE2";
           else if (isSelf) color = "#fff";
 
@@ -92,7 +92,7 @@ export default function MessageList({
 
           return (
             <div key={i} className="message-row" style={{ display: "flex", justifyContent: isSelf ? "flex-end" : "flex-start", marginBottom: 6 }}>
-              {!isSelf && !isSystem && !isTransaction && (
+              {!isSelf && !isSystem && !isTransaction && !isGift && (
                 <img
                   src={m.user?.avatar || aiAvatars[userName] || "/avatars/g01.gif"}
                   alt={userName}
@@ -103,17 +103,26 @@ export default function MessageList({
               <div style={{ maxWidth: "75%", color, background: bgColor, padding: isRelatedToMe ? "6px 10px" : 0, borderRadius: isRelatedToMe ? 8 : 0, fontSize: "1rem", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.4 }}>
                 {tag && <span style={{ fontSize: "0.7rem", color: "#e60909", marginRight: 4 }}>{tag}</span>}
 
-                {isTransaction ? (
+                {(isTransaction || isGift) ? (
                   <>
                     <span>🎁 </span>
                     <span style={{ fontWeight: "bold", cursor: "pointer", color: getUserColor(userName) }} onClick={() => handleSelectUser(userName)}>
                       {userName}
                     </span>
-                    <span> 贈送 </span>
+                    {isTransaction ? (<span> 贈送 </span>) : (<span> 向 </span>)}
                     <span style={{ fontWeight: "bold", cursor: "pointer", color: getUserColor(targetName) }} onClick={() => handleSelectUser(targetName)}>
                       {targetName}
                     </span>
-                    <span> {messageText}</span>
+                    
+                    {isGift && <div className="gift-poem">{messageText}</div>}
+                    {m.imageUrl && <div >
+                      <img
+                        src={m.imageUrl}
+                        alt="gift"
+                        className="gift-big-image"
+                      />
+                    </div>}
+                    {isTransaction && <span> {messageText}</span>}
                   </>
                 ) : isSystem && relatedUser ? (
                   <>

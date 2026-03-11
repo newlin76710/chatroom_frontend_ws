@@ -429,16 +429,39 @@ export default function ChatApp() {
       ]);
     };
 
+    const handleGiftMessage = (msg) => {
+      if (!msg) return;
+
+      setMessages((s) => [
+        ...s,
+        {
+          user: {
+            name: msg.from,
+            avatar: "/avatars/system.png",
+            type: "gift",
+          },
+          target: msg.to,
+          item: msg.item,
+          imageUrl: msg.imageUrl,
+          message: msg.message,
+          timestamp: new Date().toLocaleTimeString(),
+          type: "gift",
+        },
+      ]);
+    };
+
     socket.on("message", handleMessage);
     socket.on("systemMessage", handleSystemMessage);
     socket.on("videoUpdate", handleVideoUpdate);
     socket.on("transferMessage", handleTransferMessage);
+    socket.on("giftMessage", handleGiftMessage);
 
     return () => {
       socket.off("message", handleMessage);
       socket.off("systemMessage", handleSystemMessage);
       socket.off("videoUpdate", handleVideoUpdate);
       socket.off("transferMessage", handleTransferMessage);
+      socket.off("giftMessage", handleGiftMessage);
     };
   }, [socket, userList]); // ⚠ 一定要有 userList
 
@@ -625,7 +648,7 @@ export default function ChatApp() {
               onClick={() => setShowShop(true)}
             >
               <img src="/gifts/gold_apple.gif" alt="金蘋果" style={{ width: 20, height: 20, marginTop: -5 }} /> 商城
-            </button> }
+            </button>}
             {offline && (
               <div className="offline-banner">
                 ⚠️ 網路不穩，重新連線中...
@@ -650,6 +673,7 @@ export default function ChatApp() {
           token={token}
           myName={name}
           myLevel={level}
+          targetName={target}
           open={showShop}
           onClose={() => setShowShop(false)}
         />
