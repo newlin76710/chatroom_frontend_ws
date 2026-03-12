@@ -129,6 +129,10 @@ export default function MessageList({
                         src={m.imageUrl}
                         alt="gift"
                         className="gift-big-image"
+                        onLoad={() => {
+                          const el = containerRef.current;
+                          if (el) el.scrollTop = el.scrollHeight;
+                        }}
                       />
                     </div>}
                     {isTransaction && <span> {messageText}</span>}
