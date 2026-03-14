@@ -839,8 +839,16 @@ export default function ChatApp() {
                 <input
                   type="number"
                   min={1}
+                  max={3}
                   value={appleAmount}
-                  onChange={(e) => setAppleAmount(Math.max(1, Number(e.target.value)))}
+                  onChange={(e) => {
+                    let val = Number(e.target.value);
+                    if (val > 3) {
+                      alert("最多只能選擇 3 顆金蘋果");
+                      val = 3;
+                    }
+                    setAppleAmount(Math.max(1, val));
+                  }}
                   className="apple-amount-input"
                 />
 
