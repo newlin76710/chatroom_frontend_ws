@@ -35,6 +35,7 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
 
     setLoading(true);
     const current = announcements[currentIndex];
+
     const url = current.id
       ? `${BACKEND}/api/announcement/update`
       : `${BACKEND}/api/announcement/create`;
@@ -56,16 +57,22 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
 
       if (!res.ok) throw new Error("儲存失敗");
 
-      const saved = await res.json();
+      const result = await res.json();
+      const saved = result.data || result;
+
       setAnnouncements(prev => {
         const newArr = [...prev];
-        if (current.id) newArr[currentIndex] = saved; // 更新
-        else {
-          newArr.push(saved); // 新增
+
+        if (current.id) {
+          newArr[currentIndex] = { ...newArr[currentIndex], ...saved };
+        } else {
+          newArr.push(saved);
           setCurrentIndex(newArr.length - 1);
         }
+
         return newArr;
       });
+
       alert("公告已更新");
     } catch (err) {
       console.error(err);
@@ -225,7 +232,7 @@ export default function AnnouncementPanel({ open, onClose, myLevel, token }) {
         ) : (
           <>
             <strong style={{ color: currentAnnouncement?.color || "#ffffff" }}>{currentAnnouncement?.title}</strong>
-            <pre style={{ color: currentAnnouncement?.color || "#ffffff" }}>{currentAnnouncement?.content}</pre>
+            <pre style={{ whiteSpace: "pre-wrap", color: currentAnnouncement?.color || "#ffffff" }}>{currentAnnouncement?.content}</pre>
           </>
         )}
       </div>
