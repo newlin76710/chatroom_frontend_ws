@@ -212,6 +212,7 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
 
                       {i > 0 && (
                         <button
+                          className="kick-button"
                           onClick={() =>
                             socket.emit("adminMoveQueue", {
                               room,
@@ -225,6 +226,7 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
 
                       {i < queue.length - 1 && (
                         <button
+                          className="kick-button"
                           onClick={() =>
                             socket.emit("adminMoveQueue", {
                               room,
