@@ -194,6 +194,10 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
               {!currentSinger && <div className="queue-item">無 </div>}
             </div>
 
+            {currentSinger && queue.length > 0 && (
+              <div style={{ textAlign: "center", fontSize: "1.2rem", margin: "2px 0", opacity: 0.7 }}>⬇</div>
+            )}
+
             <div>
               <strong>排麥中：</strong>
               {queue.length === 0 ? <div style={{ opacity: 0.6 }}>目前沒有人排麥</div> :
@@ -201,6 +205,15 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
                   <div key={i} className={`queue-item ${q === name ? "me" : ""}`}>
                     <span>{i + 1}. {q}{q === name && " (我)"}</span>
                     {myLevel >= ANL && <div className="admin-controls">
+                      {i === 0 && currentSinger && (
+                        <button
+                          className="kick-button"
+                          title="踢麥失敗時使用：直接推上來替換演唱者"
+                          onClick={() => socket.emit("adminForceNext", { room })}>
+                          ⚡推上
+                        </button>
+                      )}
+
                       {i > 0 && (
                         <button
                           onClick={() =>
