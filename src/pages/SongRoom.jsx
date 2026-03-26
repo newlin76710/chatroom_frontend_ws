@@ -21,7 +21,6 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
   const micStreamRef = useRef(null);
   const panelRef = useRef(null);
   const posRef = useRef({ dragging: false, offsetX: 0, offsetY: 0 });
-  const stopSingRef = useRef(null);
   const startDrag = (clientX, clientY) => {
     posRef.current.dragging = true;
 
@@ -77,12 +76,10 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
 
   const onMouseUp = () => endDrag();
   const onTouchEnd = () => endDrag();
-  stopSingRef.current = stopSing;
-
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("forceStopSing", () => stopSingRef.current());
+    socket.on("forceStopSing", () => stopSing());
     socket.on("yourTurn", () => { setWaiting(false); grabMic(); });
     socket.on("micStateUpdate", data => { setQueue(data.queue); setMyPosition(data.queue.indexOf(name) + 1); });
 
@@ -132,31 +129,26 @@ export default function SongRoom({ room, name, socket, currentSinger, myLevel })
   const stopSing = async () => {
     if (isProcessing) return;
     setIsProcessing(true);
-    try {
-      const lk = roomRef.current;
-      await lk?.localParticipant.setMicrophoneEnabled(false);
-      if (micTrackRef.current) await lk?.localParticipant.unpublishTrack(micTrackRef.current);
-      micSourceRef.current?.disconnect();
-      micSourceRef.current = null;
-      micStreamRef.current?.getTracks().forEach(t => t.stop());
-      micStreamRef.current = null;
-      micTrackRef.current?.mediaStreamTrack?.stop();
-      micTrackRef.current?.stop();
-      micTrackRef.current = null;
-      await lk?.disconnect();
-      roomRef.current = null;
-      setLkRoom(null);
-      await audioCtxRef.current?.suspend();
-      await audioCtxRef.current?.close();
-      audioCtxRef.current = null;
-      destRef.current = null;
-      socket.emit("stopSing", { room, singer: name });
-    } catch (err) {
-      console.error("stopSing error:", err);
-    } finally {
-      setSinging(false);
-      setIsProcessing(false);
-    }
+    const lk = roomRef.current;
+    await lk?.localParticipant.setMicrophoneEnabled(false);
+    if (micTrackRef.current) await lk?.localParticipant.unpublishTrack(micTrackRef.current);
+    micSourceRef.current?.disconnect();
+    micSourceRef.current = null;
+    micStreamRef.current?.getTracks().forEach(t => t.stop());
+    micStreamRef.current = null;
+    micTrackRef.current?.mediaStreamTrack?.stop();
+    micTrackRef.current?.stop();
+    micTrackRef.current = null;
+    await lk?.disconnect();
+    roomRef.current = null;
+    setLkRoom(null);
+    await audioCtxRef.current?.suspend();
+    await audioCtxRef.current?.close();
+    audioCtxRef.current = null;
+    destRef.current = null;
+    setSinging(false);
+    socket.emit("stopSing", { room, singer: name });
+    setIsProcessing(false);
   };
 
   const grabMic = () => {
