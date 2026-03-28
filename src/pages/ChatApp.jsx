@@ -49,8 +49,7 @@ const toTraditional = (text) => {
 
 const formatLv = (lv) => String(lv).padStart(2, "0");
 
-
-export default function ChatApp() {
+export default function ChatApp({ onLoginSuccess }) {
   const navigate = useNavigate();
   const [room] = useState(RN);
   const [name, setName] = useState("");
@@ -96,7 +95,13 @@ export default function ChatApp() {
   const [apples, setApples] = useState(
     parseInt(sessionStorage.getItem("apples")) || 0
   );
-
+  // 直接呼叫 initUser
+  const handleLoginSuccess = (token) => {
+    if (!token) return;
+    // 重新抓 user 資料
+    fetchUserData(token);
+  };
+  
   const fetchUserData = async (token) => {
     try {
       const res = await fetch(`${BACKEND}/auth/me`, {
@@ -132,6 +137,10 @@ export default function ChatApp() {
       window.location.href = "/login";
     }
   };
+  
+  useEffect(() => {
+    if (onLoginSuccess) onLoginSuccess(handleLoginSuccess(token));
+  }, [onLoginSuccess]);
 
   useEffect(() => {
     const initUser = () => {
