@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { aiAvatars } from "./aiConfig";
-import ChatApp from "./ChatApp";
 import socket from "./socket";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
@@ -78,7 +77,7 @@ export default function Login() {
       sessionStorage.setItem("gender", data.gender);
       sessionStorage.setItem("last_login", data.last_login);
       sessionStorage.setItem("type", "guest");
-      navigate("/chat", { state: { loginSuccess: true } });
+      navigate("/chat");
     } catch (e) {
       alert("訪客登入失敗：" + e.message);
     }
@@ -110,7 +109,7 @@ export default function Login() {
       if (NF && data.reward_apple > 0) {
         alert(`🎉 本日首次登入獲得 ${data.reward_apple} 顆金蘋果！`);
       }
-      navigate("/chat", { state: { loginSuccess: true } });
+      navigate("/chat");
     } catch (e) {
       alert("登入失敗：" + e.message);
     }
