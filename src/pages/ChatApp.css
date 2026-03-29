@@ -462,7 +462,7 @@ body {
 @media (max-width: 480px) {
   .chat-layout { flex-direction: column; padding: 10px; }
   .chat-right { width: 100%; }
-  .user-list { max-height: 500px; }
+  .user-list { height: 500px; }
   .video-player-float iframe { height: 90px; }
   .video-request input { width: 140px; }
   .chat-input input { flex: 1 1 100%; }
