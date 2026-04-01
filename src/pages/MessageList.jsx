@@ -98,6 +98,14 @@ export default function MessageList({
           else if (isSystem) color = "#BBECE2";
           else if (isSelf) color = "#fff";
 
+          // AI 私聊文字顏色依性別覆蓋
+          if (m.mode === "private") {
+            const senderUser = userList.find((u) => u.name === userName);
+            if (senderUser?.type === "AI") {
+              color = senderUser.gender === "男" ? "#00CED1" : "#F8C8DC";
+            }
+          }
+
           const bgColor = isRelatedToMe ? "#004477" : "transparent";
           const tag = m.mode === "private" ? "(私聊)" : "";
 
