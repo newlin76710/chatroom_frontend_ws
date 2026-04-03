@@ -24,7 +24,7 @@
   white-space:pre-line;
 }
 
-/* ── 驚喜金蘋果橫幅 ────────────────────────────────── */
+/* ── 樂透金蘋果橫幅 ────────────────────────────────── */
 @keyframes surprisePulse {
   0%, 100% { box-shadow: 0 0 8px #FFD700, 0 0 16px #FF8C00; }
   50%       { box-shadow: 0 0 16px #FFD700, 0 0 32px #FF8C00; }

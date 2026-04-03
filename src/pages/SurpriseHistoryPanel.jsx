@@ -30,7 +30,7 @@ export default function SurpriseHistoryPanel({ token }) {
       setTotal(data.total || 0);
       setPage(p);
     } catch (err) {
-      console.error("查詢驚喜紀錄失敗", err);
+      console.error("查詢樂透紀錄失敗", err);
     } finally {
       setLoading(false);
     }
@@ -45,8 +45,8 @@ export default function SurpriseHistoryPanel({ token }) {
 
   if (!open) {
     return (
-      <button className="admin-btn" onClick={handleOpen} title="金蘋果驚喜紀錄">
-        🎊 驚喜紀錄
+      <button className="admin-btn" onClick={handleOpen} title="金蘋果樂透紀錄">
+        🎊 樂透紀錄
       </button>
     );
   }
@@ -54,7 +54,7 @@ export default function SurpriseHistoryPanel({ token }) {
   return (
     <div className="apple-modal">
       <div className="apple-modal-content" style={{ width: 500, maxHeight: "80vh", overflowY: "auto" }}>
-        <h3 style={{ color: "#FFD700", marginBottom: 12 }}>🎊 每日金蘋果驚喜紀錄</h3>
+        <h3 style={{ color: "#FFD700", marginBottom: 12 }}>🎊 每日金蘋果樂透紀錄</h3>
 
         {loading ? (
           <div style={{ color: "#aaa" }}>讀取中...</div>

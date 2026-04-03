@@ -268,7 +268,7 @@ export default function ChatApp() {
   }, [socket, addMessage, addSystemMessage, addTransactionMessage, addGiftMessage]);
   // addMessage 等函式全部是穩定的（useCallback deps=[]），所以等同只依賴 socket
 
-  // ─── 每日金蘋果驚喜 ──────────────────────────────────────────────────────
+  // ─── 每日金蘋果樂透 ──────────────────────────────────────────────────────
   useEffect(() => {
     const handleSurprise = (data) => {
       addSurpriseMessage(data);

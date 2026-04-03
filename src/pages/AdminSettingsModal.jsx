@@ -139,7 +139,7 @@ export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
             </div>
 
             <div>
-              <label>每日驚喜金蘋果數量</label>
+              <label>每日樂透金蘋果數量</label>
               <input
                 type="number"
                 value={settings.surprise_reward}
