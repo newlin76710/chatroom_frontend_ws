@@ -3,7 +3,10 @@ import "./ShopPanel.css";
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:10000";
 
 const CAKE_VARIANTS = [
-  { id: "birthday",       emoji: "🎂", name: "生日蛋糕",   image: "/gifts/cake_birthday.gif" },
+  { id: "original",       emoji: "🎂", name: "原味蛋糕",   image: "/gifts/cake.gif" },
+  { id: "pink",           emoji: "🩷", name: "淑女蛋糕",   image: "/gifts/cake_pink.gif" },
+  { id: "blue",           emoji: "🎩", name: "紳士蛋糕",   image: "/gifts/cake_blue.gif" },
+  { id: "birthday",       emoji: "🎉", name: "生日蛋糕",   image: "/gifts/cake_birthday.gif" },
   { id: "strawberry",     emoji: "🍓", name: "草莓蛋糕",   image: "/gifts/cake_strawberry.gif" },
   { id: "lemon",          emoji: "🍋", name: "檸檬蛋糕",   image: "/gifts/cake_lemon.gif" },
   { id: "chocolate_cake", emoji: "🍫", name: "巧克力蛋糕", image: "/gifts/cake_chocolate.gif" },
