@@ -126,6 +126,25 @@ export function useMessages() {
     );
   }, []);
 
+  // 每日驚喜金蘋果訊息
+  const addSurpriseMessage = useCallback((data) => {
+    if (!data) return;
+    const { winner, amount } = data;
+    const text = winner
+      ? `🎊 金蘋果驚喜！${winner} 正在上麥，獲得 ${amount} 顆金蘋果！`
+      : `🎊 金蘋果驚喜時刻到！可惜無人上麥，本次驚喜未能送出。`;
+    setMessages((prev) =>
+      appendMsg(prev, {
+        user: { name: "系統", avatar: SYSTEM_AVATAR, type: "system" },
+        message: text,
+        timestamp: new Date().toLocaleTimeString(),
+        type: "surprise",
+        winner: winner || null,
+        amount: amount || 0,
+      })
+    );
+  }, []);
+
   const clearMessages = useCallback(() => setMessages([]), []);
 
   return {
@@ -134,6 +153,7 @@ export function useMessages() {
     addSystemMessage,
     addTransactionMessage,
     addGiftMessage,
+    addSurpriseMessage,
     clearMessages,
   };
 }
