@@ -15,5 +15,59 @@
   background: white;
   padding: 20px;
   border-radius: 10px;
-  color: black; /* ⭐ 關鍵 */
+  color: black;
+}
+
+/* ─── 設定各節 ───────────────────────────────── */
+.settings-section {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.settings-section h4 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: #333;
+  overflow: hidden;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-label {
+  min-width: 160px;
+  font-size: 0.88rem;
+  color: #555;
+}
+
+.settings-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.settings-control input[type="number"] {
+  width: 80px;
+  padding: 3px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.field-note {
+  font-size: 0.82rem;
+  color: #888;
+}
+
+.toggle-label {
+  cursor: pointer;
+  font-size: 0.9rem;
 }

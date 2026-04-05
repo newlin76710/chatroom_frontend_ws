@@ -1,29 +1,37 @@
 import { useEffect, useState } from "react";
 import "./AdminSettingsModal.css";
-export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
-  const [settings, setSettings] = useState({
-    daily_login_reward: 1,
-    singing_reward: 2,
-    per_transfer_limit: 0,
-    daily_transfer_limit: 0,
-    surprise_reward: 10,
-  });
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  console.log("modal open:", open);
-  /* ================= 取得設定 ================= */
+const DEFAULT = {
+  daily_login_reward:   1,
+  singing_reward:       2,
+  per_transfer_limit:   0,
+  daily_transfer_limit: 0,
+  surprise_reward:      10,
+  game1_enabled:        true,
+  game1_hour:           20,
+  game1_minute:         30,
+  game1_apple_count:    5,
+  game1_reward:         1,
+  game2_enabled:        true,
+  game2_hour:           20,
+  game2_minute:         35,
+  game2_reward:         25,
+};
+
+export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
+  const [settings, setSettings] = useState(DEFAULT);
+  const [loading,  setLoading]  = useState(true);
+  const [saving,   setSaving]   = useState(false);
+
+  /* ─── 讀取設定 ───────────────────────────────────────────────── */
   const fetchSettings = async () => {
     try {
-      const res = await fetch(`${BACKEND}/admin/settings`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res  = await fetch(`${BACKEND}/admin/settings`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setSettings(data);
-    } catch (err) {
-      console.error("讀取失敗", err);
+      setSettings({ ...DEFAULT, ...data });
+    } catch {
       alert("讀取設定失敗");
     } finally {
       setLoading(false);
@@ -31,135 +39,169 @@ export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
   };
 
   useEffect(() => {
-    if (open) {
-      setLoading(true);
-      fetchSettings();
-    }
-  }, [open]);
+    if (open) { setLoading(true); fetchSettings(); }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ================= 更新設定 ================= */
+  /* ─── 儲存設定 ───────────────────────────────────────────────── */
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`${BACKEND}/admin/set-settings`, {
-        method: "POST",
+      const res  = await fetch(`${BACKEND}/admin/set-settings`, {
+        method:  "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(settings),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || "更新失敗");
-        return;
-      }
-
-      alert("更新成功");
-      onClose(); // 關閉 modal
-    } catch (err) {
-      console.error(err);
+      if (!res.ok) { alert(data.error || "更新失敗"); return; }
+      alert("更新成功！遊戲排程已重新載入。");
+      onClose();
+    } catch {
       alert("更新失敗");
     } finally {
       setSaving(false);
     }
   };
 
-  /* ================= input 處理 ================= */
-  const handleChange = (key, value) => {
-    if (value === "") {
-      setSettings(prev => ({ ...prev, [key]: "" }));
-      return;
-    }
-
-    const num = Number(value);
-    if (Number.isNaN(num) || num < 0) return;
-
-    setSettings(prev => ({
-      ...prev,
-      [key]: Math.floor(num),
-    }));
+  /* ─── 欄位處理 ───────────────────────────────────────────────── */
+  const setInt = (key, raw) => {
+    if (raw === "") { setSettings(p => ({ ...p, [key]: "" })); return; }
+    const n = Number(raw);
+    if (Number.isNaN(n) || n < 0) return;
+    setSettings(p => ({ ...p, [key]: Math.floor(n) }));
   };
+
+  const setBool = (key, val) => setSettings(p => ({ ...p, [key]: val }));
 
   if (!open) return null;
 
+  const pad2 = n => String(n).padStart(2, "0");
+  const fmtTime = (h, m) => `${pad2(h)}:${pad2(m)}`;
+
   return (
     <div className="apple-modal">
-      <div className="apple-modal-content" style={{ width: 400 }}>
+      <div className="apple-modal-content" style={{ width: 460, maxHeight: "90vh", overflowY: "auto" }}>
         <h3>⚙️ 金蘋果設定</h3>
 
-        {loading ? (
-          <div>讀取中...</div>
-        ) : (
+        {loading ? <div>讀取中…</div> : (
           <>
-            <div>
-              <label>每日登入獎勵</label>
-              <input
-                type="number"
-                value={settings.daily_login_reward}
-                onChange={(e) =>
-                  handleChange("daily_login_reward", e.target.value)
-                }
-              />
-            </div>
+            {/* ─── 基本獎勵 ──────────────────────────────────────── */}
+            <section className="settings-section">
+              <h4>基本獎勵</h4>
+              <Row label="每日登入獎勵">
+                <input type="number" value={settings.daily_login_reward}
+                  onChange={e => setInt("daily_login_reward", e.target.value)} />
+              </Row>
+              <Row label="唱歌獎勵">
+                <input type="number" value={settings.singing_reward}
+                  onChange={e => setInt("singing_reward", e.target.value)} />
+              </Row>
+              <Row label="單筆轉帳上限">
+                <input type="number" value={settings.per_transfer_limit}
+                  onChange={e => setInt("per_transfer_limit", e.target.value)} />
+              </Row>
+              <Row label="每日轉帳上限">
+                <input type="number" value={settings.daily_transfer_limit}
+                  onChange={e => setInt("daily_transfer_limit", e.target.value)} />
+              </Row>
+              <Row label="每日樂透獎勵">
+                <input type="number" value={settings.surprise_reward}
+                  onChange={e => setInt("surprise_reward", e.target.value)} />
+              </Row>
+            </section>
 
-            <div>
-              <label>唱歌獎勵</label>
-              <input
-                type="number"
-                value={settings.singing_reward}
-                onChange={(e) =>
-                  handleChange("singing_reward", e.target.value)
-                }
-              />
-            </div>
+            {/* ─── 遊戲一：多顆金蘋果 ────────────────────────────── */}
+            <section className="settings-section">
+              <h4>
+                🍎 遊戲一：撈金蘋果（多顆模式）
+                <label className="toggle-label" style={{ float: "right", fontWeight: "normal" }}>
+                  <input type="checkbox" checked={!!settings.game1_enabled}
+                    onChange={e => setBool("game1_enabled", e.target.checked)} />
+                  {" "}啟用
+                </label>
+              </h4>
 
-            <div>
-              <label>單筆轉帳上限</label>
-              <input
-                type="number"
-                value={settings.per_transfer_limit}
-                onChange={(e) =>
-                  handleChange("per_transfer_limit", e.target.value)
-                }
-              />
-            </div>
+              <Row label="每日開始時間（台灣時間）">
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <input type="number" min={0} max={23} style={{ width: 64 }}
+                    value={settings.game1_hour}
+                    onChange={e => setInt("game1_hour", e.target.value)} />
+                  <span>時</span>
+                  <input type="number" min={0} max={59} style={{ width: 64 }}
+                    value={settings.game1_minute}
+                    onChange={e => setInt("game1_minute", e.target.value)} />
+                  <span>分</span>
+                  <span style={{ color: "#aaa", fontSize: "0.85rem" }}>
+                    → {fmtTime(settings.game1_hour, settings.game1_minute)}
+                  </span>
+                </div>
+              </Row>
+              <Row label="金蘋果數量">
+                <input type="number" min={1} max={50} value={settings.game1_apple_count}
+                  onChange={e => setInt("game1_apple_count", e.target.value)} />
+                <span className="field-note">顆（同時顯示在螢幕）</span>
+              </Row>
+              <Row label="每顆獎勵">
+                <input type="number" min={1} value={settings.game1_reward}
+                  onChange={e => setInt("game1_reward", e.target.value)} />
+                <span className="field-note">個金蘋果</span>
+              </Row>
+            </section>
 
-            <div>
-              <label>每日轉帳上限</label>
-              <input
-                type="number"
-                value={settings.daily_transfer_limit}
-                onChange={(e) =>
-                  handleChange("daily_transfer_limit", e.target.value)
-                }
-              />
-            </div>
+            {/* ─── 遊戲二：一顆大金蘋果 ──────────────────────────── */}
+            <section className="settings-section">
+              <h4>
+                🎰 遊戲二：大金蘋果（第一個搶）
+                <label className="toggle-label" style={{ float: "right", fontWeight: "normal" }}>
+                  <input type="checkbox" checked={!!settings.game2_enabled}
+                    onChange={e => setBool("game2_enabled", e.target.checked)} />
+                  {" "}啟用
+                </label>
+              </h4>
 
-            <div>
-              <label>每日樂透金蘋果數量</label>
-              <input
-                type="number"
-                value={settings.surprise_reward}
-                onChange={(e) =>
-                  handleChange("surprise_reward", e.target.value)
-                }
-              />
-            </div>
+              <Row label="每日開始時間（台灣時間）">
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <input type="number" min={0} max={23} style={{ width: 64 }}
+                    value={settings.game2_hour}
+                    onChange={e => setInt("game2_hour", e.target.value)} />
+                  <span>時</span>
+                  <input type="number" min={0} max={59} style={{ width: 64 }}
+                    value={settings.game2_minute}
+                    onChange={e => setInt("game2_minute", e.target.value)} />
+                  <span>分</span>
+                  <span style={{ color: "#aaa", fontSize: "0.85rem" }}>
+                    → {fmtTime(settings.game2_hour, settings.game2_minute)}
+                  </span>
+                </div>
+              </Row>
+              <Row label="搶到獎勵">
+                <input type="number" min={1} value={settings.game2_reward}
+                  onChange={e => setInt("game2_reward", e.target.value)} />
+                <span className="field-note">個金蘋果（只有一人可得）</span>
+              </Row>
+            </section>
 
-            <div style={{ marginTop: 15 }}>
-              <button onClick={handleSave} disabled={saving}>
-                {saving ? "儲存中..." : "儲存"}
+            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+              <button onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
+                {saving ? "儲存中…" : "儲存設定"}
               </button>
-              <button onClick={onClose} style={{ marginLeft: 10 }}>
-                關閉
-              </button>
+              <button onClick={onClose}>關閉</button>
             </div>
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ─── 列布局小元件 ─────────────────────────────────────────────── */
+function Row({ label, children }) {
+  return (
+    <div className="settings-row">
+      <span className="settings-label">{label}</span>
+      <span className="settings-control">{children}</span>
     </div>
   );
 }

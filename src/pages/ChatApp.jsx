@@ -21,6 +21,7 @@ import SongRoom from "./SongRoom";
 import Listener from "./Listener";
 import UserList from "./UserList";
 import AdminSettingsModal from "./AdminSettingsModal";
+import GoldAppleGame from "./GoldAppleGame";
 import SurpriseHistoryPanel from "./SurpriseHistoryPanel";
 import AdminToolPanel from "./AdminToolPanel";
 import QuickPhrasePanel from "./QuickPhrasePanel";
@@ -677,6 +678,14 @@ export default function ChatApp() {
         onClose={() => setShowAppleSetting(false)}
         token={token}
         BACKEND={BACKEND}
+      />
+
+      {/* 撈金蘋果遊戲覆蓋層（全螢幕，有遊戲時才渲染） */}
+      <GoldAppleGame
+        socket={socket}
+        token={token}
+        name={name}
+        setApples={setApples}
       />
     </>
   );
