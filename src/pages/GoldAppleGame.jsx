@@ -42,12 +42,13 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
   const [lateMsg,  setLateMsg]  = useState("");
 
   // ── Refs（避免 re-render）
-  const containerRef  = useRef(null);
-  const physicsRef    = useRef({});         // id → { id, x, y, vx, vy }
-  const domRefs       = useRef({});         // id → DOM element（遊戲一）
-  const apple2WrapRef = useRef(null);       // 遊戲二蘋果的包裝 div
-  const apple2Physics = useRef({ x: 200, y: 200, vx: 7, vy: 6 });
-  const animRef       = useRef(null);
+  const containerRef   = useRef(null);
+  const physicsRef     = useRef({});         // id → { id, x, y, vx, vy }
+  const domRefs        = useRef({});         // id → DOM element（遊戲一）
+  const localCaughtRef = useRef(new Set()); // 已在本地點過的蘋果 ID（防重複點擊）
+  const apple2WrapRef  = useRef(null);       // 遊戲二蘋果的包裝 div
+  const apple2Physics  = useRef({ x: 200, y: 200, vx: 7, vy: 6 });
+  const animRef        = useRef(null);
   const timerRef      = useRef(null);
   const phaseRef      = useRef("idle");
   useEffect(() => { phaseRef.current = phase; }, [phase]);
@@ -119,6 +120,9 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
       setG1Result(null);
       setLateMsg("");
 
+      // 清除上場記錄
+      localCaughtRef.current.clear();
+
       const W = window.innerWidth;
       const H = window.innerHeight;
       physicsRef.current = {};
@@ -133,13 +137,13 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
       startAnim();
     };
 
-    // ── 遊戲一有人撈到 ──
+    // ── 遊戲一有人撈到（server 確認）──
     const onCaught1 = ({ appleId, newAppleId }) => {
-      // 移除舊蘋果的物理
+      // 清除舊蘋果（若本地已移除則 filter 無副作用）
       delete physicsRef.current[appleId];
-      if (domRefs.current[appleId]) delete domRefs.current[appleId];
+      delete domRefs.current[appleId];
 
-      // 新蘋果的物理
+      // 新蘋果物理
       physicsRef.current[newAppleId] = {
         id: newAppleId,
         x: SIZE1 + Math.random() * (window.innerWidth  - SIZE1 * 2),
@@ -147,8 +151,12 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
         ...randSpd(),
       };
 
-      // 更新 React state（控制 DOM）
-      setG1AppleIds(prev => [...prev.filter(id => id !== appleId), newAppleId]);
+      // 更新 React state：移除舊的（可能已移除）、加入新的
+      setG1AppleIds(prev => {
+        const without = prev.filter(id => id !== appleId);
+        // 避免重複加入（網路重送保護）
+        return without.includes(newAppleId) ? without : [...without, newAppleId];
+      });
     };
 
     // ── 遊戲一結束 ──
@@ -229,6 +237,17 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
   // ─── 撈蘋果動作 ───────────────────────────────────────────────────────────
   const handleCatch1 = useCallback((id, e) => {
     e.stopPropagation();
+
+    // ① 防止同一顆蘋果在本地被重複點擊
+    if (localCaughtRef.current.has(id)) return;
+    localCaughtRef.current.add(id);
+
+    // ② 立即從畫面移除（樂觀更新，不等 server 回應）
+    delete physicsRef.current[id];
+    delete domRefs.current[id];
+    setG1AppleIds(prev => prev.filter(aid => aid !== id));
+
+    // ③ 通知 server（server 仍有 caught flag + 節流 作為最終防線）
     socket.emit("catchApple1", { token, appleId: id });
   }, [socket, token]);
 
