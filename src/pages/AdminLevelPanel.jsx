@@ -55,6 +55,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
     /* ================= 修改等級 ================= */
     const handleLevelChange = async (username, newLevel) => {
         if (!window.confirm(`確定將 ${username} 的等級設為 ${newLevel} 嗎？`)) return;
+        const reason = window.prompt("請輸入調整原因（可留空）", "") ?? "";
 
         try {
             const res = await fetch(`${BACKEND}/admin/set-user-level`, {
@@ -66,6 +67,7 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
                 body: JSON.stringify({
                     username,
                     level: Number(newLevel),
+                    reason,
                 }),
             });
 
@@ -92,9 +94,10 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
     /* ================= 修改金蘋果 ================= */
     const handleGoldChange = async (username, newGold) => {
         if (!window.confirm(`確定將 ${username} 的金蘋果設為 ${newGold} 顆嗎？`)) return;
+        const reason = window.prompt("請輸入調整原因（可留空）", "") ?? "";
 
         try {
-            const res = await fetch(`${BACKEND}/api/set-gold-apples`, {
+            const res = await fetch(`${BACKEND}/admin/set-user-gold`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -102,7 +105,8 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
                 },
                 body: JSON.stringify({
                     username,
-                    count: Number(newGold),
+                    gold_apples: Number(newGold),
+                    reason,
                 }),
             });
 

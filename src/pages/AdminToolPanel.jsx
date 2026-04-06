@@ -4,6 +4,7 @@ import MessageLogPanel from "./MessageLogPanel";
 import AdminLevelPanel from "./AdminLevelPanel";
 import AdminIPPanel from "./AdminIPPanel";
 import AdminNicknamePanel from "./AdminNicknamePanel";
+import AdminAdjustmentLogPanel from "./AdminAdjustmentLogPanel";
 import "./AdminToolPanel.css";
 
 const AML = import.meta.env.VITE_ADMIN_MAX_LEVEL || 99;
@@ -60,6 +61,12 @@ export default function AdminToolPanel({ myName, myLevel, token, userList }) {
                 >
                   IP 管制
                 </button>
+                <button
+                  className={tab === "adjustment" ? "active" : ""}
+                  onClick={() => setTab("adjustment")}
+                >
+                  調整紀錄
+                </button>
               </>
             )}
 
@@ -79,6 +86,7 @@ export default function AdminToolPanel({ myName, myLevel, token, userList }) {
             {tab === "message" && <MessageLogPanel myName={myName} myLevel={myLevel} token={token} userList={userList}/>}
             {tab === "level" && <AdminLevelPanel token={token} myLevel={myLevel} />}
             {tab === "ip" && <AdminIPPanel token={token} />}
+            {tab === "adjustment" && <AdminAdjustmentLogPanel token={token} />}
             {tab === "nickname" && <AdminNicknamePanel myLevel={myLevel} token={token} myName={myName} />}
           </div>
         </div>
