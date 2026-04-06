@@ -55,7 +55,8 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
     /* ================= 修改等級 ================= */
     const handleLevelChange = async (username, newLevel) => {
         if (!window.confirm(`確定將 ${username} 的等級設為 ${newLevel} 嗎？`)) return;
-        const reason = window.prompt("請輸入調整原因（可留空）", "") ?? "";
+        const reason = window.prompt("請輸入調整原因（必填）", "");
+        if (!reason || !reason.trim()) { alert("調整原因為必填，操作已取消"); return; }
 
         try {
             const res = await fetch(`${BACKEND}/admin/set-user-level`, {
@@ -94,7 +95,8 @@ export default function AdminLevelPanel({ token, myLevel, minLevel }) {
     /* ================= 修改金蘋果 ================= */
     const handleGoldChange = async (username, newGold) => {
         if (!window.confirm(`確定將 ${username} 的金蘋果設為 ${newGold} 顆嗎？`)) return;
-        const reason = window.prompt("請輸入調整原因（可留空）", "") ?? "";
+        const reason = window.prompt("請輸入調整原因（必填）", "");
+        if (!reason || !reason.trim()) { alert("調整原因為必填，操作已取消"); return; }
 
         try {
             const res = await fetch(`${BACKEND}/admin/set-user-gold`, {
