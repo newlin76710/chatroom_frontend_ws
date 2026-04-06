@@ -5,13 +5,15 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import "./GoldAppleGame.css";
 
 // ─── 常數 ─────────────────────────────────────────────────────────────────────
-const SIZE1  = 40;   // px — 遊戲一蘋果尺寸
-const SIZE2  = 80;   // px — 遊戲二蘋果尺寸
-const SPD_LO = 5;    // 最低速度（像素/幀 @60fps）
-const SPD_HI = 9;    // 最高速度
+const SIZE1    = 40;   // px — 遊戲一蘋果尺寸
+const SIZE2    = 48;   // px — 遊戲二蘋果尺寸（不用太大）
+const SPD_LO   = 5;   // 遊戲一最低速度（像素/幀 @60fps）
+const SPD_HI   = 9;   // 遊戲一最高速度
+const SPD2_LO  = 11;  // 遊戲二最低速度（更快）
+const SPD2_HI  = 16;  // 遊戲二最高速度
 
-function randSpd(scale = 1) {
-  const s = (SPD_LO + Math.random() * (SPD_HI - SPD_LO)) * scale;
+function randSpd(lo = SPD_LO, hi = SPD_HI) {
+  const s = lo + Math.random() * (hi - lo);
   const a = Math.random() * Math.PI * 2;
   return { vx: Math.cos(a) * s, vy: Math.sin(a) * s };
 }
@@ -170,8 +172,8 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
       setPhase("result1");
     };
 
-    // ── 遊戲二開始 ──
-    const onG2Start = ({ duration, reward }) => {
+    // ── 遊戲二開始（不限時，有人搶到才結束）──
+    const onG2Start = ({ reward }) => {
       setG2Reward(reward);
       setG2Result(null);
       setLateMsg("");
@@ -179,10 +181,10 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
       const W = window.innerWidth;
       const H = window.innerHeight;
       const { x, y } = randPos(W, H, SIZE2);
-      apple2Physics.current = { x, y, ...randSpd(1.3) }; // 略快
+      apple2Physics.current = { x, y, ...randSpd(SPD2_LO, SPD2_HI) };
 
       setPhase("game2");
-      startTimer(duration);
+      // 不限時，不呼叫 startTimer
       startAnim();
     };
 
@@ -203,7 +205,6 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
     // ── 遊戲二結束 ──
     const onG2End = () => {
       stopAnim();
-      clearInterval(timerRef.current);
       setPhase("result2");
     };
 
@@ -324,15 +325,17 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
   return (
     <div className="gag-overlay" ref={containerRef}>
 
-      {/* 倒計時 HUD */}
+      {/* HUD — 遊戲一顯示倒計時，遊戲二只顯示提示 */}
       <div className="gag-hud">
-        <span className="gag-timer">{timeLeft}</span>
-        <span className="gag-timer-unit">秒</span>
         {phase === "game1" && (
-          <span className="gag-hint">點擊金蘋果來撈！每顆 {g1Reward} 個🍎</span>
+          <>
+            <span className="gag-timer">{timeLeft}</span>
+            <span className="gag-timer-unit">秒</span>
+            <span className="gag-hint">點擊金蘋果來撈！每顆 {g1Reward} 個🍎</span>
+          </>
         )}
         {phase === "game2" && (
-          <span className="gag-hint">第一個點到大金蘋果得 {g2Reward} 個🍎！</span>
+          <span className="gag-hint">🔥 搶金蘋果！第一個點到得 {g2Reward} 個🍎！</span>
         )}
       </div>
 

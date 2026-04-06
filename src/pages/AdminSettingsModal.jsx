@@ -153,7 +153,7 @@ export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
             {/* ─── 遊戲二：一顆大金蘋果 ──────────────────────────── */}
             <section className="settings-section">
               <h4>
-                🎰 遊戲二：大金蘋果（第一個搶）
+                🔥 遊戲二：搶金蘋果（第一個點到即結束）
                 <label className="toggle-label" style={{ float: "right", fontWeight: "normal" }}>
                   <input type="checkbox" checked={!!settings.game2_enabled}
                     onChange={e => setBool("game2_enabled", e.target.checked)} />
@@ -179,7 +179,7 @@ export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
               <Row label="搶到獎勵">
                 <input type="number" min={1} value={settings.game2_reward}
                   onChange={e => setInt("game2_reward", e.target.value)} />
-                <span className="field-note">個金蘋果（只有一人可得）</span>
+                <span className="field-note">個金蘋果（第一個搶到即得，無時間限制）</span>
               </Row>
             </section>
 
