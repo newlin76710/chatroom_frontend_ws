@@ -9,8 +9,8 @@ const SIZE1    = 40;   // px — 遊戲一蘋果尺寸
 const SIZE2    = 48;   // px — 遊戲二蘋果尺寸（不用太大）
 const SPD_LO   = 5;   // 遊戲一最低速度（像素/幀 @60fps）
 const SPD_HI   = 9;   // 遊戲一最高速度
-const SPD2_LO  = 11;  // 遊戲二最低速度（更快）
-const SPD2_HI  = 16;  // 遊戲二最高速度
+const SPD2_LO  = 28;  // 遊戲二最低速度（更快）
+const SPD2_HI  = 38;  // 遊戲二最高速度
 
 function randSpd(lo = SPD_LO, hi = SPD_HI) {
   const s = lo + Math.random() * (hi - lo);
