@@ -343,37 +343,45 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
       {lateMsg && <div className="gag-late">{lateMsg}</div>}
 
       {/* 遊戲一：多顆蘋果 */}
-      {phase === "game1" && g1AppleIds.map(id => (
-        <div
-          key={id}
-          className="gag-apple-wrap"
-          ref={el => { if (el) domRefs.current[id] = el; }}
-          onClick={e => handleCatch1(id, e)}
-        >
-          <img
-            src="/gifts/gold_apple.gif"
-            className="gag-apple-img"
-            alt="金蘋果"
-            draggable={false}
-          />
-        </div>
-      ))}
+      {phase === "game1" && g1AppleIds.map(id => {
+        const p = physicsRef.current[id];
+        return (
+          <div
+            key={id}
+            className="gag-apple-wrap"
+            ref={el => { if (el) domRefs.current[id] = el; }}
+            onClick={e => handleCatch1(id, e)}
+            style={p ? { transform: `translate(${p.x}px, ${p.y}px)` } : undefined}
+          >
+            <img
+              src="/gifts/gold_apple.gif"
+              className="gag-apple-img"
+              alt="金蘋果"
+              draggable={false}
+            />
+          </div>
+        );
+      })}
 
       {/* 遊戲二：一顆大蘋果 */}
-      {phase === "game2" && (
-        <div
-          className="gag-apple-wrap"
-          ref={apple2WrapRef}
-          onClick={handleCatch2}
-        >
-          <img
-            src="/gifts/gold_apple.gif"
-            className="gag-apple-img big"
-            alt="大金蘋果"
-            draggable={false}
-          />
-        </div>
-      )}
+      {phase === "game2" && (() => {
+        const p = apple2Physics.current;
+        return (
+          <div
+            className="gag-apple-wrap"
+            ref={apple2WrapRef}
+            onClick={handleCatch2}
+            style={p ? { transform: `translate(${p.x}px, ${p.y}px)` } : undefined}
+          >
+            <img
+              src="/gifts/gold_apple.gif"
+              className="gag-apple-img big"
+              alt="大金蘋果"
+              draggable={false}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }
