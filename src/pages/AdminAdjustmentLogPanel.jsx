@@ -14,6 +14,7 @@ const toUtc = (localDatetime) => {
 const typeLabel = (t) => (t === "level" ? "等級" : t === "gold_apples" ? "金蘋果" : t);
 
 export default function AdminAdjustmentLogPanel({ token }) {
+  const [open, setOpen] = useState(false);
   const [logs, setLogs] = useState([]);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -57,6 +58,12 @@ export default function AdminAdjustmentLogPanel({ token }) {
     }
   };
 
+  const handleOpen = () => {
+    setOpen(true);
+    setPage(1);
+    loadLogs(1);
+  };
+
   const handlePage = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
     loadLogs(newPage);
@@ -85,74 +92,89 @@ export default function AdminAdjustmentLogPanel({ token }) {
   };
 
   return (
-    <div>
-      <div className="admin-filter-bar" style={{ flexWrap: "wrap", gap: "8px" }}>
-        <input
-          placeholder="管理員帳號"
-          value={adminUser}
-          onChange={e => setAdminUser(e.target.value)}
-          style={{ width: "120px" }}
-        />
-        <input
-          placeholder="目標帳號"
-          value={targetUser}
-          onChange={e => setTargetUser(e.target.value)}
-          style={{ width: "120px" }}
-        />
-        <select value={adjType} onChange={e => setAdjType(e.target.value)}>
-          <option value="">全部類型</option>
-          <option value="level">等級</option>
-          <option value="gold_apples">金蘋果</option>
-        </select>
-        <label>
-          起：
-          <input type="datetime-local" value={fromDate} onChange={e => setFromDate(e.target.value)} />
-        </label>
-        <label>
-          迄：
-          <input type="datetime-local" value={toDate} onChange={e => setToDate(e.target.value)} />
-        </label>
-        <button className="admin-btn" onClick={() => loadLogs(1)}>查詢</button>
-      </div>
+    <>
+      <button className="admin-btn" onClick={handleOpen}>
+        🛡 調整紀錄
+      </button>
 
-      <div className="admin-table-wrapper">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>管理員</th>
-              <th>目標帳號</th>
-              <th>類型</th>
-              <th>調整前</th>
-              <th>調整後</th>
-              <th>原因</th>
-              <th>時間（台灣）</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.length > 0 ? logs.map(l => (
-              <tr key={l.id}>
-                <td>{l.admin_username}</td>
-                <td>{l.target_username}</td>
-                <td>{typeLabel(l.adjustment_type)}</td>
-                <td>{l.old_value ?? "-"}</td>
-                <td>{l.new_value}</td>
-                <td>{l.reason || "-"}</td>
-                <td>{new Date(l.created_at).toLocaleString("zh-TW", { hour12: false })}</td>
-              </tr>
-            )) : (
-              <tr>
-                <td colSpan={7} style={{ textAlign: "center" }}>無資料</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {open && (
+        <div className="admin-overlay" onClick={() => setOpen(false)}>
+          <div className="admin-modal" onClick={e => e.stopPropagation()}>
+            <div className="admin-header">
+              <h3>等級 / 金蘋果調整紀錄</h3>
+              <button onClick={() => setOpen(false)}>✖</button>
+            </div>
 
-        <div className="admin-pagination">
-          <button className="admin-btn" onClick={() => handlePage(page - 1)} disabled={page <= 1}>上一頁</button>
-          {renderPageButtons()}
-          <button className="admin-btn" onClick={() => handlePage(page + 1)} disabled={page >= totalPages}>下一頁</button>
+            <div className="admin-filter-bar">
+              <input
+                placeholder="管理員帳號"
+                value={adminUser}
+                onChange={e => setAdminUser(e.target.value)}
+                style={{ width: "110px" }}
+              />
+              <input
+                placeholder="目標帳號"
+                value={targetUser}
+                onChange={e => setTargetUser(e.target.value)}
+                style={{ width: "110px" }}
+              />
+              <select value={adjType} onChange={e => setAdjType(e.target.value)}>
+                <option value="">全部類型</option>
+                <option value="level">等級</option>
+                <option value="gold_apples">金蘋果</option>
+              </select>
+              <label>
+                起：
+                <input type="datetime-local" value={fromDate} onChange={e => setFromDate(e.target.value)} />
+              </label>
+              <label>
+                迄：
+                <input type="datetime-local" value={toDate} onChange={e => setToDate(e.target.value)} />
+              </label>
+              <button className="admin-btn" onClick={() => loadLogs(1)}>查詢</button>
+            </div>
+
+            <div className="admin-table-wrapper">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>管理員</th>
+                    <th>目標帳號</th>
+                    <th>類型</th>
+                    <th>調整前</th>
+                    <th>調整後</th>
+                    <th>原因</th>
+                    <th>時間（台灣）</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.length > 0 ? logs.map(l => (
+                    <tr key={l.id}>
+                      <td>{l.admin_username}</td>
+                      <td>{l.target_username}</td>
+                      <td>{typeLabel(l.adjustment_type)}</td>
+                      <td>{l.old_value ?? "-"}</td>
+                      <td>{l.new_value}</td>
+                      <td>{l.reason || "-"}</td>
+                      <td>{new Date(l.created_at).toLocaleString("zh-TW", { hour12: false })}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={7} style={{ textAlign: "center" }}>無資料</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              <div className="admin-pagination">
+                <button className="admin-btn" onClick={() => handlePage(page - 1)} disabled={page <= 1}>上一頁</button>
+                {renderPageButtons()}
+                <button className="admin-btn" onClick={() => handlePage(page + 1)} disabled={page >= totalPages}>下一頁</button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
