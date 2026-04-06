@@ -53,17 +53,29 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
   const animRef        = useRef(null);
   const timerRef      = useRef(null);
   const phaseRef      = useRef("idle");
+  // 快取容器尺寸，避免每幀 layout thrashing
+  const sizeRef        = useRef({ W: window.innerWidth, H: window.innerHeight });
   useEffect(() => { phaseRef.current = phase; }, [phase]);
+
+  // 容器尺寸只在 resize 時更新
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      sizeRef.current = { W: width, H: height };
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [phase]); // phase 改變時容器可能重新 mount
 
   // ─── 動畫迴圈 ──────────────────────────────────────────────────────────────
   const startAnim = useCallback(() => {
     if (animRef.current) cancelAnimationFrame(animRef.current);
 
     function loop() {
-      const el = containerRef.current;
-      if (!el) return;
-      const W = el.clientWidth;
-      const H = el.clientHeight;
+      if (!containerRef.current) return;
+      const { W, H } = sizeRef.current;
 
       if (phaseRef.current === "game1") {
         // 更新所有蘋果位置
@@ -350,7 +362,7 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
             key={id}
             className="gag-apple-wrap"
             ref={el => { if (el) domRefs.current[id] = el; }}
-            onClick={e => handleCatch1(id, e)}
+            onPointerDown={e => handleCatch1(id, e)}
             style={p ? { transform: `translate(${p.x}px, ${p.y}px)` } : undefined}
           >
             <img
@@ -370,7 +382,7 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
           <div
             className="gag-apple-wrap"
             ref={apple2WrapRef}
-            onClick={handleCatch2}
+            onPointerDown={handleCatch2}
             style={p ? { transform: `translate(${p.x}px, ${p.y}px)` } : undefined}
           >
             <img

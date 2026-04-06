@@ -70,10 +70,9 @@
   filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
 }
 
-.gag-apple-img:hover,
-.gag-apple-img:active {
+.gag-apple-img:hover {
   filter: drop-shadow(0 0 18px gold);
-  transform: scale(1.2);
+  transform: scale(1.1);
 }
 
 /* 遊戲二：稍大的蘋果（48px，快速移動增加難度）*/
