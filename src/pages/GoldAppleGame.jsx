@@ -5,12 +5,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import "./GoldAppleGame.css";
 
 // ─── 常數 ─────────────────────────────────────────────────────────────────────
-const SIZE1    = 40;   // px — 遊戲一蘋果尺寸
-const SIZE2    = 48;   // px — 遊戲二蘋果尺寸（不用太大）
-const SPD_LO   = 5;   // 遊戲一最低速度（像素/幀 @60fps）
-const SPD_HI   = 9;   // 遊戲一最高速度
-const SPD2_LO  = 28;  // 遊戲二最低速度（更快）
-const SPD2_HI  = 38;  // 遊戲二最高速度
+const SIZE1 = 40;   // px — 遊戲一蘋果尺寸
+const SIZE2 = 48;   // px — 遊戲二蘋果尺寸（不用太大）
+const SPD_LO = 5;   // 遊戲一最低速度（像素/幀 @60fps）
+const SPD_HI = 9;   // 遊戲一最高速度
+const SPD2_LO = 60;
+const SPD2_HI = 90;
 
 function randSpd(lo = SPD_LO, hi = SPD_HI) {
   const s = lo + Math.random() * (hi - lo);
@@ -32,8 +32,8 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
 
   // ── 遊戲一
   const [g1AppleIds, setG1AppleIds] = useState([]); // React 控制 DOM 渲染
-  const [g1Reward,   setG1Reward]   = useState(1);
-  const [g1Result,   setG1Result]   = useState(null); // catches map 結束時
+  const [g1Reward, setG1Reward] = useState(1);
+  const [g1Result, setG1Result] = useState(null); // catches map 結束時
 
   // ── 遊戲二
   const [g2Reward, setG2Reward] = useState(25);
@@ -41,20 +41,20 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
 
   // ── 共用
   const [timeLeft, setTimeLeft] = useState(0);
-  const [lateMsg,  setLateMsg]  = useState("");
+  const [lateMsg, setLateMsg] = useState("");
 
   // ── Refs（避免 re-render）
-  const containerRef   = useRef(null);
-  const physicsRef     = useRef({});         // id → { id, x, y, vx, vy }
-  const domRefs        = useRef({});         // id → DOM element（遊戲一）
+  const containerRef = useRef(null);
+  const physicsRef = useRef({});         // id → { id, x, y, vx, vy }
+  const domRefs = useRef({});         // id → DOM element（遊戲一）
   const localCaughtRef = useRef(new Set()); // 已在本地點過的蘋果 ID（防重複點擊）
-  const apple2WrapRef  = useRef(null);       // 遊戲二蘋果的包裝 div
-  const apple2Physics  = useRef({ x: 200, y: 200, vx: 7, vy: 6 });
-  const animRef        = useRef(null);
-  const timerRef      = useRef(null);
-  const phaseRef      = useRef("idle");
+  const apple2WrapRef = useRef(null);       // 遊戲二蘋果的包裝 div
+  const apple2Physics = useRef({ x: 200, y: 200, vx: 7, vy: 6 });
+  const animRef = useRef(null);
+  const timerRef = useRef(null);
+  const phaseRef = useRef("idle");
   // 快取容器尺寸，避免每幀 layout thrashing
-  const sizeRef        = useRef({ W: window.innerWidth, H: window.innerHeight });
+  const sizeRef = useRef({ W: window.innerWidth, H: window.innerHeight });
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
   // 容器尺寸只在 resize 時更新
@@ -82,10 +82,10 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
         for (const p of Object.values(physicsRef.current)) {
           p.x += p.vx;
           p.y += p.vy;
-          if (p.x < 0)          { p.x = 0;          p.vx =  Math.abs(p.vx); }
-          if (p.x > W - SIZE1)  { p.x = W - SIZE1;  p.vx = -Math.abs(p.vx); }
-          if (p.y < 0)          { p.y = 0;           p.vy =  Math.abs(p.vy); }
-          if (p.y > H - SIZE1)  { p.y = H - SIZE1;  p.vy = -Math.abs(p.vy); }
+          if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx); }
+          if (p.x > W - SIZE1) { p.x = W - SIZE1; p.vx = -Math.abs(p.vx); }
+          if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy); }
+          if (p.y > H - SIZE1) { p.y = H - SIZE1; p.vy = -Math.abs(p.vy); }
           const dom = domRefs.current[p.id];
           if (dom) dom.style.transform = `translate(${p.x}px, ${p.y}px)`;
         }
@@ -94,10 +94,10 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
         const p = apple2Physics.current;
         p.x += p.vx;
         p.y += p.vy;
-        if (p.x < 0)          { p.x = 0;          p.vx =  Math.abs(p.vx); }
-        if (p.x > W - SIZE2)  { p.x = W - SIZE2;  p.vx = -Math.abs(p.vx); }
-        if (p.y < 0)          { p.y = 0;           p.vy =  Math.abs(p.vy); }
-        if (p.y > H - SIZE2)  { p.y = H - SIZE2;  p.vy = -Math.abs(p.vy); }
+        if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx); }
+        if (p.x > W - SIZE2) { p.x = W - SIZE2; p.vx = -Math.abs(p.vx); }
+        if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy); }
+        if (p.y > H - SIZE2) { p.y = H - SIZE2; p.vy = -Math.abs(p.vy); }
         if (apple2WrapRef.current) {
           apple2WrapRef.current.style.transform = `translate(${p.x}px, ${p.y}px)`;
         }
@@ -160,7 +160,7 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
       // 新蘋果物理
       physicsRef.current[newAppleId] = {
         id: newAppleId,
-        x: SIZE1 + Math.random() * (window.innerWidth  - SIZE1 * 2),
+        x: SIZE1 + Math.random() * (window.innerWidth - SIZE1 * 2),
         y: SIZE1 + Math.random() * (window.innerHeight - SIZE1 * 2),
         ...randSpd(),
       };
@@ -220,22 +220,22 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
       setPhase("result2");
     };
 
-    socket.on("goldGame1Start",   onG1Start);
+    socket.on("goldGame1Start", onG1Start);
     socket.on("goldAppleCaught1", onCaught1);
-    socket.on("goldGame1End",     onG1End);
-    socket.on("goldGame2Start",   onG2Start);
-    socket.on("goldGame2Won",     onG2Won);
-    socket.on("goldGame2Late",    onG2Late);
-    socket.on("goldGame2End",     onG2End);
+    socket.on("goldGame1End", onG1End);
+    socket.on("goldGame2Start", onG2Start);
+    socket.on("goldGame2Won", onG2Won);
+    socket.on("goldGame2Late", onG2Late);
+    socket.on("goldGame2End", onG2End);
 
     return () => {
-      socket.off("goldGame1Start",   onG1Start);
+      socket.off("goldGame1Start", onG1Start);
       socket.off("goldAppleCaught1", onCaught1);
-      socket.off("goldGame1End",     onG1End);
-      socket.off("goldGame2Start",   onG2Start);
-      socket.off("goldGame2Won",     onG2Won);
-      socket.off("goldGame2Late",    onG2Late);
-      socket.off("goldGame2End",     onG2End);
+      socket.off("goldGame1End", onG1End);
+      socket.off("goldGame2Start", onG2Start);
+      socket.off("goldGame2Won", onG2Won);
+      socket.off("goldGame2Late", onG2Late);
+      socket.off("goldGame2End", onG2End);
     };
   }, [socket, name, setApples, startAnim, stopAnim, startTimer]);
 
@@ -282,14 +282,16 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
 
   // ─── 結果畫面 ─────────────────────────────────────────────────────────────
   if (phase === "result1") {
-    const entries = Object.entries(g1Result || {}).sort((a, b) => b[1] - a[1]);
+    const entries = Object.entries(g1Result || {})
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 100);
     return (
       <div className="gag-overlay" onClick={dismissResult}>
         <div className="gag-result" onClick={e => e.stopPropagation()}>
           <h2>🍎 遊戲結束！</h2>
           {entries.length > 0 ? (
             <>
-              <p>本次撈金蘋果得獎名單：</p>
+              <p>本次撈金蘋果得獎名單(前百)：</p>
               <ul>
                 {entries.map(([uname, count]) => (
                   <li key={uname} className={uname === name ? "me" : ""}>
