@@ -457,7 +457,7 @@ export default function ChatApp() {
         <div className="chat-left">
           <div className="chat-title-bar">
             <div className="chat-title">
-              尋夢園{CN}聊天室
+              <a href="https://www.ek21.com" target="_blank" rel="noopener noreferrer"><img src="/logo/logo_ek21.gif" alt="尋夢園" style={{height:'3em', verticalAlign:'bottom', marginBottom:'-0.5em'}} /></a>{CN}聊天室
               <button className="announce-btn" title="聊天室公告" onClick={() => setShowAnnouncement(true)}>
                 📢公告
               </button>
