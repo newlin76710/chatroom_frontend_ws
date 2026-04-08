@@ -357,34 +357,31 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
       {lateMsg && <div className="gag-late">{lateMsg}</div>}
 
       {/* 遊戲一：多顆蘋果 */}
-      {phase === "game1" && g1AppleIds.map(id => {
-        const p = physicsRef.current[id];
-        return (
-          <div
-            key={id}
-            className="gag-apple-wrap"
-            ref={el => {
-              if (el) {
-                domRefs.current[id] = el;
-              } else {
-                // 元素卸載時只清理 DOM ref；物理資料由 handleCatch1/onCaught1 明確刪除
-                // 不在此處刪除 physicsRef，否則每次 re-render（如 setTimeLeft）都會
-                // 呼叫 ref(null) → ref(el)，導致物理資料被清空、蘋果位置歸零到左上角
-                delete domRefs.current[id];
-              }
-            }}
-            onPointerDown={e => handleCatch1(id, e)}
-            style={p ? { transform: `translate(${p.x}px, ${p.y}px)` } : undefined}
-          >
-            <img
-              src="/gifts/gold_apple.gif"
-              className="gag-apple-img"
-              alt="金蘋果"
-              draggable={false}
-            />
-          </div>
-        );
-      })}
+      {phase === "game1" && g1AppleIds.map(id => (
+        <div
+          key={id}
+          className="gag-apple-wrap"
+          ref={el => {
+            if (el) {
+              domRefs.current[id] = el;
+              // 掛載時立即設定初始位置（參考大金蘋果做法）
+              // 不用 style prop，避免 setTimeLeft 重渲染時 React 覆蓋動畫迴圈的 transform
+              const initP = physicsRef.current[id];
+              if (initP) el.style.transform = `translate(${initP.x}px, ${initP.y}px)`;
+            } else {
+              delete domRefs.current[id];
+            }
+          }}
+          onPointerDown={e => handleCatch1(id, e)}
+        >
+          <img
+            src="/gifts/gold_apple.gif"
+            className="gag-apple-img"
+            alt="金蘋果"
+            draggable={false}
+          />
+        </div>
+      ))}
 
       {/* 遊戲二：一顆大蘋果 */}
       {phase === "game2" && (() => {
