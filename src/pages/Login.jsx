@@ -253,6 +253,9 @@ export default function Login() {
               setGender(data.gender);
               setAvatar(data.avatar || "");
               setBirthday(data.birthday ? data.birthday.slice(0, 10) : "");
+              setPhone(data.phone || "");
+              setEmail(data.email || "");
+              setConfirmPassword(password);
               setPhoneConfirm(data.phone_confirm ?? false);
               setEmailConfirm(data.email_confirm ?? false);
               setEditLoggedIn(true);
