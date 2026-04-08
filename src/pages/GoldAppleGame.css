@@ -6,10 +6,15 @@
   inset: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.78);
+  background: rgba(0, 0, 0, 0.65);
   z-index: 9100;
   overflow: hidden;
   user-select: none;
+  /* iOS Safari fix：強制 overlay 進入自己的 GPU 合成層，
+     避免 will-change:transform 的子元素被渲染到背景後面 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  isolation: isolate;
 }
 
 /* ─── 抬頭顯示（倒計時 + 提示）────────────────────────────── */
@@ -63,22 +68,35 @@
 /* ─── 蘋果圖片（CSS hover 效果，不影響 JS transform）─────────── */
 .gag-apple-img {
   display: block;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   pointer-events: all;
   transition: filter 0.08s, transform 0.08s;
-  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.85))
+          drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
 }
 
 .gag-apple-img:hover {
-  filter: drop-shadow(0 0 18px gold);
-  transform: scale(1.1);
+  filter: drop-shadow(0 0 20px gold) drop-shadow(0 0 6px #fff);
+  transform: scale(1.12);
 }
 
-/* 遊戲二：稍大的蘋果（48px，快速移動增加難度）*/
+/* 遊戲二：大蘋果 */
 .gag-apple-img.big {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
+}
+
+/* 平板/手機：蘋果再放大一點 */
+@media (max-width: 1024px) {
+  .gag-apple-img {
+    width: 56px;
+    height: 56px;
+  }
+  .gag-apple-img.big {
+    width: 70px;
+    height: 70px;
+  }
 }
 
 /* ─── 「慢了 N 秒」提示 ──────────────────────────────────────── */

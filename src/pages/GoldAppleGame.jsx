@@ -5,8 +5,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import "./GoldAppleGame.css";
 
 // ─── 常數 ─────────────────────────────────────────────────────────────────────
-const SIZE1 = 40;   // px — 遊戲一蘋果尺寸
-const SIZE2 = 48;   // px — 遊戲二蘋果尺寸（不用太大）
+const SIZE1 = 56;   // px — 遊戲一蘋果尺寸（平板放大後以最大值計算邊界）
+const SIZE2 = 70;   // px — 遊戲二蘋果尺寸
 const SPD_LO = 5;   // 遊戲一最低速度（像素/幀 @60fps）
 const SPD_HI = 9;   // 遊戲一最高速度
 const SPD2_LO = 60;
@@ -74,7 +74,11 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
     if (animRef.current) cancelAnimationFrame(animRef.current);
 
     function loop() {
-      if (!containerRef.current) return;
+      if (!containerRef.current) {
+        // container 尚未掛載，下一幀再試（不可直接 return 否則迴圈永久停止）
+        animRef.current = requestAnimationFrame(loop);
+        return;
+      }
       const { W, H } = sizeRef.current;
 
       if (phaseRef.current === "game1") {
@@ -153,11 +157,7 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
 
     // ── 遊戲一有人撈到（server 確認）──
     const onCaught1 = ({ appleId, newAppleId }) => {
-      // 清除舊蘋果（若本地已移除則 filter 無副作用）
-      delete physicsRef.current[appleId];
-      delete domRefs.current[appleId];
-
-      // 新蘋果物理
+      // 新蘋果物理（先加，避免 React 渲染時 physicsRef 缺項）
       physicsRef.current[newAppleId] = {
         id: newAppleId,
         x: SIZE1 + Math.random() * (window.innerWidth - SIZE1 * 2),
@@ -165,7 +165,9 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
         ...randSpd(),
       };
 
-      // 更新 React state：移除舊的（可能已移除）、加入新的
+      // 更新 React state：移除舊的、加入新的
+      // 舊蘋果的物理資料由 ref callback（el=null 時）清理，
+      // 這樣蘋果在 React 真正卸載 DOM 之前仍持續移動，不會凍結
       setG1AppleIds(prev => {
         const without = prev.filter(id => id !== appleId);
         // 避免重複加入（網路重送保護）
@@ -256,8 +258,7 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
     localCaughtRef.current.add(id);
 
     // ② 立即從畫面移除（樂觀更新，不等 server 回應）
-    delete physicsRef.current[id];
-    delete domRefs.current[id];
+    // 物理資料由 ref callback（el=null）在 React 卸載元素時清理
     setG1AppleIds(prev => prev.filter(aid => aid !== id));
 
     // ③ 通知 server（server 仍有 caught flag + 節流 作為最終防線）
@@ -363,7 +364,15 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
           <div
             key={id}
             className="gag-apple-wrap"
-            ref={el => { if (el) domRefs.current[id] = el; }}
+            ref={el => {
+              if (el) {
+                domRefs.current[id] = el;
+              } else {
+                // 元素卸載時清理，讓蘋果持續移動直到 React 真正移除 DOM
+                delete domRefs.current[id];
+                delete physicsRef.current[id];
+              }
+            }}
             onPointerDown={e => handleCatch1(id, e)}
             style={p ? { transform: `translate(${p.x}px, ${p.y}px)` } : undefined}
           >
