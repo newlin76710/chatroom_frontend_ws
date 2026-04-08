@@ -164,10 +164,9 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
         y: SIZE1 + Math.random() * (window.innerHeight - SIZE1 * 2),
         ...randSpd(),
       };
+      // 明確清除被撈走的蘋果物理資料（ref callback 已不負責清除）
+      delete physicsRef.current[appleId];
 
-      // 更新 React state：移除舊的、加入新的
-      // 舊蘋果的物理資料由 ref callback（el=null 時）清理，
-      // 這樣蘋果在 React 真正卸載 DOM 之前仍持續移動，不會凍結
       setG1AppleIds(prev => {
         const without = prev.filter(id => id !== appleId);
         // 避免重複加入（網路重送保護）
@@ -258,7 +257,7 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
     localCaughtRef.current.add(id);
 
     // ② 立即從畫面移除（樂觀更新，不等 server 回應）
-    // 物理資料由 ref callback（el=null）在 React 卸載元素時清理
+    delete physicsRef.current[id];
     setG1AppleIds(prev => prev.filter(aid => aid !== id));
 
     // ③ 通知 server（server 仍有 caught flag + 節流 作為最終防線）
@@ -368,9 +367,10 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
               if (el) {
                 domRefs.current[id] = el;
               } else {
-                // 元素卸載時清理，讓蘋果持續移動直到 React 真正移除 DOM
+                // 元素卸載時只清理 DOM ref；物理資料由 handleCatch1/onCaught1 明確刪除
+                // 不在此處刪除 physicsRef，否則每次 re-render（如 setTimeLeft）都會
+                // 呼叫 ref(null) → ref(el)，導致物理資料被清空、蘋果位置歸零到左上角
                 delete domRefs.current[id];
-                delete physicsRef.current[id];
               }
             }}
             onPointerDown={e => handleCatch1(id, e)}
