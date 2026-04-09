@@ -22,6 +22,7 @@ import Listener from "./Listener";
 import UserList from "./UserList";
 import AdminSettingsModal from "./AdminSettingsModal";
 import GoldAppleGame from "./GoldAppleGame";
+import WhackAppleGame from "./WhackAppleGame";
 import SurpriseHistoryPanel from "./SurpriseHistoryPanel";
 import AdminToolPanel from "./AdminToolPanel";
 import QuickPhrasePanel from "./QuickPhrasePanel";
@@ -682,6 +683,14 @@ export default function ChatApp() {
 
       {/* 撈金蘋果遊戲覆蓋層（全螢幕，有遊戲時才渲染） */}
       <GoldAppleGame
+        socket={socket}
+        token={token}
+        name={name}
+        setApples={setApples}
+      />
+
+      {/* 打金蘋果遊戲（打地鼠風格，有遊戲時才渲染） */}
+      <WhackAppleGame
         socket={socket}
         token={token}
         name={name}

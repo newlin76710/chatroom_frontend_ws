@@ -6,16 +6,26 @@ import "./GoldAppleGame.css";
 
 // ─── 常數 ─────────────────────────────────────────────────────────────────────
 const SIZE1 = 56;   // px — 遊戲一蘋果尺寸（平板放大後以最大值計算邊界）
-const SIZE2 = 70;   // px — 遊戲二蘋果尺寸
+const SIZE2 = 100;  // px — 遊戲二蘋果尺寸（放大後視覺更清楚）
 const SPD_LO = 5;   // 遊戲一最低速度（像素/幀 @60fps）
 const SPD_HI = 9;   // 遊戲一最高速度
-const SPD2_LO = 60;
-const SPD2_HI = 90;
+const SPD2_LO = 4;  // 遊戲二最低速度（放慢，避免殘像）
+const SPD2_HI = 6;  // 遊戲二最高速度
 
 function randSpd(lo = SPD_LO, hi = SPD_HI) {
   const s = lo + Math.random() * (hi - lo);
   const a = Math.random() * Math.PI * 2;
   return { vx: Math.cos(a) * s, vy: Math.sin(a) * s };
+}
+
+// 反彈後旋轉速度向量 ±angle 度，讓軌跡不規則
+function jitterBounce(p, angleDeg = 20) {
+  const a = (Math.random() - 0.5) * (angleDeg * Math.PI / 180);
+  const cos = Math.cos(a), sin = Math.sin(a);
+  const vx = p.vx * cos - p.vy * sin;
+  const vy = p.vx * sin + p.vy * cos;
+  p.vx = vx;
+  p.vy = vy;
 }
 
 function randPos(W, H, size) {
@@ -98,10 +108,12 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
         const p = apple2Physics.current;
         p.x += p.vx;
         p.y += p.vy;
-        if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx); }
-        if (p.x > W - SIZE2) { p.x = W - SIZE2; p.vx = -Math.abs(p.vx); }
-        if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy); }
-        if (p.y > H - SIZE2) { p.y = H - SIZE2; p.vy = -Math.abs(p.vy); }
+        let bounced = false;
+        if (p.x < 0)         { p.x = 0;         p.vx =  Math.abs(p.vx); bounced = true; }
+        if (p.x > W - SIZE2) { p.x = W - SIZE2; p.vx = -Math.abs(p.vx); bounced = true; }
+        if (p.y < 0)         { p.y = 0;         p.vy =  Math.abs(p.vy); bounced = true; }
+        if (p.y > H - SIZE2) { p.y = H - SIZE2; p.vy = -Math.abs(p.vy); bounced = true; }
+        if (bounced) jitterBounce(p, 25);
         if (apple2WrapRef.current) {
           apple2WrapRef.current.style.transform = `translate(${p.x}px, ${p.y}px)`;
         }

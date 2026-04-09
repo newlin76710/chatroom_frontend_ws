@@ -83,8 +83,8 @@
 
 /* 遊戲二：大蘋果 */
 .gag-apple-img.big {
-  width: 60px;
-  height: 60px;
+  width: 100px;
+  height: 100px;
 }
 
 /* 平板/手機：蘋果再放大一點 */
@@ -94,8 +94,8 @@
     height: 56px;
   }
   .gag-apple-img.big {
-    width: 70px;
-    height: 70px;
+    width: 100px;
+    height: 100px;
   }
 }
 

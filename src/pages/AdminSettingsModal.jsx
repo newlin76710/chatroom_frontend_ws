@@ -16,6 +16,11 @@ const DEFAULT = {
   game2_hour:           20,
   game2_minute:         35,
   game2_reward:         25,
+  whack_enabled:        true,
+  whack_hour:           21,
+  whack_minute:         0,
+  whack_duration:       30,
+  whack_reward:         1,
 };
 
 export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
@@ -180,6 +185,45 @@ export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
                 <input type="number" min={1} value={settings.game2_reward}
                   onChange={e => setInt("game2_reward", e.target.value)} />
                 <span className="field-note">個金蘋果（第一個搶到即得，無時間限制）</span>
+              </Row>
+            </section>
+
+            {/* ─── 遊戲三：打金蘋果（打地鼠） ────────────────────── */}
+            <section className="settings-section">
+              <h4>
+                🔨 遊戲三：打金蘋果（打地鼠風格）
+                <label className="toggle-label" style={{ float: "right", fontWeight: "normal" }}>
+                  <input type="checkbox" checked={!!settings.whack_enabled}
+                    onChange={e => setBool("whack_enabled", e.target.checked)} />
+                  {" "}啟用
+                </label>
+              </h4>
+
+              <Row label="每日開始時間（台灣時間）">
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <input type="number" min={0} max={23} style={{ width: 64 }}
+                    value={settings.whack_hour}
+                    onChange={e => setInt("whack_hour", e.target.value)} />
+                  <span>時</span>
+                  <input type="number" min={0} max={59} style={{ width: 64 }}
+                    value={settings.whack_minute}
+                    onChange={e => setInt("whack_minute", e.target.value)} />
+                  <span>分</span>
+                  <span style={{ color: "#aaa", fontSize: "0.85rem" }}>
+                    → {fmtTime(settings.whack_hour, settings.whack_minute)}
+                  </span>
+                </div>
+              </Row>
+              <Row label="遊戲時長">
+                <input type="number" min={10} max={120} style={{ width: 80 }}
+                  value={settings.whack_duration}
+                  onChange={e => setInt("whack_duration", e.target.value)} />
+                <span className="field-note">秒（最少 10 秒）</span>
+              </Row>
+              <Row label="每顆獎勵">
+                <input type="number" min={1} value={settings.whack_reward}
+                  onChange={e => setInt("whack_reward", e.target.value)} />
+                <span className="field-note">個金蘋果（打一顆算一次）</span>
               </Row>
             </section>
 
