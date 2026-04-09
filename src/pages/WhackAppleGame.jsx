@@ -82,7 +82,7 @@ export default function WhackAppleGame({ socket, token, name, setApples }) {
       setHoles([...holeStateRef.current]);
 
       // 停留一段時間後自動縮回（若未被打到）
-      const upDuration = rand(700, 1450);
+      const upDuration = rand(350, 700);
       const t2 = setTimeout(() => {
         if (phaseRef.current !== "playing") return;
         const h = holeStateRef.current[i];
@@ -92,7 +92,7 @@ export default function WhackAppleGame({ socket, token, name, setApples }) {
             idx === i ? { up: false, whacked: false } : hole
           );
           setHoles([...holeStateRef.current]);
-          scheduleNextHole(rand(300, 800));
+          scheduleNextHole(rand(100, 350));
         }
       }, upDuration);
 
@@ -106,20 +106,31 @@ export default function WhackAppleGame({ socket, token, name, setApples }) {
     clearHoleTimers();
     resetHoles();
     upCountRef.current = 0;
-    maxConcurrentRef.current = 2;
+    maxConcurrentRef.current = 4;
 
-    // 開始時錯開啟動 2 顆
-    scheduleNextHole(rand(400, 700));
-    scheduleNextHole(rand(900, 1300));
+    // 開始時錯開啟動 4 顆
+    for (let k = 0; k < 4; k++) {
+      scheduleNextHole(rand(k * 150, k * 150 + 300));
+    }
 
-    // 15 秒後升為同時 3 顆
-    const rampTimer = setTimeout(() => {
+    // 10 秒後升為 5 顆
+    const ramp1 = setTimeout(() => {
       if (phaseRef.current === "playing") {
-        maxConcurrentRef.current = 3;
-        scheduleNextHole(rand(200, 500));
+        maxConcurrentRef.current = 5;
+        scheduleNextHole(rand(50, 200));
       }
-    }, 15000);
-    holeTimers.current.push(rampTimer);
+    }, 10000);
+
+    // 20 秒後升為 7 顆
+    const ramp2 = setTimeout(() => {
+      if (phaseRef.current === "playing") {
+        maxConcurrentRef.current = 7;
+        scheduleNextHole(rand(50, 200));
+        scheduleNextHole(rand(150, 350));
+      }
+    }, 20000);
+
+    holeTimers.current.push(ramp1, ramp2);
   }, [clearHoleTimers, resetHoles, scheduleNextHole]);
 
   const stopHoles = useCallback(() => {
@@ -217,7 +228,7 @@ export default function WhackAppleGame({ socket, token, name, setApples }) {
       );
       setHoles([...holeStateRef.current]);
       upCountRef.current = Math.max(0, upCountRef.current - 1);
-      if (phaseRef.current === "playing") scheduleNextHole(rand(300, 700));
+      if (phaseRef.current === "playing") scheduleNextHole(rand(80, 250));
     }, 380);
   }, [socket, token, scheduleNextHole]);
 
