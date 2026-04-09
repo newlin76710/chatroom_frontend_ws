@@ -12,15 +12,23 @@ const DEFAULT = {
   game1_minute:         30,
   game1_apple_count:    5,
   game1_reward:         1,
+  game1_spd_lo:         5,
+  game1_spd_hi:         9,
   game2_enabled:        true,
   game2_hour:           20,
   game2_minute:         35,
   game2_reward:         25,
+  game2_spd_lo:         4,
+  game2_spd_hi:         6,
   whack_enabled:        true,
   whack_hour:           21,
   whack_minute:         0,
   whack_duration:       30,
   whack_reward:         1,
+  whack_ms_lo:          350,
+  whack_ms_hi:          700,
+  whack_min_apples:     4,
+  whack_max_apples:     7,
 };
 
 export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
@@ -153,6 +161,18 @@ export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
                   onChange={e => setInt("game1_reward", e.target.value)} />
                 <span className="field-note">個金蘋果</span>
               </Row>
+              <Row label="蘋果速度（px/幀）">
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span>最慢</span>
+                  <input type="number" min={1} max={30} style={{ width: 64 }}
+                    value={settings.game1_spd_lo}
+                    onChange={e => setInt("game1_spd_lo", e.target.value)} />
+                  <span>最快</span>
+                  <input type="number" min={1} max={30} style={{ width: 64 }}
+                    value={settings.game1_spd_hi}
+                    onChange={e => setInt("game1_spd_hi", e.target.value)} />
+                </div>
+              </Row>
             </section>
 
             {/* ─── 遊戲二：一顆大金蘋果 ──────────────────────────── */}
@@ -185,6 +205,18 @@ export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
                 <input type="number" min={1} value={settings.game2_reward}
                   onChange={e => setInt("game2_reward", e.target.value)} />
                 <span className="field-note">個金蘋果（第一個搶到即得，無時間限制）</span>
+              </Row>
+              <Row label="蘋果速度（px/幀）">
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span>最慢</span>
+                  <input type="number" min={1} max={20} style={{ width: 64 }}
+                    value={settings.game2_spd_lo}
+                    onChange={e => setInt("game2_spd_lo", e.target.value)} />
+                  <span>最快</span>
+                  <input type="number" min={1} max={20} style={{ width: 64 }}
+                    value={settings.game2_spd_hi}
+                    onChange={e => setInt("game2_spd_hi", e.target.value)} />
+                </div>
               </Row>
             </section>
 
@@ -224,6 +256,31 @@ export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
                 <input type="number" min={1} value={settings.whack_reward}
                   onChange={e => setInt("whack_reward", e.target.value)} />
                 <span className="field-note">個金蘋果（打一顆算一次）</span>
+              </Row>
+              <Row label="蘋果可見時間（ms）">
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span>最短</span>
+                  <input type="number" min={100} max={2000} step={50} style={{ width: 72 }}
+                    value={settings.whack_ms_lo}
+                    onChange={e => setInt("whack_ms_lo", e.target.value)} />
+                  <span>最長</span>
+                  <input type="number" min={100} max={2000} step={50} style={{ width: 72 }}
+                    value={settings.whack_ms_hi}
+                    onChange={e => setInt("whack_ms_hi", e.target.value)} />
+                </div>
+              </Row>
+              <Row label="同時蘋果顆數">
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span>開始</span>
+                  <input type="number" min={1} max={9} style={{ width: 56 }}
+                    value={settings.whack_min_apples}
+                    onChange={e => setInt("whack_min_apples", e.target.value)} />
+                  <span>最高</span>
+                  <input type="number" min={1} max={9} style={{ width: 56 }}
+                    value={settings.whack_max_apples}
+                    onChange={e => setInt("whack_max_apples", e.target.value)} />
+                  <span className="field-note">顆（最高 9）</span>
+                </div>
               </Row>
             </section>
 

@@ -30,9 +30,13 @@ export default function WhackAppleGame({ socket, token, name, setApples }) {
   const myScoreRef  = useRef(0);
   const comboRef    = useRef(0);
   const comboTimer  = useRef(null);
-  const hitIdRef         = useRef(0);
-  const upCountRef       = useRef(0); // 目前彈出中的蘋果數
-  const maxConcurrentRef = useRef(2); // 最多同時顯示幾顆
+  const hitIdRef           = useRef(0);
+  const upCountRef         = useRef(0);   // 目前彈出中的蘋果數
+  const maxConcurrentRef   = useRef(4);   // 目前上限（隨難度遞增）
+  const initConcurrentRef  = useRef(4);   // 開場同時蘋果數（from server）
+  const finalConcurrentRef = useRef(7);   // 最高同時蘋果數（from server）
+  const appleMsLoRef       = useRef(350); // 蘋果最短可見 ms（from server）
+  const appleMsHiRef       = useRef(700); // 蘋果最長可見 ms（from server）
   // Ref-based hole state — authoritative for collision detection; avoids stale closures
   const holeStateRef = useRef(
     Array.from({ length: HOLE_COUNT }, () => ({ up: false, whacked: false }))
@@ -82,7 +86,7 @@ export default function WhackAppleGame({ socket, token, name, setApples }) {
       setHoles([...holeStateRef.current]);
 
       // 停留一段時間後自動縮回（若未被打到）
-      const upDuration = rand(350, 700);
+      const upDuration = rand(appleMsLoRef.current, appleMsHiRef.current);
       const t2 = setTimeout(() => {
         if (phaseRef.current !== "playing") return;
         const h = holeStateRef.current[i];
@@ -106,27 +110,30 @@ export default function WhackAppleGame({ socket, token, name, setApples }) {
     clearHoleTimers();
     resetHoles();
     upCountRef.current = 0;
-    maxConcurrentRef.current = 4;
 
-    // 開始時錯開啟動 4 顆
-    for (let k = 0; k < 4; k++) {
-      scheduleNextHole(rand(k * 150, k * 150 + 300));
+    const initN  = initConcurrentRef.current;
+    const finalN = finalConcurrentRef.current;
+    const midN   = Math.round((initN + finalN) / 2);
+    maxConcurrentRef.current = initN;
+
+    // 開始時錯開啟動
+    for (let k = 0; k < initN; k++) {
+      scheduleNextHole(rand(k * 120, k * 120 + 250));
     }
 
-    // 10 秒後升為 5 顆
+    // 10 秒後升至中間值
     const ramp1 = setTimeout(() => {
-      if (phaseRef.current === "playing") {
-        maxConcurrentRef.current = 5;
-        scheduleNextHole(rand(50, 200));
+      if (phaseRef.current === "playing" && midN > initN) {
+        maxConcurrentRef.current = midN;
+        for (let k = 0; k < midN - initN; k++) scheduleNextHole(rand(50 + k * 100, 200 + k * 100));
       }
     }, 10000);
 
-    // 20 秒後升為 7 顆
+    // 20 秒後升至最高值
     const ramp2 = setTimeout(() => {
-      if (phaseRef.current === "playing") {
-        maxConcurrentRef.current = 7;
-        scheduleNextHole(rand(50, 200));
-        scheduleNextHole(rand(150, 350));
+      if (phaseRef.current === "playing" && finalN > midN) {
+        maxConcurrentRef.current = finalN;
+        for (let k = 0; k < finalN - midN; k++) scheduleNextHole(rand(50 + k * 80, 200 + k * 80));
       }
     }, 20000);
 
@@ -140,12 +147,16 @@ export default function WhackAppleGame({ socket, token, name, setApples }) {
 
   // ─── Socket events ────────────────────────────────────────────────────────
   useEffect(() => {
-    const onStart = ({ duration, reward: r }) => {
+    const onStart = ({ duration, reward: r, msLo, msHi, minApples, maxApples }) => {
       setReward(r ?? 1);
       setMyScore(0); myScoreRef.current = 0;
       setCombo(0);   comboRef.current   = 0;
       setResult(null);
       setHitEffects([]);
+      if (msLo       !== undefined) appleMsLoRef.current       = msLo;
+      if (msHi       !== undefined) appleMsHiRef.current       = msHi;
+      if (minApples  !== undefined) initConcurrentRef.current  = minApples;
+      if (maxApples  !== undefined) finalConcurrentRef.current = maxApples;
       phaseRef.current = "playing";
       setPhase("playing");
 

@@ -60,6 +60,9 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
   const localCaughtRef = useRef(new Set()); // 已在本地點過的蘋果 ID（防重複點擊）
   const apple2WrapRef = useRef(null);       // 遊戲二蘋果的包裝 div
   const apple2Physics = useRef({ x: 200, y: 200, vx: 7, vy: 6 });
+  // 速度設定（從 server 取得，預設值僅在 server 未送時使用）
+  const g1SpdRef = useRef({ lo: SPD_LO,  hi: SPD_HI  });
+  const g2SpdRef = useRef({ lo: SPD2_LO, hi: SPD2_HI });
   const animRef = useRef(null);
   const timerRef = useRef(null);
   const phaseRef = useRef("idle");
@@ -145,10 +148,11 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
   // ─── Socket 事件 ──────────────────────────────────────────────────────────
   useEffect(() => {
     // ── 遊戲一開始 ──
-    const onG1Start = ({ duration, appleIds, reward }) => {
+    const onG1Start = ({ duration, appleIds, reward, speedLo, speedHi }) => {
       setG1Reward(reward);
       setG1Result(null);
       setLateMsg("");
+      if (speedLo !== undefined) g1SpdRef.current = { lo: speedLo, hi: speedHi };
 
       // 清除上場記錄
       localCaughtRef.current.clear();
@@ -158,7 +162,7 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
       physicsRef.current = {};
       appleIds.forEach(id => {
         const { x, y } = randPos(W, H, SIZE1);
-        physicsRef.current[id] = { id, ...randSpd(), x, y };
+        physicsRef.current[id] = { id, ...randSpd(g1SpdRef.current.lo, g1SpdRef.current.hi), x, y };
       });
 
       setG1AppleIds(appleIds);
@@ -174,7 +178,7 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
         id: newAppleId,
         x: SIZE1 + Math.random() * (window.innerWidth - SIZE1 * 2),
         y: SIZE1 + Math.random() * (window.innerHeight - SIZE1 * 2),
-        ...randSpd(),
+        ...randSpd(g1SpdRef.current.lo, g1SpdRef.current.hi),
       };
       // 明確清除被撈走的蘋果物理資料（ref callback 已不負責清除）
       delete physicsRef.current[appleId];
@@ -198,15 +202,16 @@ export default function GoldAppleGame({ socket, token, name, setApples }) {
     };
 
     // ── 遊戲二開始（不限時，有人搶到才結束）──
-    const onG2Start = ({ reward }) => {
+    const onG2Start = ({ reward, speedLo, speedHi }) => {
       setG2Reward(reward);
       setG2Result(null);
       setLateMsg("");
+      if (speedLo !== undefined) g2SpdRef.current = { lo: speedLo, hi: speedHi };
 
       const W = window.innerWidth;
       const H = window.innerHeight;
       const { x, y } = randPos(W, H, SIZE2);
-      apple2Physics.current = { x, y, ...randSpd(SPD2_LO, SPD2_HI) };
+      apple2Physics.current = { x, y, ...randSpd(g2SpdRef.current.lo, g2SpdRef.current.hi) };
 
       setPhase("game2");
       // 不限時，不呼叫 startTimer
