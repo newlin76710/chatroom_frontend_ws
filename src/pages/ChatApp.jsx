@@ -583,12 +583,10 @@ export default function ChatApp() {
                   onSelect={(content) => setText((prev) => (prev ? prev + " " : "") + content)}
                 />
 
-                {NF && (
-                  <label>
-                    <input type="checkbox" checked={convertTC} onChange={(e) => setConvertTC(e.target.checked)} />
-                    簡轉繁
-                  </label>
-                )}
+                <label>
+                  <input type="checkbox" checked={convertTC} onChange={(e) => setConvertTC(e.target.checked)} />
+                  簡轉繁
+                </label>
 
                 <input
                   ref={inputRef}
