@@ -23,6 +23,8 @@ export default function MessageList({
   const containerRef = useRef(null);
   const isNearBottomRef = useRef(true);
   const scrollLockedRef = useRef(scrollLocked);
+  const prevMsgLenRef = useRef(0);
+  const prevScrollLockedRef = useRef(scrollLocked);
   scrollLockedRef.current = scrollLocked;
 
   // 追蹤使用者是否在底部附近
@@ -38,10 +40,11 @@ export default function MessageList({
 
   // scrollLocked 解除時立刻捲到底
   useLayoutEffect(() => {
-    if (!scrollLocked) {
+    if (prevScrollLockedRef.current && !scrollLocked) {
       const el = containerRef.current;
       if (el) el.scrollTop = el.scrollHeight;
     }
+    prevScrollLockedRef.current = scrollLocked;
   }, [scrollLocked]);
 
   // 手機鍵盤彈出/收起時（visualViewport resize），若原本在底部就補捲
@@ -68,7 +71,10 @@ export default function MessageList({
   useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el || !messages.length || scrollLocked) return;
-
+    const prevLen = prevMsgLenRef.current;
+    const currLen = messages.length;
+    prevMsgLenRef.current = currLen;
+    if (currLen <= prevLen) return; // ⭐️ 關鍵：不是新訊息就不滾
     const lastMsg = messages[messages.length - 1];
     const isSelf = lastMsg?.user?.name === name;
 
@@ -200,7 +206,7 @@ export default function MessageList({
                         className="gift-big-image"
                         onLoad={() => {
                           const el = containerRef.current;
-                          if (el && !scrollLockedRef.current) el.scrollTop = el.scrollHeight;
+                          if (el && !scrollLockedRef.current && isNearBottomRef.current) el.scrollTop = el.scrollHeight;
                         }}
                       />
                     </div>}
