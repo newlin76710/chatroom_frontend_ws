@@ -79,10 +79,7 @@ export default function MessageList({
     const isSelf = lastMsg?.user?.name === name;
 
     requestAnimationFrame(() => {
-      // 自己發的訊息一律捲到底；其他人的訊息只有在「已在底部」時才跟著捲
-      if (isSelf || isNearBottomRef.current) {
-        el.scrollTop = el.scrollHeight;
-      }
+      el.scrollTop = el.scrollHeight;
     });
   }, [messages, name, scrollLocked]);
 
@@ -206,7 +203,7 @@ export default function MessageList({
                         className="gift-big-image"
                         onLoad={() => {
                           const el = containerRef.current;
-                          if (el && !scrollLockedRef.current && isNearBottomRef.current) el.scrollTop = el.scrollHeight;
+                          if (el && !scrollLockedRef.current) el.scrollTop = el.scrollHeight;
                         }}
                       />
                     </div>}
