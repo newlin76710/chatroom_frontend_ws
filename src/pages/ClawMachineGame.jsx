@@ -70,7 +70,9 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
   const [phase,        setPhase]        = useState("idle");
   const [warnVisible,  setWarnVisible]  = useState(false); // 30秒預告說明彈窗
   const [warnSeconds,  setWarnSeconds]  = useState(30);    // 說明彈窗倒數
-  const [appleList,    setAppleList]    = useState(() => FULL_APPLE_INIT.slice(0, 12));
+  // appleList: [{ id, x, dur, delay, posIdx, isCaught }]
+  // posIdx 決定 bot 高度（FULL_APPLE_INIT[posIdx].bot），夾走後上方蘋果 posIdx-- 往下補位
+  const [appleList,    setAppleList]    = useState([]);
   const [timeLeft,     setTimeLeft]     = useState(0);
   const [reward,       setReward]       = useState(1);
   const [myScore,      setMyScore]      = useState(0);
@@ -81,7 +83,6 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
   const [hasCatch,     setHasCatch]     = useState(false);
   const [dropping,     setDropping]     = useState(false);
   const [effects,      setEffects]      = useState([]);
-  const [caughtIds,    setCaughtIds]    = useState(new Set()); // 已被夾走的蘋果 id
 
   // ── refs ──────────────────────────────────────────────────────────────────────
   const phaseRef        = useRef("idle");
@@ -95,30 +96,29 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
   const timerRef        = useRef(null);
   const closeTimerRef   = useRef(null);  // closing → result 延遲計時器
   const warnTimerRef    = useRef(null);  // 說明彈窗倒數計時器
-  const appleInitRef    = useRef(FULL_APPLE_INIT.slice(0, 12)); // 本局蘋果清單（給 RAF 用）
+  const slideTimerRef   = useRef(null);  // 補位動畫延遲計時器
+  const appleListRef    = useRef([]);    // appleList 的 ref 鏡像（給 RAF 讀）
   const oscAnimRef      = useRef(null);
   const dropAnimRef     = useRef(null);
   const catchResultRef  = useRef(null);
   const effectIdRef     = useRef(0);
   const windowRef       = useRef(null);
-  // 每顆蘋果的 caught 狀態（給 RAF 讀，不觸發 re-render）
-  const appleCaughtRef  = useRef(new Set());
 
   useEffect(() => { phaseRef.current  = phase;  }, [phase]);
   useEffect(() => { rewardRef.current = reward; }, [reward]);
 
   // ── 重置蘋果堆 ────────────────────────────────────────────────────────────────
   const resetApples = useCallback(() => {
-    appleCaughtRef.current = new Set();
-    setCaughtIds(new Set());
+    appleListRef.current = [];
+    setAppleList([]);
   }, []);
 
-  // ── 找最近的未被夾蘋果（比較中心點 x） ──────────────────────────────────────
+  // ── 找最近的未被夾蘋果（比較中心點 x，從 ref 讀取避免 stale closure） ──────
   const findNearestApple = useCallback(() => {
     const cx = clawXRef.current;
     let best = null, bestDist = Infinity;
-    for (const a of appleInitRef.current) {
-      if (appleCaughtRef.current.has(a.id)) continue;
+    for (const a of appleListRef.current) {
+      if (a.isCaught) continue;
       const dist = Math.abs(a.x - cx);
       if (dist < bestDist) { bestDist = dist; best = a; }
     }
@@ -175,11 +175,29 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
           setProngsOpen(false); // 爪子夾合
 
           if (success) {
-            // 找最近蘋果，讓它消失
+            // 找最近蘋果，標記消失並啟動補位
             const apple = findNearestApple();
             if (apple) {
-              appleCaughtRef.current = new Set([...appleCaughtRef.current, apple.id]);
-              setCaughtIds(new Set(appleCaughtRef.current));
+              // 立即標記 caught（ref + state 同步）
+              const withCaught = appleListRef.current.map(a =>
+                a.id === apple.id ? { ...a, isCaught: true } : a
+              );
+              appleListRef.current = withCaught;
+              setAppleList([...withCaught]);
+
+              // 消失動畫結束後移除並補位
+              clearTimeout(slideTimerRef.current);
+              slideTimerRef.current = setTimeout(() => {
+                const caughtPosIdx = apple.posIdx;
+                const next = appleListRef.current
+                  .filter(a => !a.isCaught)
+                  .map(a => a.posIdx > caughtPosIdx
+                    ? { ...a, posIdx: a.posIdx - 1 }
+                    : a
+                  );
+                appleListRef.current = next;
+                setAppleList([...next]);
+              }, 450);
             }
             setHasCatch(true); // 爪子上顯示金蘋果
           }
@@ -243,13 +261,19 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
       stopOscillation();
       if (dropAnimRef.current) cancelAnimationFrame(dropAnimRef.current);
 
-      // 設定本局蘋果數量
+      // 設定本局蘋果（新形狀：{ id, x, dur, delay, posIdx, isCaught }）
       const count = Math.max(1, Math.min(appleCount ?? 12, FULL_APPLE_INIT.length));
-      const activeApples = FULL_APPLE_INIT.slice(0, count);
-      appleInitRef.current = activeApples;
-      setAppleList(activeApples);
+      const activeApples = FULL_APPLE_INIT.slice(0, count).map((a, i) => ({
+        id: a.id, x: a.x, dur: a.dur, delay: a.delay,
+        posIdx: i, isCaught: false,
+      }));
+      appleListRef.current = activeApples;
+      clearTimeout(slideTimerRef.current);
 
-      resetApples();
+      resetApples(); // 清空舊狀態
+      // resetApples 會 setAppleList([])，再設定新的
+      appleListRef.current = activeApples;
+      setAppleList(activeApples);
       setPhase("playing");
       phaseRef.current       = "playing";
       setTimeLeft(duration || 30);
@@ -317,6 +341,7 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
       clearInterval(timerRef.current);
       clearInterval(warnTimerRef.current);
       clearTimeout(closeTimerRef.current);
+      clearTimeout(slideTimerRef.current);
       stopOscillation();
       if (dropAnimRef.current) cancelAnimationFrame(dropAnimRef.current);
     };
@@ -444,10 +469,10 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
             {appleList.map(a => (
               <div
                 key={a.id}
-                className={`clw-pile-apple${caughtIds.has(a.id) ? " caught" : ""}`}
+                className={`clw-pile-apple${a.isCaught ? " caught" : ""}`}
                 style={{
                   left:      `calc(${a.x}% - 19px)`,
-                  bottom:    `${a.bot}%`,
+                  bottom:    `${FULL_APPLE_INIT[a.posIdx].bot}%`,
                   "--dur":   `${a.dur}s`,
                   "--delay": `${a.delay}s`,
                 }}

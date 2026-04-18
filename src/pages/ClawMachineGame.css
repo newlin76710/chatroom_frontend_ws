@@ -261,6 +261,7 @@
   animation-delay: var(--delay, 0s);
   z-index: 2;
   cursor: default;
+  transition: bottom 0.35s ease; /* 補位滑落動畫 */
 }
 
 .clw-pile-apple img {
