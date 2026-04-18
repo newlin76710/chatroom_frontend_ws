@@ -31,6 +31,8 @@ const APPLE_INIT = [
 
 export default function ClawMachineGame({ socket, token, name, setApples }) {
   const [phase,        setPhase]        = useState("idle");
+  const [warnVisible,  setWarnVisible]  = useState(false); // 30秒預告說明彈窗
+  const [warnSeconds,  setWarnSeconds]  = useState(30);    // 說明彈窗倒數
   const [timeLeft,     setTimeLeft]     = useState(0);
   const [reward,       setReward]       = useState(1);
   const [myScore,      setMyScore]      = useState(0);
@@ -53,6 +55,8 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
   const myScoreRef      = useRef(0);
   const rewardRef       = useRef(1);
   const timerRef        = useRef(null);
+  const closeTimerRef   = useRef(null);  // closing → result 延遲計時器
+  const warnTimerRef    = useRef(null);  // 說明彈窗倒數計時器
   const oscAnimRef      = useRef(null);
   const dropAnimRef     = useRef(null);
   const catchResultRef  = useRef(null);
@@ -179,7 +183,23 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
   useEffect(() => {
     if (!socket) return;
 
+    const onWarn = ({ secondsLeft }) => {
+      setWarnSeconds(secondsLeft || 30);
+      setWarnVisible(true);
+      clearInterval(warnTimerRef.current);
+      let s = secondsLeft || 30;
+      warnTimerRef.current = setInterval(() => {
+        s -= 1;
+        setWarnSeconds(s);
+        if (s <= 0) clearInterval(warnTimerRef.current);
+      }, 1000);
+    };
+
     const onStart = ({ duration, reward: r, speed, dropSpeed }) => {
+      // 遊戲開始，關閉說明彈窗
+      clearInterval(warnTimerRef.current);
+      setWarnVisible(false);
+
       clearInterval(timerRef.current);
       stopOscillation();
       if (dropAnimRef.current) cancelAnimationFrame(dropAnimRef.current);
@@ -221,26 +241,37 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
       clearInterval(timerRef.current);
       stopOscillation();
       if (dropAnimRef.current) cancelAnimationFrame(dropAnimRef.current);
+      clearTimeout(closeTimerRef.current);
 
-      setPhase("result");
-      phaseRef.current    = "result";
+      // 先進入 closing 相位讓遊戲畫面淡出，再顯示結果
+      setPhase("closing");
+      phaseRef.current    = "closing";
       setDropping(false);
       droppingRef.current = false;
       setClawY(0);
       setProngsOpen(true);
       setHasCatch(false);
       setResult(scores);
+
+      closeTimerRef.current = setTimeout(() => {
+        setPhase("result");
+        phaseRef.current = "result";
+      }, 450);
     };
 
+    socket.on("clawGameWarn",   onWarn);
     socket.on("clawGameStart",  onStart);
     socket.on("clawDropResult", onDropResult);
     socket.on("clawGameEnd",    onEnd);
 
     return () => {
+      socket.off("clawGameWarn",   onWarn);
       socket.off("clawGameStart",  onStart);
       socket.off("clawDropResult", onDropResult);
       socket.off("clawGameEnd",    onEnd);
       clearInterval(timerRef.current);
+      clearInterval(warnTimerRef.current);
+      clearTimeout(closeTimerRef.current);
       stopOscillation();
       if (dropAnimRef.current) cancelAnimationFrame(dropAnimRef.current);
     };
@@ -266,15 +297,67 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [handleDrop]);
 
+  // ── 30 秒預告說明彈窗（遊戲尚未開始時） ──────────────────────────────────────
+  if (phase === "idle" && warnVisible) {
+    return (
+      <div className="clw-warn-overlay" onClick={() => setWarnVisible(false)}>
+        <div className="clw-warn-card" onClick={e => e.stopPropagation()}>
+          <div className="clw-warn-countdown">{warnSeconds}</div>
+          <div className="clw-warn-unit">秒後開始</div>
+          <h2 className="clw-warn-title">🎰 夾蘋果機</h2>
+          <ul className="clw-warn-rules">
+            <li>🔄 爪子會自動<strong>左右搖擺</strong></li>
+            <li>👇 看準時機按「<strong>抓！</strong>」讓爪子下降</li>
+            <li>🍎 爪子夾中時蘋果<strong>消失</strong>，獲得金蘋果</li>
+            <li>⏱ 時間內盡可能多夾！</li>
+          </ul>
+          <button
+            className="clw-warn-close"
+            onClick={() => setWarnVisible(false)}
+          >
+            我知道了！
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (phase === "idle") return null;
 
   const sortedScores = result ? Object.entries(result).sort(([, a], [, b]) => b - a) : [];
-  const ropeH = 20 + clawY * 9999; // CSS var 限制實際最大值
+  const ropeH = 20 + clawY * 9999;
+  const isClosing = phase === "closing";
 
+  // ── 結果畫面（點任意處關閉） ──────────────────────────────────────────────────
+  if (phase === "result") {
+    return (
+      <div
+        className="clw-overlay clw-result-screen"
+        onClick={() => { setPhase("idle"); phaseRef.current = "idle"; }}
+      >
+        <div className="clw-result">
+          <h2>🎉 遊戲結束</h2>
+          <p className="clw-my-rank">
+            你夾了 <strong>{myScore}</strong> 顆金蘋果
+          </p>
+          <ul>
+            {sortedScores.map(([n, s], i) => (
+              <li key={n} className={n === name ? "me" : ""}>
+                {i + 1}. {n}：{s} 顆
+              </li>
+            ))}
+          </ul>
+          <div className="clw-dismiss-hint">點擊任意處關閉</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 遊戲畫面（playing / closing） ────────────────────────────────────────────
   return (
-    <div className="clw-overlay">
+    <div className={`clw-overlay${isClosing ? " closing" : ""}`}>
 
-      {/* ── HUD ──────────────────────────────────────────────────────────────── */}
+      {/* HUD */}
       <div className="clw-hud">
         <span className={`clw-timer${timeLeft <= 10 ? " urgent" : timeLeft <= 20 ? " warning" : ""}`}>
           {timeLeft}<span className="clw-timer-unit">秒</span>
@@ -285,22 +368,17 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
         <span className="clw-hint">按「抓！」或空白鍵落下爪子</span>
       </div>
 
-      {/* ── Field ────────────────────────────────────────────────────────────── */}
+      {/* Field */}
       <div className="clw-field">
         <div className="clw-machine">
 
-          {/* 標題 */}
           <div className="clw-top-bar">
             <span className="clw-neon-text">🎰 夾蘋果機</span>
           </div>
 
-          {/* 玻璃窗 */}
           <div className="clw-window" ref={windowRef}>
-
-            {/* 軌道 */}
             <div className="clw-rail" />
 
-            {/* 爪子組件 */}
             <div className="clw-claw-system" style={{ left: `${clawX}%` }}>
               <div
                 className="clw-rope"
@@ -318,14 +396,13 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
               </div>
             </div>
 
-            {/* 蘋果堆（每顆追蹤位置，夾到後消失） */}
             {APPLE_INIT.map(a => (
               <div
                 key={a.id}
                 className={`clw-pile-apple${caughtIds.has(a.id) ? " caught" : ""}`}
                 style={{
-                  left:    `${a.x}%`,
-                  bottom:  `${a.bot}%`,
+                  left:      `${a.x}%`,
+                  bottom:    `${a.bot}%`,
                   "--dur":   `${a.dur}s`,
                   "--delay": `${a.delay}s`,
                 }}
@@ -334,7 +411,6 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
               </div>
             ))}
 
-            {/* 浮動得分特效 */}
             {effects.map(e => (
               <div key={e.id} className="clw-effect">
                 +{e.earned} <img src={APPLE_IMG} alt="" />
@@ -342,13 +418,11 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
             ))}
           </div>
 
-          {/* 出口 */}
           <div className="clw-slot">
             <span className="clw-slot-label">出口</span>
           </div>
         </div>
 
-        {/* 抓！按鈕 */}
         <button
           className={`clw-grab-btn${dropping ? " disabled" : ""}`}
           onClick={handleDrop}
@@ -357,24 +431,6 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
           {dropping ? "⋯" : "抓！"}
         </button>
       </div>
-
-      {/* ── 結果 ─────────────────────────────────────────────────────────────── */}
-      {phase === "result" && result && (
-        <div className="clw-result" onClick={() => { setPhase("idle"); phaseRef.current = "idle"; }}>
-          <h2>🎉 遊戲結束</h2>
-          <p className="clw-my-rank">
-            你夾了 <strong>{myScore}</strong> 顆金蘋果
-          </p>
-          <ul>
-            {sortedScores.map(([n, s], i) => (
-              <li key={n} className={n === name ? "me" : ""}>
-                {i + 1}. {n}：{s} 顆
-              </li>
-            ))}
-          </ul>
-          <div className="clw-dismiss-hint">點擊關閉</div>
-        </div>
-      )}
     </div>
   );
 }

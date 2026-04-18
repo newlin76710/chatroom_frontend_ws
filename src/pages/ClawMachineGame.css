@@ -350,6 +350,110 @@
 }
 .clw-grab-btn.disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* ─── 30 秒預告說明彈窗 ──────────────────────────────────────────────────────── */
+.clw-warn-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9300;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.clw-warn-card {
+  background: linear-gradient(145deg, #1a0040 0%, #0d0030 100%);
+  border: 3px solid #aa44ff;
+  border-radius: 22px;
+  padding: 28px 36px 24px;
+  text-align: center;
+  color: #fff;
+  min-width: 280px;
+  max-width: 400px;
+  width: 90vw;
+  cursor: default;
+  box-shadow:
+    0 0 50px rgba(170, 68, 255, 0.45),
+    0 0 100px rgba(100, 0, 200, 0.2);
+  animation: clw-fadein 0.35s ease;
+}
+
+.clw-warn-countdown {
+  font-size: 4rem;
+  font-weight: 900;
+  color: gold;
+  line-height: 1;
+  text-shadow: 0 0 20px #ff8800, 0 0 40px #ff4400;
+  font-variant-numeric: tabular-nums;
+}
+
+.clw-warn-unit {
+  font-size: 1rem;
+  color: #cc99ff;
+  margin-bottom: 12px;
+}
+
+.clw-warn-title {
+  font-size: 1.6rem;
+  color: #fff;
+  margin: 0 0 16px;
+  text-shadow: 0 0 10px #cc44ff;
+  letter-spacing: 2px;
+}
+
+.clw-warn-rules {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clw-warn-rules li {
+  font-size: 1rem;
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 8px 14px;
+  border-left: 3px solid #8844cc;
+  line-height: 1.5;
+}
+
+.clw-warn-rules li strong { color: gold; }
+
+.clw-warn-close {
+  width: 100%;
+  padding: 12px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a0800;
+  background: linear-gradient(180deg, #ffe000 0%, #ffaa00 100%);
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #cc6600, 0 6px 16px rgba(255,160,0,0.4);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.clw-warn-close:hover { transform: translateY(-1px); box-shadow: 0 5px 0 #cc6600; }
+.clw-warn-close:active { transform: translateY(3px); box-shadow: 0 1px 0 #cc6600; }
+
+/* ─── Closing：遊戲畫面淡出 ─────────────────────────────────────────────────── */
+.clw-overlay.closing .clw-hud,
+.clw-overlay.closing .clw-field {
+  animation: clw-fadeout 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+/* ─── Result screen：整個覆蓋層可點擊 ─────────────────────────────────────── */
+.clw-result-screen {
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+}
+
 /* ─── Result card ───────────────────────────────────────────────────────────── */
 .clw-result {
   position: fixed;
@@ -434,6 +538,12 @@
   0%   { opacity: 1; transform: translateX(-50%) translateY(0)     scale(1);    }
   40%  { opacity: 1; transform: translateX(-50%) translateY(-50px)  scale(1.15); }
   100% { opacity: 0; transform: translateX(-50%) translateY(-110px) scale(0.85); }
+}
+
+/* 遊戲畫面淡出（closing 相位） */
+@keyframes clw-fadeout {
+  from { opacity: 1; transform: scale(1);    }
+  to   { opacity: 0; transform: scale(0.95); }
 }
 
 /* 結果卡片淡入 */
