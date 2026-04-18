@@ -23,6 +23,7 @@ import UserList from "./UserList";
 import AdminSettingsModal from "./AdminSettingsModal";
 import GoldAppleGame from "./GoldAppleGame";
 import WhackAppleGame from "./WhackAppleGame";
+import ClawMachineGame from "./ClawMachineGame";
 import SurpriseHistoryPanel from "./SurpriseHistoryPanel";
 import AdminToolPanel from "./AdminToolPanel";
 import QuickPhrasePanel from "./QuickPhrasePanel";
@@ -701,6 +702,16 @@ export default function ChatApp() {
       {/* 打金蘋果遊戲（打地鼠風格，有遊戲時才渲染） */}
       {NF && (
         <WhackAppleGame
+          socket={socket}
+          token={token}
+          name={name}
+          setApples={setApples}
+        />
+      )}
+
+      {/* 夾蘋果機遊戲（夾娃娃機風格，有遊戲時才渲染） */}
+      {NF && (
+        <ClawMachineGame
           socket={socket}
           token={token}
           name={name}
