@@ -13,26 +13,64 @@ const BASE_HOLD_MS = 500;
 const BASE_RISE_MS = 533;
 const APPLE_IMG = "/gifts/gold_apple.gif";
 
-// 蘋果初始排列：x=左邊距%，bot=底部距%，dur/delay=滾動動畫參數
-const APPLE_INIT = [
+// 蘋果池（x=中心點%，bot=底部距%，dur/delay=滾動動畫）
+// 所有蘋果集中在下半區域（bot: 3–33%），數量越多越重疊堆積。
+// x 代表蘋果中心，渲染時 left: calc(x% - 19px) 讓中心對齊 x%。
+const FULL_APPLE_INIT = [
+  // ── 排 1（貼底） IDs 0-5
   { id: 0,  x: 7,  bot: 4,  dur: 2.4, delay: 0.0 },
   { id: 1,  x: 21, bot: 3,  dur: 2.8, delay: 0.5 },
   { id: 2,  x: 35, bot: 5,  dur: 2.2, delay: 0.9 },
   { id: 3,  x: 49, bot: 4,  dur: 3.1, delay: 0.3 },
   { id: 4,  x: 63, bot: 3,  dur: 2.6, delay: 0.7 },
   { id: 5,  x: 77, bot: 5,  dur: 2.3, delay: 1.1 },
-  { id: 6,  x: 14, bot: 23, dur: 2.7, delay: 0.4 },
-  { id: 7,  x: 28, bot: 22, dur: 2.5, delay: 0.8 },
-  { id: 8,  x: 42, bot: 24, dur: 2.9, delay: 0.1 },
-  { id: 9,  x: 56, bot: 23, dur: 2.1, delay: 0.6 },
-  { id: 10, x: 70, bot: 22, dur: 2.6, delay: 1.0 },
-  { id: 11, x: 84, bot: 24, dur: 2.4, delay: 0.2 },
+  // ── 排 2 IDs 6-11
+  { id: 6,  x: 14, bot: 10, dur: 2.7, delay: 0.4 },
+  { id: 7,  x: 28, bot: 9,  dur: 2.5, delay: 0.8 },
+  { id: 8,  x: 42, bot: 11, dur: 2.9, delay: 0.1 },
+  { id: 9,  x: 56, bot: 10, dur: 2.1, delay: 0.6 },
+  { id: 10, x: 70, bot: 9,  dur: 2.6, delay: 1.0 },
+  { id: 11, x: 84, bot: 11, dur: 2.4, delay: 0.2 },
+  // ── 排 3 IDs 12-17
+  { id: 12, x: 7,  bot: 15, dur: 2.5, delay: 0.7 },
+  { id: 13, x: 21, bot: 14, dur: 2.3, delay: 0.2 },
+  { id: 14, x: 35, bot: 16, dur: 2.8, delay: 1.0 },
+  { id: 15, x: 49, bot: 15, dur: 2.2, delay: 0.5 },
+  { id: 16, x: 63, bot: 14, dur: 3.0, delay: 0.9 },
+  { id: 17, x: 77, bot: 16, dur: 2.6, delay: 0.3 },
+  // ── 排 4 IDs 18-23
+  { id: 18, x: 14, bot: 20, dur: 2.4, delay: 0.6 },
+  { id: 19, x: 28, bot: 19, dur: 2.7, delay: 0.1 },
+  { id: 20, x: 42, bot: 21, dur: 2.3, delay: 0.8 },
+  { id: 21, x: 56, bot: 20, dur: 2.9, delay: 0.4 },
+  { id: 22, x: 70, bot: 19, dur: 2.5, delay: 1.1 },
+  { id: 23, x: 84, bot: 21, dur: 2.1, delay: 0.2 },
+  // ── 排 5 IDs 24-29
+  { id: 24, x: 7,  bot: 25, dur: 2.6, delay: 0.5 },
+  { id: 25, x: 21, bot: 24, dur: 2.4, delay: 1.0 },
+  { id: 26, x: 35, bot: 26, dur: 2.8, delay: 0.3 },
+  { id: 27, x: 49, bot: 25, dur: 2.2, delay: 0.7 },
+  { id: 28, x: 63, bot: 24, dur: 3.1, delay: 0.0 },
+  { id: 29, x: 77, bot: 26, dur: 2.5, delay: 0.9 },
+  // ── 排 6 IDs 30-35
+  { id: 30, x: 14, bot: 29, dur: 2.3, delay: 0.4 },
+  { id: 31, x: 28, bot: 28, dur: 2.7, delay: 0.8 },
+  { id: 32, x: 42, bot: 30, dur: 2.4, delay: 0.1 },
+  { id: 33, x: 56, bot: 29, dur: 2.9, delay: 0.6 },
+  { id: 34, x: 70, bot: 28, dur: 2.2, delay: 1.1 },
+  { id: 35, x: 84, bot: 30, dur: 2.6, delay: 0.3 },
+  // ── 排 7（頂堆，4 顆） IDs 36-39
+  { id: 36, x: 21, bot: 33, dur: 2.5, delay: 0.9 },
+  { id: 37, x: 42, bot: 32, dur: 2.3, delay: 0.2 },
+  { id: 38, x: 56, bot: 34, dur: 2.7, delay: 0.7 },
+  { id: 39, x: 77, bot: 33, dur: 2.4, delay: 0.4 },
 ];
 
 export default function ClawMachineGame({ socket, token, name, setApples }) {
   const [phase,        setPhase]        = useState("idle");
   const [warnVisible,  setWarnVisible]  = useState(false); // 30秒預告說明彈窗
   const [warnSeconds,  setWarnSeconds]  = useState(30);    // 說明彈窗倒數
+  const [appleList,    setAppleList]    = useState(() => FULL_APPLE_INIT.slice(0, 12));
   const [timeLeft,     setTimeLeft]     = useState(0);
   const [reward,       setReward]       = useState(1);
   const [myScore,      setMyScore]      = useState(0);
@@ -57,6 +95,7 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
   const timerRef        = useRef(null);
   const closeTimerRef   = useRef(null);  // closing → result 延遲計時器
   const warnTimerRef    = useRef(null);  // 說明彈窗倒數計時器
+  const appleInitRef    = useRef(FULL_APPLE_INIT.slice(0, 12)); // 本局蘋果清單（給 RAF 用）
   const oscAnimRef      = useRef(null);
   const dropAnimRef     = useRef(null);
   const catchResultRef  = useRef(null);
@@ -74,11 +113,11 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
     setCaughtIds(new Set());
   }, []);
 
-  // ── 找最近的未被夾蘋果 ────────────────────────────────────────────────────────
+  // ── 找最近的未被夾蘋果（比較中心點 x） ──────────────────────────────────────
   const findNearestApple = useCallback(() => {
     const cx = clawXRef.current;
     let best = null, bestDist = Infinity;
-    for (const a of APPLE_INIT) {
+    for (const a of appleInitRef.current) {
       if (appleCaughtRef.current.has(a.id)) continue;
       const dist = Math.abs(a.x - cx);
       if (dist < bestDist) { bestDist = dist; best = a; }
@@ -195,7 +234,7 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
       }, 1000);
     };
 
-    const onStart = ({ duration, reward: r, speed, dropSpeed }) => {
+    const onStart = ({ duration, reward: r, speed, dropSpeed, appleCount }) => {
       // 遊戲開始，關閉說明彈窗
       clearInterval(warnTimerRef.current);
       setWarnVisible(false);
@@ -203,6 +242,12 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
       clearInterval(timerRef.current);
       stopOscillation();
       if (dropAnimRef.current) cancelAnimationFrame(dropAnimRef.current);
+
+      // 設定本局蘋果數量
+      const count = Math.max(1, Math.min(appleCount ?? 12, FULL_APPLE_INIT.length));
+      const activeApples = FULL_APPLE_INIT.slice(0, count);
+      appleInitRef.current = activeApples;
+      setAppleList(activeApples);
 
       resetApples();
       setPhase("playing");
@@ -396,12 +441,12 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
               </div>
             </div>
 
-            {APPLE_INIT.map(a => (
+            {appleList.map(a => (
               <div
                 key={a.id}
                 className={`clw-pile-apple${caughtIds.has(a.id) ? " caught" : ""}`}
                 style={{
-                  left:      `${a.x}%`,
+                  left:      `calc(${a.x}% - 19px)`,
                   bottom:    `${a.bot}%`,
                   "--dur":   `${a.dur}s`,
                   "--delay": `${a.delay}s`,

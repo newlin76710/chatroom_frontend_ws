@@ -37,6 +37,7 @@ const DEFAULT = {
   claw_difficulty:      75,
   claw_speed:           100,
   claw_drop_speed:      100,
+  claw_apple_count:     12,
 };
 
 export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
@@ -347,6 +348,12 @@ export default function AdminSettingsModal({ open, onClose, token, BACKEND }) {
                   value={settings.claw_drop_speed}
                   onChange={e => setInt("claw_drop_speed", e.target.value)} />
                 <span className="field-note">50=慢，100=預設，200=快，300=極快</span>
+              </Row>
+              <Row label="場內蘋果數量">
+                <input type="number" min={1} max={40} style={{ width: 80 }}
+                  value={settings.claw_apple_count}
+                  onChange={e => setInt("claw_apple_count", e.target.value)} />
+                <span className="field-note">顆（1–40，越多越滿）</span>
               </Row>
             </section>
 
