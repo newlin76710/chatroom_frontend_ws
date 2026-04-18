@@ -254,14 +254,19 @@
 }
 
 /* ─── Apple pile ────────────────────────────────────────────────────────────── */
-.clw-pile-apple {
+/* 外層：只負責定位；bottom transition 在此層，與 transform 動畫完全隔離 */
+.clw-pile-pos {
   position: absolute;
-  /* --dur 和 --delay 由 inline style 注入 */
-  animation: clw-roll var(--dur, 2.5s) ease-in-out infinite;
-  animation-delay: var(--delay, 0s);
   z-index: 2;
   cursor: default;
   transition: bottom 0.35s ease; /* 補位滑落動畫 */
+}
+
+/* 內層：只負責滾動動畫；will-change 讓瀏覽器保持在合成層，不受 layout 影響 */
+.clw-pile-apple {
+  will-change: transform;
+  animation: clw-roll var(--dur, 2.5s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
 }
 
 .clw-pile-apple img {
@@ -559,6 +564,6 @@
   .clw-grab-btn  { height: 54px; font-size: 1.6rem; }
   .clw-hint      { display: none; }
   .clw-timer     { font-size: 2rem; }
-  .clw-pile-apple img { width: 30px; height: 30px; }
+  .clw-pile-pos .clw-pile-apple img { width: 30px; height: 30px; }
   .clw-held-apple img { width: 28px; height: 28px; }
 }

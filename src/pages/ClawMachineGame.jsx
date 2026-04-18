@@ -311,6 +311,7 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
       stopOscillation();
       if (dropAnimRef.current) cancelAnimationFrame(dropAnimRef.current);
       clearTimeout(closeTimerRef.current);
+      clearTimeout(slideTimerRef.current);
 
       // 先進入 closing 相位讓遊戲畫面淡出，再顯示結果
       setPhase("closing");
@@ -469,15 +470,18 @@ export default function ClawMachineGame({ socket, token, name, setApples }) {
             {appleList.map(a => (
               <div
                 key={a.id}
-                className={`clw-pile-apple${a.isCaught ? " caught" : ""}`}
+                className="clw-pile-pos"
                 style={{
-                  left:      `calc(${a.x}% - 19px)`,
-                  bottom:    `${FULL_APPLE_INIT[a.posIdx].bot}%`,
-                  "--dur":   `${a.dur}s`,
-                  "--delay": `${a.delay}s`,
+                  left:   `calc(${a.x}% - 19px)`,
+                  bottom: `${FULL_APPLE_INIT[a.posIdx].bot}%`,
                 }}
               >
-                <img src={APPLE_IMG} alt="金蘋果" />
+                <div
+                  className={`clw-pile-apple${a.isCaught ? " caught" : ""}`}
+                  style={{ "--dur": `${a.dur}s`, "--delay": `${a.delay}s` }}
+                >
+                  <img src={APPLE_IMG} alt="金蘋果" />
+                </div>
               </div>
             ))}
 
