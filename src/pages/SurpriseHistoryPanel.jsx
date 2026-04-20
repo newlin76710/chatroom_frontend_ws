@@ -47,7 +47,7 @@ export default function SurpriseHistoryPanel({ token }) {
   return (
     <div className="apple-modal">
       <div className="apple-modal-content" style={{ width: 500, maxHeight: "80vh", overflowY: "auto" }}>
-        <h3 style={{ color: "#FFD700", marginBottom: 12 }}>🎊 每日金蘋果樂透紀錄（最近 10 天）</h3>
+        <h3 style={{ color: "#FFD700", marginBottom: 12 }}>🎊 金蘋果樂透紀錄（10日內）</h3>
 
         {loading ? (
           <div style={{ color: "#aaa" }}>讀取中...</div>
