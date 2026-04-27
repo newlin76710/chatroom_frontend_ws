@@ -41,7 +41,6 @@
   overflow: hidden;
 }
 
-/* Felt texture overlay */
 .bj-table::before {
   content: "";
   position: absolute;
@@ -146,11 +145,71 @@
 }
 .bj-card.small .bj-card-br { font-size: 0.6rem; }
 
-.bj-card-center {
-  font-size: 1.4rem;
+/* 中間花色（數字牌） */
+.bj-card-center-pips {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(7, 1fr);
+  padding: 6px;
+}
+.bj-pip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
   line-height: 1;
 }
-.bj-card.small .bj-card-center { font-size: 1.1rem; }
+
+/* 各數字的位置 */
+.bj-pip-top           { grid-column: 2; grid-row: 1; }
+.bj-pip-bottom        { grid-column: 2; grid-row: 7; }
+.bj-pip-center        { grid-column: 2; grid-row: 4; }
+.bj-pip-top-left      { grid-column: 1; grid-row: 1; }
+.bj-pip-top-right     { grid-column: 3; grid-row: 1; }
+.bj-pip-bottom-left   { grid-column: 1; grid-row: 7; }
+.bj-pip-bottom-right  { grid-column: 3; grid-row: 7; }
+.bj-pip-center-left   { grid-column: 1; grid-row: 4; }
+.bj-pip-center-right  { grid-column: 3; grid-row: 4; }
+.bj-pip-center-top    { grid-column: 2; grid-row: 2; }
+.bj-pip-center-bottom { grid-column: 2; grid-row: 6; }
+.bj-pip-center-top-left     { grid-column: 1; grid-row: 2; }
+.bj-pip-center-top-right    { grid-column: 3; grid-row: 2; }
+.bj-pip-center-bottom-left  { grid-column: 1; grid-row: 6; }
+.bj-pip-center-bottom-right { grid-column: 3; grid-row: 6; }
+.bj-pip-top-center    { grid-column: 2; grid-row: 1 / 3; }
+.bj-pip-bottom-center { grid-column: 2; grid-row: 6 / 8; }
+
+/* Ace 中央大花色 */
+.bj-card-center-ace {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bj-ace-big {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+.bj-card.small .bj-ace-big { font-size: 1.7rem; }
+
+/* 人頭牌 SVG 區塊 */
+.bj-card-center-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bj-card-center-face svg {
+  display: block;
+}
+.bj-card-center-letter {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
 
 /* Highlight effect for winning cards */
 .bj-card-hl {
@@ -298,7 +357,6 @@
   flex-wrap: wrap;
 }
 
-/* Casino-style chips */
 .bj-chip {
   width: 46px;
   height: 46px;
