@@ -2,22 +2,33 @@
 
 export function JackOfSpades({ size = 60 }) {
   return (
-    <svg width={size} height={size * 1.26} viewBox="0 0 100 126">
-      <ellipse cx="50" cy="30" rx="14" ry="15" fill="#1a1a2e" />
-      <path d="M32 22 Q50 8 68 22 L65 20 Q50 10 35 20Z" fill="#16213e" />
-      <rect x="36" y="16" width="28" height="4" rx="2" fill="#0f3460" />
-      <path d="M30 46 L28 82 L35 97 L50 102 L65 97 L72 82 L70 46 Q50 40 30 46Z" fill="#16213e" />
-      <path d="M30 46 L50 52 L70 46 L65 54 L50 58 L35 54 Z" fill="#e94560" />
-      <path d="M30 46 L20 42 L28 50Z" fill="#e94560" />
-      <path d="M70 46 L80 42 L72 50Z" fill="#e94560" />
-      <circle cx="44" cy="28" r="2" fill="#fff" />
-      <circle cx="56" cy="28" r="2" fill="#fff" />
-      <ellipse cx="50" cy="34" rx="4" ry="2" fill="#e94560" />
-      <path d="M36 20 Q31 26 36 30 Q40 24 36 20Z" fill="#1a1a2e" />
-      <path d="M64 20 Q69 26 64 30 Q60 24 64 20Z" fill="#1a1a2e" />
-      <rect x="48" y="47" width="4" height="55" rx="2" fill="#c0c0c0" />
-      <rect x="46" y="44" width="8" height="6" rx="2" fill="#d4af37" />
-      <circle cx="50" cy="42" r="4" fill="#e94560" />
+    <svg width={size} height={size*1.26} viewBox="0 0 100 126">
+      {/* 頭部 */}
+      <ellipse cx="50" cy="28" rx="12" ry="14" fill="#f5e0c0"/>
+      {/* 羽毛帽 */}
+      <path d="M34 16 Q50 2 66 16 Q58 12 50 14 Q42 12 34 16Z" fill="#1a237e"/>
+      <rect x="38" y="14" width="24" height="4" rx="2" fill="#c0c0c0"/>
+      {/* 披風 */}
+      <path d="M26 44 Q20 70 18 95 L28 105 L50 102 L72 105 L82 95 Q80 70 74 44Z" fill="#1a237e"/>
+      {/* 鎧甲上身 */}
+      <path d="M30 44 L50 52 L70 44 L68 62 L50 72 L32 62Z" fill="#c0c0c0"/>
+      <path d="M36 48 L50 56 L64 48 L62 58 L50 66 L38 58Z" fill="#fff"/>
+      {/* 領巾 */}
+      <path d="M30 44 L50 48 L70 44 L64 50 L50 53 L36 50Z" fill="#d32f2f"/>
+      {/* 劍 */}
+      <rect x="48" y="46" width="4" height="55" rx="2" fill="#ccc"/>
+      <rect x="45" y="43" width="10" height="6" rx="3" fill="#ffd700"/>
+      {/* 臉部 */}
+      <circle cx="45" cy="26" r="2" fill="#1a1a1a"/>
+      <circle cx="55" cy="26" r="2" fill="#1a1a1a"/>
+      <path d="M47 32 Q50 36 53 32" stroke="#1a1a1a" strokeWidth="1.5" fill="none"/>
+      <ellipse cx="50" cy="38" rx="4" ry="4" fill="#f5e0c0"/>
+      {/* 頭髮 */}
+      <path d="M38 18 Q30 28 38 32 Q44 22 38 18Z" fill="#1a1a1a"/>
+      <path d="M62 18 Q70 28 62 32 Q56 22 62 18Z" fill="#1a1a1a"/>
+      {/* 靴子 */}
+      <path d="M28 105 L22 110 L28 112 L30 108Z" fill="#1a237e"/>
+      <path d="M72 105 L78 110 L72 112 L70 108Z" fill="#1a237e"/>
     </svg>
   );
 }
